@@ -1,12 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // --- Shop-Daten (Produkte, Kategorien, Blog, Reviews, Konfigurator, Logo) ---
+    // Lesen: öffentlich  (die Website muss die Produkte für alle Besucher laden)
+    // Schreiben: nur eingeloggte Admins (Firebase E-Mail/Passwort-Login im Admin-Panel)
     match /shop_data/{document=**} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if request.auth != null;
     }
+
+    // --- Newsletter-Abonnenten (Double-Opt-In) ---
+    // Anonyme Besucher dürfen sich anmelden (create) und ihre Anmeldung
+    // per Bestätigungslink lesen (get) und bestätigen (update).
+    // Die gesamte Liste einsehen oder löschen darf nur ein eingeloggter Admin.
     match /newsletter_subscribers/{subscriberId} {
-      allow read, write: if true;
+      allow get, create, update: if true;
+      allow list, delete: if request.auth != null;
     }
   }
 }
-

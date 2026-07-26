@@ -1,0 +1,54 @@
+name: Deploy zu Hostinger
+
+# Baut die Seite und lädt das Ergebnis (dist/) per FTP auf Hostinger.
+# Läuft automatisch bei jedem Push auf main – und manuell über den
+# "Run workflow"-Button (workflow_dispatch).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Verhindert parallele Deploys (ein FTP-Upload gleichzeitig)
+concurrency:
+  group: hostinger-deploy
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Bun einrichten
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Abhängigkeiten installieren
+        run: bun install --frozen-lockfile
+
+      - name: Produktions-Build erstellen
+        run: bun run build
+
+      - name: Per FTP zu Hostinger hochladen
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          # Zugangsdaten kommen aus den GitHub-Secrets (Settings -> Secrets -> Actions)
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          # Nur der fertige Build wird hochgeladen
+          local-dir: ./dist/
+          # Zielordner auf Hostinger (Web-Root). Bei Bedarf anpassen,
+          # z.B. /public_html/ oder /domains/it-market.at/public_html/
+          server-dir: /public_html/
+          # Inkrementell: nur geänderte Dateien werden übertragen
+          # (Status wird in .ftp-deploy-sync-state.json auf dem Server gehalten)
+          dangerous-clean-slate: false
+          # Diese Dateien nie hochladen
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
