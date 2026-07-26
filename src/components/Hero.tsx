@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { VideoBackground, getYouTubeId } from "./VideoBackground";
+import { uploadImageToStorage, uploadFileToStorage } from "../lib/storageService";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -176,14 +177,6 @@ export default function Hero({
       netzwerk: "/netzwerk-hero-section.jpg"
     };
     if (heroImages) return { ...defaults, ...heroImages };
-    const saved = localStorage.getItem("bewacht_vernetzt_hero_images");
-    if (saved) {
-      try {
-        return { ...defaults, ...JSON.parse(saved) };
-      } catch (e) {
-        console.error(e);
-      }
-    }
     return defaults;
   });
 
@@ -206,14 +199,6 @@ export default function Hero({
       smarthome: "https://raw.githubusercontent.com/intel-iot-devkit/sample-videos/master/store-aisle-detection.mp4"
     };
     if (heroVideos) return { ...defaults, ...heroVideos };
-    const saved = localStorage.getItem("bewacht_vernetzt_hero_videos");
-    if (saved) {
-      try {
-        return { ...defaults, ...JSON.parse(saved) };
-      } catch (e) {
-        console.error(e);
-      }
-    }
     return defaults;
   });
 
@@ -305,84 +290,43 @@ export default function Hero({
   };
 
   // Convert and compress local file to JPEG DataURL to stay under localStorage limit
-  const handleLocalImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLocalImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploading(true);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new window.Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-        
-        // Target optimized resolution for reliable cloud sync across devices
-        const MAX_SIZE = 800;
-        if (width > height) {
-          if (width > MAX_SIZE) {
-            height = Math.round((height * MAX_SIZE) / width);
-            width = MAX_SIZE;
-          }
-        } else {
-          if (height > MAX_SIZE) {
-            width = Math.round((width * MAX_SIZE) / height);
-            height = MAX_SIZE;
-          }
-        }
-        
-        let mimeType = "image/jpeg";
-        let quality: number | undefined = 0.55;
-        
-        if (file.type === "image/webp") {
-          mimeType = "image/webp";
-          quality = 0.55;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.clearRect(0, 0, width, height);
-          ctx.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL(mimeType, quality);
-          setCustomUrlInput(dataUrl);
-          setIsUploading(false);
-        }
-      };
-      img.onerror = () => {
-        setIsUploading(false);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.onerror = () => {
+    try {
+      // Hero-Bild als echte Datei nach Firebase Storage; gespeichert wird nur die URL.
+      const url = await uploadImageToStorage(file, "hero", 1920, 0.82);
+      setCustomUrlInput(url);
+    } catch (err) {
+      console.error("Hero-Bild-Upload fehlgeschlagen:", err);
+      alert("Bild-Upload fehlgeschlagen. Bitte stellen Sie sicher, dass Sie als Admin eingeloggt sind, und versuchen Sie es erneut.");
+    } finally {
       setIsUploading(false);
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   // Upload local video file
-  const handleLocalVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLocalVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2.5 * 1024 * 1024) {
-      alert("Lokale Videodatei ist zu groß (max. 2.5MB für Browser- & Firestore-Speicher). Für längere/größere Videos bitte eine direkte MP4-Video-URL angeben.");
+    if (file.size > 50 * 1024 * 1024) {
+      alert("Lokale Videodatei ist zu groß (max. 50 MB). Für größere Videos bitte eine direkte MP4-Video-URL angeben.");
       return;
     }
 
     setIsUploading(true);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      setCustomVideoInput(dataUrl);
+    try {
+      const url = await uploadFileToStorage(file, "hero-videos");
+      setCustomVideoInput(url);
+    } catch (err) {
+      console.error("Hero-Video-Upload fehlgeschlagen:", err);
+      alert("Video-Upload fehlgeschlagen. Bitte stellen Sie sicher, dass Sie als Admin eingeloggt sind, und versuchen Sie es erneut.");
+    } finally {
       setIsUploading(false);
-    };
-    reader.onerror = () => {
-      setIsUploading(false);
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   // Apply customized image and video
@@ -395,11 +339,6 @@ export default function Hero({
       [activeId]: customUrlInput
     };
     setSlideImages(updatedImages);
-    try {
-      localStorage.setItem("bewacht_vernetzt_hero_images", JSON.stringify(updatedImages));
-    } catch (e) {
-      console.warn("Could not save hero images to localStorage:", e);
-    }
     if (onUpdateHeroImages) {
       onUpdateHeroImages(updatedImages);
     }
@@ -410,11 +349,6 @@ export default function Hero({
       [activeId]: customVideoInput
     };
     setSlideVideos(updatedVideos);
-    try {
-      localStorage.setItem("bewacht_vernetzt_hero_videos", JSON.stringify(updatedVideos));
-    } catch (e) {
-      console.warn("Could not save hero videos to localStorage:", e);
-    }
     if (onUpdateHeroVideos) {
       onUpdateHeroVideos(updatedVideos);
     }
@@ -433,9 +367,6 @@ export default function Hero({
     };
     setSlideImages(updatedImages);
     setCustomUrlInput(defaultImage);
-    try {
-      localStorage.setItem("bewacht_vernetzt_hero_images", JSON.stringify(updatedImages));
-    } catch (e) {}
     if (onUpdateHeroImages) {
       onUpdateHeroImages(updatedImages);
     }
@@ -444,9 +375,6 @@ export default function Hero({
     delete updatedVideos[activeId];
     setSlideVideos(updatedVideos);
     setCustomVideoInput("");
-    try {
-      localStorage.setItem("bewacht_vernetzt_hero_videos", JSON.stringify(updatedVideos));
-    } catch (e) {}
     if (onUpdateHeroVideos) {
       onUpdateHeroVideos(updatedVideos);
     }

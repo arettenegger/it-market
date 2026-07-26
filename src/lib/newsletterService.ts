@@ -11,46 +11,16 @@ export interface NewsletterSubscriber {
   source?: string;
 }
 
-const LOCAL_STORAGE_KEY = "bewacht_vernetzt_subscribers";
-
-// Get cached subscribers from localStorage
-export function getLocalSubscribers(): NewsletterSubscriber[] {
-  try {
-    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch (e) {
-    console.error("Failed to parse local newsletter subscribers:", e);
-    return [];
-  }
-}
-
-// Save subscribers to localStorage
-export function saveLocalSubscribers(subscribers: NewsletterSubscriber[]) {
-  try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(subscribers));
-  } catch (e) {
-    console.error("Failed to save local newsletter subscribers:", e);
-  }
-}
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/mpqvkzkr";
 
 // Step 1: Request Double Opt-In
+// Legt einen "pending"-Abonnenten in Firestore an und stößt die
+// Bestätigungs-E-Mail (via Formspree) an. Kein localStorage.
 export async function requestDoubleOptIn(
   email: string,
   source: string = "Website Newsletter"
 ): Promise<{ success: boolean; token: string; confirmUrl: string; isAlreadyConfirmed?: boolean }> {
   const cleanEmail = email.trim().toLowerCase();
-  
-  // Check if already registered
-  const existingList = getLocalSubscribers();
-  const existing = existingList.find(s => s.email.toLowerCase() === cleanEmail);
-  if (existing && existing.status === "confirmed") {
-    return {
-      success: true,
-      token: existing.token,
-      confirmUrl: "",
-      isAlreadyConfirmed: true
-    };
-  }
 
   const token = "doi_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
   const confirmUrl = `${window.location.origin}?confirm_newsletter=${token}&email=${encodeURIComponent(cleanEmail)}`;
@@ -65,20 +35,16 @@ export async function requestDoubleOptIn(
     source
   };
 
-  // 1. Save to Firestore
+  // In Firestore speichern
   try {
     await setDoc(doc(db, "newsletter_subscribers", token), subscriber);
   } catch (err) {
     console.warn("Firestore save pending subscriber warning:", err);
   }
 
-  // 2. Save to localStorage
-  const updatedList = [subscriber, ...existingList.filter(s => s.email.toLowerCase() !== cleanEmail)];
-  saveLocalSubscribers(updatedList);
-
-  // 3. Send Formspree request (Double Opt-In email trigger)
+  // Formspree-Benachrichtigung (Double-Opt-In-Trigger)
   try {
-    await fetch("https://formspree.io/f/mpqvkzkr", {
+    await fetch(FORMSPREE_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -108,7 +74,7 @@ export async function confirmDoubleOptIn(
 ): Promise<{ success: boolean; email: string; message: string }> {
   let subscriber: NewsletterSubscriber | null = null;
 
-  // 1. Try fetching from Firestore
+  // Aus Firestore laden
   try {
     const docRef = doc(db, "newsletter_subscribers", token);
     const docSnap = await getDoc(docRef);
@@ -117,15 +83,6 @@ export async function confirmDoubleOptIn(
     }
   } catch (err) {
     console.warn("Firestore fetch token error:", err);
-  }
-
-  // 2. Fallback to localStorage
-  const localList = getLocalSubscribers();
-  if (!subscriber) {
-    const foundLocal = localList.find(s => s.token === token || (providedEmail && s.email.toLowerCase() === providedEmail.toLowerCase()));
-    if (foundLocal) {
-      subscriber = foundLocal;
-    }
   }
 
   const confirmedEmail = subscriber?.email || providedEmail || "Abonnent";
@@ -141,20 +98,16 @@ export async function confirmDoubleOptIn(
     source: subscriber?.source || "Double Opt-In Link"
   };
 
-  // Update Firestore
+  // In Firestore aktualisieren
   try {
     await setDoc(doc(db, "newsletter_subscribers", updatedSubscriber.id), updatedSubscriber, { merge: true });
   } catch (err) {
     console.warn("Firestore update confirmed subscriber warning:", err);
   }
 
-  // Update Local Storage
-  const filteredLocal = localList.filter(s => s.id !== updatedSubscriber.id && s.email.toLowerCase() !== confirmedEmail.toLowerCase());
-  saveLocalSubscribers([updatedSubscriber, ...filteredLocal]);
-
-  // Notify Formspree about successful confirmation
+  // Formspree über erfolgreiche Bestätigung informieren
   try {
-    await fetch("https://formspree.io/f/mpqvkzkr", {
+    await fetch(FORMSPREE_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -180,59 +133,39 @@ export async function confirmDoubleOptIn(
   };
 }
 
-// Fetch all subscribers (for Admin Panel)
+// Alle Abonnenten laden (für das Admin-Panel; erfordert Admin-Login)
 export async function fetchAllSubscribers(): Promise<NewsletterSubscriber[]> {
-  const localList = getLocalSubscribers();
   try {
     const querySnap = await getDocs(collection(db, "newsletter_subscribers"));
-    const firestoreSubscribers: NewsletterSubscriber[] = [];
-    querySnap.forEach(docSnap => {
-      firestoreSubscribers.push(docSnap.data() as NewsletterSubscriber);
+    const subscribers: NewsletterSubscriber[] = [];
+    querySnap.forEach((docSnap) => {
+      subscribers.push(docSnap.data() as NewsletterSubscriber);
     });
-
-    if (firestoreSubscribers.length > 0) {
-      // Merge local and firestore
-      const map = new Map<string, NewsletterSubscriber>();
-      [...localList, ...firestoreSubscribers].forEach(sub => {
-        const existing = map.get(sub.email.toLowerCase());
-        if (!existing || sub.status === "confirmed") {
-          map.set(sub.email.toLowerCase(), sub);
-        }
-      });
-      const merged = Array.from(map.values());
-      saveLocalSubscribers(merged);
-      return merged;
-    }
+    return subscribers;
   } catch (err) {
     console.warn("Firestore fetch subscribers warning:", err);
+    return [];
   }
-
-  return localList;
 }
 
-// Admin: Delete subscriber
+// Admin: Abonnent löschen
 export async function deleteSubscriber(idOrToken: string): Promise<void> {
   try {
     await deleteDoc(doc(db, "newsletter_subscribers", idOrToken));
   } catch (e) {
     console.warn("Firestore delete subscriber warning:", e);
   }
-  const localList = getLocalSubscribers().filter(s => s.id !== idOrToken && s.token !== idOrToken);
-  saveLocalSubscribers(localList);
 }
 
-// Admin: Manually confirm subscriber
+// Admin: Abonnent manuell bestätigen
 export async function manualConfirmSubscriber(idOrToken: string): Promise<void> {
-  const localList = getLocalSubscribers();
-  const target = localList.find(s => s.id === idOrToken || s.token === idOrToken);
-  if (target) {
-    target.status = "confirmed";
-    target.confirmedAt = new Date().toISOString();
-    try {
-      await setDoc(doc(db, "newsletter_subscribers", target.id), target, { merge: true });
-    } catch (e) {
-      console.warn("Firestore manual confirm warning:", e);
-    }
-    saveLocalSubscribers([...localList]);
+  try {
+    await setDoc(
+      doc(db, "newsletter_subscribers", idOrToken),
+      { status: "confirmed", confirmedAt: new Date().toISOString() },
+      { merge: true }
+    );
+  } catch (e) {
+    console.warn("Firestore manual confirm warning:", e);
   }
 }

@@ -57,12 +57,29 @@ Der Admin-Bereich wird über ein Firebase-Konto geschützt.
 
 ---
 
-## Schritt 3 – Firestore-Sicherheitsregeln veröffentlichen
+## Schritt 3 – Sicherheitsregeln veröffentlichen (Firestore **und** Storage)
 
-Damit nur eingeloggte Admins Produkte ändern können (Besucher können nur lesen).
+Damit nur eingeloggte Admins Daten/Bilder ändern können (Besucher können nur lesen).
 
-1. Firebase Console → *Firestore Database* → *Rules*.
-2. Den kompletten Inhalt der Datei **`firestore.rules`** (im Repo) einfügen und **Veröffentlichen**.
+1. **Firestore-Regeln**: Firebase Console → *Firestore Database* → *Rules* → kompletten Inhalt von
+   **`firestore.rules`** (im Repo) einfügen → **Veröffentlichen**.
+   (Enthält jetzt auch die Kunden-Collections `inquiries` und `callbacks`.)
+2. **Storage aktivieren & Regeln**: Firebase Console → *Storage* → einmalig *Get started* (Bucket anlegen).
+   Dann *Rules* → kompletten Inhalt von **`storage.rules`** (im Repo) einfügen → **Veröffentlichen**.
+   (Bilder/Videos werden jetzt in Firebase Storage gespeichert – Upload nur für eingeloggte Admins.)
+
+> **Wichtig – „nichts lokal / alles in der Cloud":** Produkte, Bilder, Anfragen, Rückrufe und Newsletter
+> werden jetzt ausschließlich in Firebase gespeichert (kein Browser-Speicher mehr). Deshalb **muss der
+> Admin sich per Firebase-Login (E-Mail/Passwort) anmelden** – nur dann funktionieren Speichern und
+> Bild-Upload. Der einfache PIN-Login allein reicht dafür nicht mehr aus.
+
+> **Wichtig – Firestore-Kontingent / eigenes Firebase-Projekt:** Das aktuell hinterlegte Projekt
+> (`gen-lang-client-0171145532`) stammt aus Google AI Studio und ist auf das **kostenlose Tageslimit**
+> begrenzt (aktuell durch die Entwicklung teils aufgebraucht → Besucher sehen dann vorübergehend nur den
+> Standard-Katalog; das Limit setzt sich täglich zurück). **Empfehlung für den echten Betrieb:** ein
+> **eigenes Firebase-Projekt** anlegen (kostenloser Spark-Tarif; bei mehr Traffic Blaze/Pay-as-you-go) und
+> die Werte in `firebase-applet-config.json` ersetzen. Dann hast du volle Kontrolle über Kontingente,
+> Login und Speicher.
 
 ---
 

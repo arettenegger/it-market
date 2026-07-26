@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X, PhoneCall, CheckCircle, ShieldAlert, Sparkles, Send } from "lucide-react";
+import { saveCallback } from "../lib/leadsService";
 
 interface CallbackModalProps {
   isOpen: boolean;
@@ -54,19 +55,17 @@ export default function CallbackModal({ isOpen, onClose, initialTopic }: Callbac
         setIsSubmitting(false);
       }
 
-      // Save callback request to localStorage so it is available in Admin Panel
-      const callId = "call-" + Math.floor(100 + Math.random() * 900);
-      const dateOptions: Intl.DateTimeFormatOptions = { 
-        day: 'numeric', 
-        month: 'long', 
-        year: 'numeric', 
-        hour: 'numeric', 
-        minute: '2-digit' 
+      // Rückruf in Firestore speichern, damit er im Admin-Bereich erscheint (cloud-only)
+      const dateOptions: Intl.DateTimeFormatOptions = {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
       };
       const dateStr = new Date().toLocaleDateString('de-DE', dateOptions);
-      
+
       const newCallback = {
-        id: callId,
         date: dateStr,
         name: formData.name,
         phone: formData.phone,
@@ -74,19 +73,11 @@ export default function CallbackModal({ isOpen, onClose, initialTopic }: Callbac
         status: "Offen"
       };
 
-      const savedCallbacks = localStorage.getItem("bewacht_vernetzt_callbacks");
-      let currentCallbacks = [];
-      if (savedCallbacks) {
-        try {
-          currentCallbacks = JSON.parse(savedCallbacks);
-        } catch (err) {
-          console.error(err);
-        }
-      }
-      const updatedCallbacks = [newCallback, ...currentCallbacks];
       try {
-        localStorage.setItem("bewacht_vernetzt_callbacks", JSON.stringify(updatedCallbacks));
-      } catch (e) {}
+        await saveCallback(newCallback);
+      } catch (err) {
+        console.error("Rückruf konnte nicht in Firestore gespeichert werden:", err);
+      }
 
       setIsSuccess(true);
     }

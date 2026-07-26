@@ -91,29 +91,15 @@ export default function App() {
   const [configuratorData, setConfiguratorData] = useState<ConfiguratorData>(DEFAULT_CONFIGURATOR_DATA);
   const [logoImage, setLogoImage] = useState<string>("");
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(new Date());
-  const [heroImages, setHeroImages] = useState<Record<string, string>>(() => {
-    const defaults = {
-      kameras: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=1920",
-      smarthome: "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=80&w=1920",
-      nas: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=1920",
-      netzwerk: "/netzwerk-hero-section.jpg"
-    };
-    const saved = localStorage.getItem("bewacht_vernetzt_hero_images");
-    if (saved) {
-      try { return { ...defaults, ...JSON.parse(saved) }; } catch (e) {}
-    }
-    return defaults;
+  const [heroImages, setHeroImages] = useState<Record<string, string>>({
+    kameras: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=1920",
+    smarthome: "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=80&w=1920",
+    nas: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=1920",
+    netzwerk: "/netzwerk-hero-section.jpg"
   });
 
-  const [heroVideos, setHeroVideos] = useState<Record<string, string>>(() => {
-    const defaults = {
-      smarthome: "https://raw.githubusercontent.com/intel-iot-devkit/sample-videos/master/store-aisle-detection.mp4"
-    };
-    const saved = localStorage.getItem("bewacht_vernetzt_hero_videos");
-    if (saved) {
-      try { return { ...defaults, ...JSON.parse(saved) }; } catch (e) {}
-    }
-    return defaults;
+  const [heroVideos, setHeroVideos] = useState<Record<string, string>>({
+    smarthome: "https://raw.githubusercontent.com/intel-iot-devkit/sample-videos/master/store-aisle-detection.mp4"
   });
 
   const [doiConfirmedInfo, setDoiConfirmedInfo] = useState<{ email: string; message: string } | null>(null);
@@ -196,89 +182,54 @@ export default function App() {
   };
 
   useEffect(() => {
+    // Warenkorb & Wunschliste dürfen lokal bleiben (keine Kundendaten,
+    // pro Browser sinnvoll). Alle Shop-Daten kommen ausschließlich aus der Cloud.
     const savedCart = localStorage.getItem("bewacht_vernetzt_cart");
-    const savedWishlist = localStorage.getItem("bewacht_vernetzt_wishlist");
-    const savedProducts = localStorage.getItem("bewacht_vernetzt_products");
-    const savedBlog = localStorage.getItem("bewacht_vernetzt_blog");
-    const savedReviews = localStorage.getItem("bewacht_vernetzt_reviews");
-    const savedCategories = localStorage.getItem("bewacht_vernetzt_categories");
-    const savedConfig = localStorage.getItem("bewacht_vernetzt_configurator");
-    const savedLogo = localStorage.getItem("bewacht_vernetzt_logo_image");
-    const savedHeroImages = localStorage.getItem("bewacht_vernetzt_hero_images");
-    const savedHeroVideos = localStorage.getItem("bewacht_vernetzt_hero_videos");
-
-    if (savedLogo) {
-      setLogoImage(savedLogo);
-    }
-    
     if (savedCart) {
-      try {
-        setCart(JSON.parse(savedCart));
-      } catch (e) {
-        console.error("Error reading cart", e);
-      }
+      try { setCart(JSON.parse(savedCart)); } catch (e) { console.error("Error reading cart", e); }
     }
+    const savedWishlist = localStorage.getItem("bewacht_vernetzt_wishlist");
     if (savedWishlist) {
-      try {
-        setWishlist(JSON.parse(savedWishlist));
-      } catch (e) {
-        console.error("Error reading wishlist", e);
-      }
-    }
-    if (savedProducts) {
-      try {
-        setProducts(JSON.parse(savedProducts));
-      } catch (e) {
-        console.error("Error reading products", e);
-        setProducts(PRODUCTS);
-      }
-    } else {
-      setProducts(PRODUCTS);
+      try { setWishlist(JSON.parse(savedWishlist)); } catch (e) { console.error("Error reading wishlist", e); }
     }
 
-    if (savedBlog) {
-      try {
-        setBlogPosts(JSON.parse(savedBlog));
-      } catch (e) {
-        console.error("Error reading blog posts", e);
-        setBlogPosts(INITIAL_BLOG_POSTS);
+    // Shop-Daten live aus Firestore laden (cloud-only, kein localStorage).
+    // Änderungen im Admin erscheinen dadurch sofort bei allen Besuchern.
+    const applyCloudData = (data: any) => {
+      setProducts(Array.isArray(data?.products) && data.products.length ? data.products : PRODUCTS);
+      setBlogPosts(Array.isArray(data?.blogPosts) ? data.blogPosts : INITIAL_BLOG_POSTS);
+      setReviews(Array.isArray(data?.reviews) && data.reviews.length ? data.reviews : REVIEWS);
+      setCategories(Array.isArray(data?.categories) && data.categories.length ? data.categories : CATEGORIES);
+      setConfiguratorData(data?.configuratorData || DEFAULT_CONFIGURATOR_DATA);
+      if (typeof data?.logoImage === "string") setLogoImage(data.logoImage);
+      if (data?.heroImages && typeof data.heroImages === "object") {
+        setHeroImages((prev) => ({ ...prev, ...data.heroImages }));
       }
-    } else {
-      setBlogPosts(INITIAL_BLOG_POSTS);
-    }
+      if (data?.heroVideos && typeof data.heroVideos === "object") {
+        setHeroVideos((prev) => ({ ...prev, ...data.heroVideos }));
+      }
+    };
 
-    if (savedReviews) {
-      try {
-        setReviews(JSON.parse(savedReviews));
-      } catch (e) {
-        console.error("Error reading reviews", e);
-        setReviews(REVIEWS);
+    const unsubscribe = onSnapshot(
+      SHOP_DOC_REF,
+      (snap) => {
+        if (snap.exists()) {
+          applyCloudData(snap.data());
+        } else {
+          // Noch keine Cloud-Daten vorhanden -> Standardkatalog anzeigen
+          setProducts(PRODUCTS);
+          setBlogPosts(INITIAL_BLOG_POSTS);
+        }
+      },
+      (err) => {
+        console.error("Firestore onSnapshot error:", err);
+        // Bei Verbindungsfehler wenigstens den eingebauten Standardkatalog zeigen
+        setProducts((prev) => (prev.length ? prev : PRODUCTS));
+        setBlogPosts((prev) => (prev.length ? prev : INITIAL_BLOG_POSTS));
       }
-    } else {
-      setReviews(REVIEWS);
-    }
+    );
 
-    if (savedCategories) {
-      try {
-        setCategories(JSON.parse(savedCategories));
-      } catch (e) {
-        console.error("Error reading categories", e);
-        setCategories(CATEGORIES);
-      }
-    } else {
-      setCategories(CATEGORIES);
-    }
-
-    if (savedConfig) {
-      try {
-        setConfiguratorData(JSON.parse(savedConfig));
-      } catch (e) {
-        console.error("Error reading configurator data", e);
-        setConfiguratorData(DEFAULT_CONFIGURATOR_DATA);
-      }
-    } else {
-      setConfiguratorData(DEFAULT_CONFIGURATOR_DATA);
-    }
+    return () => unsubscribe();
   }, []);
 
 
@@ -316,38 +267,14 @@ export default function App() {
       const docSnap = await getDoc(SHOP_DOC_REF);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (data.products) {
-          setProducts(data.products);
-          localStorage.setItem("bewacht_vernetzt_products", JSON.stringify(data.products));
-        }
-        if (data.blogPosts) {
-          setBlogPosts(data.blogPosts);
-          localStorage.setItem("bewacht_vernetzt_blog", JSON.stringify(data.blogPosts));
-        }
-        if (data.reviews) {
-          setReviews(data.reviews);
-          localStorage.setItem("bewacht_vernetzt_reviews", JSON.stringify(data.reviews));
-        }
-        if (data.categories) {
-          setCategories(data.categories);
-          localStorage.setItem("bewacht_vernetzt_categories", JSON.stringify(data.categories));
-        }
-        if (data.configuratorData) {
-          setConfiguratorData(data.configuratorData);
-          localStorage.setItem("bewacht_vernetzt_configurator", JSON.stringify(data.configuratorData));
-        }
-        if (data.logoImage !== undefined) {
-          setLogoImage(data.logoImage);
-          localStorage.setItem("bewacht_vernetzt_logo_image", data.logoImage);
-        }
-        if (data.heroImages) {
-          setHeroImages(data.heroImages);
-          localStorage.setItem("bewacht_vernetzt_hero_images", JSON.stringify(data.heroImages));
-        }
-        if (data.heroVideos) {
-          setHeroVideos(data.heroVideos);
-          localStorage.setItem("bewacht_vernetzt_hero_videos", JSON.stringify(data.heroVideos));
-        }
+        if (data.products) setProducts(data.products);
+        if (data.blogPosts) setBlogPosts(data.blogPosts);
+        if (data.reviews) setReviews(data.reviews);
+        if (data.categories) setCategories(data.categories);
+        if (data.configuratorData) setConfiguratorData(data.configuratorData);
+        if (data.logoImage !== undefined) setLogoImage(data.logoImage);
+        if (data.heroImages) setHeroImages(data.heroImages);
+        if (data.heroVideos) setHeroVideos(data.heroVideos);
 
         setToastMessage("☁️ Alle Daten (Blog, Produkte, Header etc.) erfolgreich aus der Cloud aktualisiert!");
         setTimeout(() => setToastMessage(null), 4000);
@@ -358,7 +285,7 @@ export default function App() {
       console.error("Cloud refresh error:", err);
       const msg = err?.message || "";
       if (msg.includes("Quota limit exceeded") || msg.includes("quota") || msg.includes("RESOURCE_EXHAUSTED")) {
-        alert("ℹ️ Firestore Free-Tier Quota erreicht.\n\nDa Sie bereits das vollständige Backup per JSON-Datei auf Ihrer Hostinger-Domain importiert haben, laufen alle Daten (Produkte, Header-Bilder, Blog, Kategorien etc.) bereits perfekt, sekundenschnell und unabhängig über den lokalen Speicher Ihres Browsers (localStorage)!");
+        alert("ℹ️ Firestore Free-Tier Quota erreicht. Bitte versuchen Sie es in einigen Minuten erneut.");
       } else {
         alert("Fehler beim Laden aus der Cloud: " + (msg || "Unbekannter Fehler"));
       }
@@ -367,72 +294,48 @@ export default function App() {
 
   const handleUpdateHeroImages = (updated: Record<string, string>) => {
     setHeroImages(updated);
-    try {
-      localStorage.setItem("bewacht_vernetzt_hero_images", JSON.stringify(updated));
-    } catch (e) {}
     syncHeroToFirestore({ heroImages: updated });
     triggerToast("Hero-Bilder aktualisiert & synchronisiert!");
   };
 
   const handleUpdateHeroVideos = (updated: Record<string, string>) => {
     setHeroVideos(updated);
-    try {
-      localStorage.setItem("bewacht_vernetzt_hero_videos", JSON.stringify(updated));
-    } catch (e) {}
     syncHeroToFirestore({ heroVideos: updated });
     triggerToast("Hero-Videos aktualisiert & synchronisiert!");
   };
 
   const handleUpdateProducts = (updatedProducts: Product[]) => {
     setProducts(updatedProducts);
-    try {
-      localStorage.setItem("bewacht_vernetzt_products", JSON.stringify(updatedProducts));
-    } catch (e) {}
     syncProductToFirestore({ products: updatedProducts });
     triggerToast("Produktkatalog aktualisiert & synchronisiert!");
   };
 
   const handleUpdateBlogPosts = (updatedPosts: BlogPost[]) => {
     setBlogPosts(updatedPosts);
-    try {
-      localStorage.setItem("bewacht_vernetzt_blog", JSON.stringify(updatedPosts));
-    } catch (e) {}
     syncBlogToFirestore({ blogPosts: updatedPosts });
     triggerToast("Blogartikel synchronisiert!");
   };
 
   const handleUpdateReviews = (updatedReviews: Review[]) => {
     setReviews(updatedReviews);
-    try {
-      localStorage.setItem("bewacht_vernetzt_reviews", JSON.stringify(updatedReviews));
-    } catch (e) {}
     syncReviewToFirestore({ reviews: updatedReviews });
     triggerToast("Kundenstimmen synchronisiert!");
   };
 
   const handleUpdateCategories = (updatedCategories: Category[]) => {
     setCategories(updatedCategories);
-    try {
-      localStorage.setItem("bewacht_vernetzt_categories", JSON.stringify(updatedCategories));
-    } catch (e) {}
     syncCategoryToFirestore({ categories: updatedCategories });
     triggerToast("Kategorien synchronisiert!");
   };
 
   const handleUpdateConfiguratorData = (updatedConfig: ConfiguratorData) => {
     setConfiguratorData(updatedConfig);
-    try {
-      localStorage.setItem("bewacht_vernetzt_configurator", JSON.stringify(updatedConfig));
-    } catch (err) {}
     syncConfigToFirestore({ configuratorData: updatedConfig });
     triggerToast("Konfiguration synchronisiert!");
   };
 
   const handleUpdateLogoImage = (url: string) => {
     setLogoImage(url);
-    try {
-      localStorage.setItem("bewacht_vernetzt_logo_image", url);
-    } catch (e) {}
     syncLogoToFirestore({ logoImage: url });
     triggerToast("Logo Branding synchronisiert!");
   };

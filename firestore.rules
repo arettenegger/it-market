@@ -18,5 +18,19 @@ service cloud.firestore {
       allow get, create, update: if true;
       allow list, delete: if request.auth != null;
     }
+
+    // --- Angebotsanfragen (Kundendaten aus dem Warenkorb) ---
+    // Besucher dürfen eine Anfrage absenden (create).
+    // Lesen/Ändern/Löschen nur für eingeloggte Admins.
+    match /inquiries/{inquiryId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+
+    // --- Rückruf-Wünsche (Kundendaten aus dem Rückruf-Formular) ---
+    match /callbacks/{callbackId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
   }
 }

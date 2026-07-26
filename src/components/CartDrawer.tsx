@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { CartItem, formatPrice } from "../types";
 import CameraSvg from "./CameraSvg";
+import { saveInquiry } from "../lib/leadsService";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -113,19 +114,17 @@ export default function CartDrawer({
       setIsSubmitting(false);
     }
     
-    // Save to localStorage so it is available in Admin Panel
-    const inqId = "inq-" + Math.floor(100 + Math.random() * 900);
-    const dateOptions: Intl.DateTimeFormatOptions = { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric', 
-      hour: 'numeric', 
-      minute: '2-digit' 
+    // In Firestore speichern, damit die Anfrage im Admin-Bereich erscheint (cloud-only)
+    const dateOptions: Intl.DateTimeFormatOptions = {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
     };
     const dateStr = new Date().toLocaleDateString('de-DE', dateOptions);
-    
+
     const newInquiry = {
-      id: inqId,
       date: dateStr,
       name: formData.name,
       email: formData.email,
@@ -141,19 +140,11 @@ export default function CartDrawer({
       total: Math.round(finalTotal)
     };
 
-    const savedInquiries = localStorage.getItem("bewacht_vernetzt_inquiries");
-    let currentInquiries = [];
-    if (savedInquiries) {
-      try {
-        currentInquiries = JSON.parse(savedInquiries);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    const updatedInquiries = [newInquiry, ...currentInquiries];
     try {
-      localStorage.setItem("bewacht_vernetzt_inquiries", JSON.stringify(updatedInquiries));
-    } catch (e) {}
+      await saveInquiry(newInquiry);
+    } catch (err) {
+      console.error("Anfrage konnte nicht in Firestore gespeichert werden:", err);
+    }
 
     setIsSubmitted(true);
     // Simulating offer calculations

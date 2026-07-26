@@ -60,29 +60,18 @@ export function FirebaseStorageManager({
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   
-  // Local list of files
-  const [files, setFiles] = useState<StorageFile[]>(() => {
-    const saved = localStorage.getItem("bewacht_vernetzt_firebase_storage_files");
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { return []; }
-    }
-    return [];
-  });
+  // Dateiliste (live aus Firebase Storage, kein localStorage)
+  const [files, setFiles] = useState<StorageFile[]>([]);
 
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
-
-  // Save to localStorage
-  useEffect(() => {
-    localStorage.setItem("bewacht_vernetzt_firebase_storage_files", JSON.stringify(files));
-  }, [files]);
 
   // Load files from storage folder using Firebase Storage SDK
   const fetchStorageFiles = async () => {
     setIsLoadingFiles(true);
     setUploadError(null);
     try {
-      const targetFolders = folder === "all" 
-        ? ["", "uploads", "products", "hero", "logos", "blog"]
+      const targetFolders = folder === "all"
+        ? ["", "uploads", "products", "hero", "logos", "blog", "images", "avatars", "videos", "hero-videos"]
         : [folder];
 
       const allFetchedFiles: StorageFile[] = [];

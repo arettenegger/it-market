@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { VideoBackground } from "./VideoBackground";
 import { FirebaseStorageManager } from "./FirebaseStorageManager";
+import { uploadImageToStorage, uploadFileToStorage } from "../lib/storageService";
+import { fetchInquiries, fetchCallbacks, deleteInquiry, deleteCallback, updateCallbackStatus } from "../lib/leadsService";
 import { 
   Database, 
   Plus, 
@@ -293,12 +295,15 @@ export default function AdminPanel({
     setCurrentLogoUrl(logoImage || "");
   }, [logoImage]);
 
-  const handleUploadLogoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadLogoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setCurrentLogoUrl(reader.result as string);
-      reader.readAsDataURL(file);
+    if (!file) return;
+    try {
+      const url = await uploadImageToStorage(file, "logos", 500, 0.9);
+      setCurrentLogoUrl(url);
+    } catch (err) {
+      console.error("Logo-Upload fehlgeschlagen:", err);
+      alert("Logo-Upload fehlgeschlagen. Bitte stellen Sie sicher, dass Sie als Admin eingeloggt sind, und versuchen Sie es erneut.");
     }
   };
 
@@ -394,40 +399,14 @@ export default function AdminPanel({
     }
   };
 
-  const compressAndSetImage = (file: File, callback: (result: string) => void) => {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          callback(event.target?.result as string);
-          return;
-        }
-        let width = img.width;
-        let height = img.height;
-        const MAX_SIZE = 1000;
-        if (width > height) {
-          if (width > MAX_SIZE) {
-            height = Math.round((height * MAX_SIZE) / width);
-            width = MAX_SIZE;
-          }
-        } else {
-          if (height > MAX_SIZE) {
-            width = Math.round((width * MAX_SIZE) / height);
-            height = MAX_SIZE;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
-        ctx.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
-        callback(dataUrl);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+  const compressAndSetImage = async (file: File, callback: (result: string) => void) => {
+    try {
+      const url = await uploadImageToStorage(file, "images", 1400, 0.85);
+      callback(url);
+    } catch (err) {
+      console.error("Bild-Upload fehlgeschlagen:", err);
+      alert("Bild-Upload fehlgeschlagen. Bitte stellen Sie sicher, dass Sie als Admin eingeloggt sind, und versuchen Sie es erneut.");
+    }
   };
 
   const handleUploadCategoryImg = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -499,12 +478,15 @@ export default function AdminPanel({
     onUpdateReviews(updated);
   };
 
-  const handleUploadReviewAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadReviewAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setRevAvatar(reader.result as string);
-      reader.readAsDataURL(file);
+    if (!file) return;
+    try {
+      const url = await uploadImageToStorage(file, "avatars", 300, 0.85);
+      setRevAvatar(url);
+    } catch (err) {
+      console.error("Avatar-Upload fehlgeschlagen:", err);
+      alert("Avatar-Upload fehlgeschlagen. Bitte stellen Sie sicher, dass Sie als Admin eingeloggt sind, und versuchen Sie es erneut.");
     }
   };
 
@@ -671,18 +653,23 @@ export default function AdminPanel({
     setLocalConfig(updatedConfig);
     if (onUpdateConfiguratorData) onUpdateConfiguratorData(updatedConfig);
   };
-  const handleUploadSmartHomeVideo = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const handleUploadSmartHomeVideo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("Die Videodatei ist größer als 5 MB. Für eine dauerhafte Speicherung im Browser empfehlen wir MP4-Dateien unter 5 MB oder das Einfügen einer direkten MP4-Video-URL.");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        handleUpdateSmartHomeBannerVideo(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      alert("Die Videodatei ist größer als 50 MB. Bitte eine kleinere MP4-Datei verwenden oder eine direkte MP4-Video-URL einfügen.");
+      return;
+    }
+    setIsUploadingVideo(true);
+    try {
+      const url = await uploadFileToStorage(file, "videos");
+      handleUpdateSmartHomeBannerVideo(url);
+    } catch (err) {
+      console.error("Video-Upload fehlgeschlagen:", err);
+      alert("Video-Upload fehlgeschlagen. Bitte stellen Sie sicher, dass Sie als Admin eingeloggt sind, und versuchen Sie es erneut.");
+    } finally {
+      setIsUploadingVideo(false);
     }
   };
   
@@ -825,74 +812,14 @@ export default function AdminPanel({
   const [callbacks, setCallbacks] = useState<any[]>([]);
 
   useEffect(() => {
-    // Load inquiry and callback lists
-    const loadLogs = () => {
-      const savedInquiries = localStorage.getItem("bewacht_vernetzt_inquiries");
-      const savedCallbacks = localStorage.getItem("bewacht_vernetzt_callbacks");
-      
-      if (savedInquiries) {
-        try { setInquiries(JSON.parse(savedInquiries)); } catch (e) { console.error(e); }
-      } else {
-        // Seed initial mock inquiries if empty to show a high-fidelity interface
-        const initialMockInquiries = [
-          {
-            id: "inq-101",
-            date: "12. Juli 2026, 11:15",
-            name: "Dr. Med. Thomas Weber",
-            email: "t.weber@praxis-weber.de",
-            phone: "+49 89 221144",
-            clientType: "Geschäftskunde",
-            notes: "Wir benötigen eine Vor-Ort-Montageberatung für unsere Praxisräumlichkeiten. Kameras sollten vandalensicher sein.",
-            items: [
-              { name: "Dome 360 Gen2 Kamera", qty: 4, price: 149, color: "Polar Weiß" },
-              { "name": "V-Switch PoE+ 8-Port Gigabit", qty: 1, price: 119, color: "Carbon Schwarz" },
-              { "name": "V-Vault Home NAS 2-Bay (4TB)", qty: 1, price: 399, color: "Carbon Schwarz" }
-            ],
-            total: 1114
-          },
-          {
-            id: "inq-102",
-            date: "11. Juli 2026, 17:34",
-            name: "Sabine Reinhardt",
-            email: "sabine.reinhardt@gmx.de",
-            phone: "+49 172 8877665",
-            clientType: "Privatkunde",
-            notes: "Bitte das Angebot schnell zuschicken, damit mein Mann das noch am Wochenende planen kann.",
-            items: [
-              { name: "Pro Bullet 4K IP-Kamera", qty: 2, price: 189, color: "Space Grau" },
-              { name: "V-Lock Pro Smart Doorlock", qty: 1, price: 249, color: "Carbon Schwarz" }
-            ],
-            total: 627
-          }
-        ];
-        setInquiries(initialMockInquiries);
-        try { localStorage.setItem("bewacht_vernetzt_inquiries", JSON.stringify(initialMockInquiries)); } catch (e) {}
-      }
-
-      if (savedCallbacks) {
-        try { setCallbacks(JSON.parse(savedCallbacks)); } catch (e) { console.error(e); }
-      } else {
-        // Seed initial mock callbacks
-        const initialMockCallbacks = [
-          {
-            id: "call-1",
-            date: "12. Juli 2026, 09:40",
-            name: "Alexander Fischer",
-            phone: "+49 151 44558833",
-            topic: "Großprojekt Verkabelung & NVR Speicherbedarf",
-            status: "Offen"
-          },
-          {
-            id: "call-2",
-            date: "11. Juli 2026, 14:10",
-            name: "Michael Schmidt",
-            phone: "+49 170 3344556",
-            topic: "Kompatibilität Smart-Lock mit Haustürprofil",
-            status: "Erledigt"
-          }
-        ];
-        setCallbacks(initialMockCallbacks);
-        try { localStorage.setItem("bewacht_vernetzt_callbacks", JSON.stringify(initialMockCallbacks)); } catch (e) {}
+    // Anfragen & Rückrufe live aus Firestore laden (cloud-only, kein localStorage)
+    const loadLogs = async () => {
+      try {
+        const [inq, cbs] = await Promise.all([fetchInquiries(), fetchCallbacks()]);
+        setInquiries(inq);
+        setCallbacks(cbs);
+      } catch (e) {
+        console.error("Anfragen/Rückrufe konnten nicht geladen werden:", e);
       }
     };
 
@@ -1000,57 +927,21 @@ export default function AdminPanel({
     }
   };
 
-  const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploadingImage(true);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new window.Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-        
-        // Product images look best when square (1:1), let's resize to max 500x500 to keep localStorage size extremely small
-        const MAX_SIZE = 500;
-        if (width > height) {
-          if (width > MAX_SIZE) {
-            height = Math.round((height * MAX_SIZE) / width);
-            width = MAX_SIZE;
-          }
-        } else {
-          if (height > MAX_SIZE) {
-            width = Math.round((width * MAX_SIZE) / height);
-            height = MAX_SIZE;
-          }
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0, 0, width, height);
-          ctx.drawImage(img, 0, 0, width, height);
-          let dataUrl = canvas.toDataURL("image/webp", 0.85);
-          if (!dataUrl.startsWith("data:image/webp")) {
-            dataUrl = canvas.toDataURL("image/jpeg", 0.82);
-          }
-          setFormImage(dataUrl);
-          setIsUploadingImage(false);
-        }
-      };
-      img.onerror = () => {
-        setIsUploadingImage(false);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.onerror = () => {
+    try {
+      // Produktbilder als echte Datei nach Firebase Storage; gespeichert wird nur die URL.
+      const url = await uploadImageToStorage(file, "products", 800, 0.85);
+      setFormImage(url);
+    } catch (err) {
+      console.error("Produktbild-Upload fehlgeschlagen:", err);
+      alert("Produktbild-Upload fehlgeschlagen. Bitte stellen Sie sicher, dass Sie als Admin eingeloggt sind, und versuchen Sie es erneut.");
+    } finally {
       setIsUploadingImage(false);
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   // Save changes
@@ -1498,27 +1389,21 @@ export default function AdminPanel({
 
         if (backup.products && Array.isArray(backup.products)) {
           onUpdateProducts(backup.products);
-          localStorage.setItem("bewacht_vernetzt_products", JSON.stringify(backup.products));
         }
         if (backup.blogPosts && Array.isArray(backup.blogPosts) && onUpdateBlogPosts) {
           onUpdateBlogPosts(backup.blogPosts);
-          localStorage.setItem("bewacht_vernetzt_blog", JSON.stringify(backup.blogPosts));
         }
         if (backup.reviews && Array.isArray(backup.reviews) && onUpdateReviews) {
           onUpdateReviews(backup.reviews);
-          localStorage.setItem("bewacht_vernetzt_reviews", JSON.stringify(backup.reviews));
         }
         if (backup.categories && Array.isArray(backup.categories) && onUpdateCategories) {
           onUpdateCategories(backup.categories);
-          localStorage.setItem("bewacht_vernetzt_categories", JSON.stringify(backup.categories));
         }
         if (backup.configuratorData && onUpdateConfiguratorData) {
           onUpdateConfiguratorData(backup.configuratorData);
-          localStorage.setItem("bewacht_vernetzt_configurator", JSON.stringify(backup.configuratorData));
         }
         if (backup.logoImage !== undefined && onUpdateLogoImage) {
           onUpdateLogoImage(backup.logoImage);
-          localStorage.setItem("bewacht_vernetzt_logo_image", backup.logoImage);
         }
 
         alert("Komplettes Shop-Backup erfolgreich importiert! Alle Daten (Produkte, Blog, Konfigurator, Kategorien) wurden aktualisiert.");
@@ -1571,48 +1456,21 @@ export default function AdminPanel({
   };
 
   // Upload blog cover image
-  const handleBlogImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBlogImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploadingBlogImage(true);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new window.Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-        
-        const MAX_WIDTH = 800;
-        if (width > MAX_WIDTH) {
-          height = Math.round((height * MAX_WIDTH) / width);
-          width = MAX_WIDTH;
-        }
-        
-        let mimeType = "image/jpeg";
-        let quality: number | undefined = 0.75;
-        if (file.type === "image/png" || file.type === "image/gif") {
-          mimeType = "image/png";
-          quality = undefined;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.clearRect(0, 0, width, height);
-          ctx.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL(mimeType, quality);
-          setBlogImage(dataUrl);
-          setIsUploadingBlogImage(false);
-        }
-      };
-      img.onerror = () => setIsUploadingBlogImage(false);
-      img.src = event.target?.result as string;
-    };
-    reader.onerror = () => setIsUploadingBlogImage(false);
-    reader.readAsDataURL(file);
+    try {
+      // Blog-Titelbild als echte Datei nach Firebase Storage; gespeichert wird nur die URL.
+      const url = await uploadImageToStorage(file, "blog", 1200, 0.82);
+      setBlogImage(url);
+    } catch (err) {
+      console.error("Blogbild-Upload fehlgeschlagen:", err);
+      alert("Blogbild-Upload fehlgeschlagen. Bitte stellen Sie sicher, dass Sie als Admin eingeloggt sind, und versuchen Sie es erneut.");
+    } finally {
+      setIsUploadingBlogImage(false);
+    }
   };
 
   // Save Blog Post
@@ -1701,30 +1559,31 @@ export default function AdminPanel({
     setDeletingBlogPost(null);
   };
 
-  // Callback resolve toggle
+  // Callback resolve toggle (in Firestore)
   const handleToggleCallbackStatus = (callId: string) => {
-    const updated = callbacks.map(c => {
-      if (c.id === callId) {
-        return { ...c, status: c.status === "Offen" ? "Erledigt" : "Offen" };
-      }
-      return c;
+    const target = callbacks.find(c => c.id === callId);
+    if (!target) return;
+    const newStatus = target.status === "Offen" ? "Erledigt" : "Offen";
+    setCallbacks(callbacks.map(c => (c.id === callId ? { ...c, status: newStatus } : c)));
+    updateCallbackStatus(callId, newStatus).catch(err => {
+      console.error("Rückruf-Status konnte nicht gespeichert werden:", err);
     });
-    setCallbacks(updated);
-    try { localStorage.setItem("bewacht_vernetzt_callbacks", JSON.stringify(updated)); } catch (e) {}
   };
 
-  // Delete callback
+  // Delete callback (in Firestore)
   const handleDeleteCallback = (callId: string) => {
-    const updated = callbacks.filter(c => c.id !== callId);
-    setCallbacks(updated);
-    try { localStorage.setItem("bewacht_vernetzt_callbacks", JSON.stringify(updated)); } catch (e) {}
+    setCallbacks(callbacks.filter(c => c.id !== callId));
+    deleteCallback(callId).catch(err => {
+      console.error("Rückruf konnte nicht gelöscht werden:", err);
+    });
   };
 
-  // Delete inquiry
+  // Delete inquiry (in Firestore)
   const handleDeleteInquiry = (inqId: string) => {
-    const updated = inquiries.filter(i => i.id !== inqId);
-    setInquiries(updated);
-    try { localStorage.setItem("bewacht_vernetzt_inquiries", JSON.stringify(updated)); } catch (e) {}
+    setInquiries(inquiries.filter(i => i.id !== inqId));
+    deleteInquiry(inqId).catch(err => {
+      console.error("Anfrage konnte nicht gelöscht werden:", err);
+    });
   };
 
   // Filter products by query
