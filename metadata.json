@@ -1,0 +1,6 @@
+{
+  "name": "IT-MARKET Onlineshop",
+  "description": "Premium Onlineshop für PC-Hardware, Netzwerke, Hotspotlösungen, NAS-Systeme, IP-Kameras und Smart-Home.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

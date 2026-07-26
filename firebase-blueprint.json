@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "ShopConfig": {
+      "title": "Shop Configuration",
+      "description": "Main shop configuration and state including products, blog, reviews, categories, etc.",
+      "type": "object",
+      "properties": {
+        "products": { "type": "array" },
+        "blogPosts": { "type": "array" },
+        "reviews": { "type": "array" },
+        "categories": { "type": "array" },
+        "configuratorData": { "type": "object" },
+        "logoImage": { "type": "string" }
+      }
+    },
+    "NewsletterSubscriber": {
+      "title": "Newsletter Subscriber",
+      "description": "Double Opt-In newsletter subscriber record",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed"] },
+        "token": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "confirmedAt": { "type": "string" },
+        "source": { "type": "string" }
+      },
+      "required": ["email", "status", "token", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/shop_data/main_config": {
+      "schema": { "$ref": "#/entities/ShopConfig" },
+      "description": "Global store configuration and data document"
+    },
+    "/newsletter_subscribers/{subscriberId}": {
+      "schema": { "$ref": "#/entities/NewsletterSubscriber" },
+      "description": "Newsletter subscribers with double opt-in status"
+    }
+  }
+}
