@@ -11,31 +11,34 @@ Die Seite selbst ist fertig – es sind nur noch ein paar einmalige Einstellunge
 - **Bestellungen/Anfragen** kommen per **Formspree** als E-Mail an dich und erscheinen zusätzlich im Admin.
 - **Produkte, Kategorien, Blog, Bewertungen** werden in **Firebase (Firestore)** gespeichert und im
   **Admin-Bereich** bearbeitet.
-- **Automatisches Deployment**: Jede Änderung im GitHub-Repo wird gebaut und automatisch per FTP auf
-  Hostinger hochgeladen.
+- **Deployment über GitHub**: GitHub Actions **baut** die Seite bei jedem Push und legt das fertige
+  Ergebnis in den Branch **`hostinger`**. Hostinger ist mit genau diesem Branch verbunden und holt sich
+  die fertigen Dateien automatisch.
+
+> **Wichtig zu verstehen:** Hostingers Git-Verbindung *baut nicht selbst*. Deshalb darfst du in Hostinger
+> **nicht den `main`-Branch** verbinden (der enthält nur Quellcode), sondern den **`hostinger`-Branch**
+> mit dem fertigen Build. Um den kümmert sich GitHub Actions automatisch.
 
 ---
 
-## Schritt 1 – FTP-Zugangsdaten als GitHub-Secrets hinterlegen
+## Schritt 1 – Hostinger mit dem GitHub-Repo verbinden
 
-Damit GitHub die Seite automatisch auf Hostinger hochladen kann.
+1. **`hostinger`-Branch erzeugen lassen**: Er entsteht automatisch beim ersten GitHub-Actions-Lauf
+   (nach einem Push auf `main`). Prüfen: Repo → *Branches* → dort sollte `hostinger` erscheinen,
+   bzw. Repo → *Actions* → Lauf „Build & Publish" grün.
+2. **In Hostinger verbinden**: hPanel → *Fortgeschritten* → **GIT** → *Repository erstellen*:
+   - **Repository-Adresse**: `https://github.com/arettenegger/it-market.git`
+   - **Branch**: **`hostinger`**  ← nicht `main`!
+   - **Verzeichnis**: `public_html` (bzw. das Web-Root deiner Domain)
+   - Repo ist öffentlich → kein Deploy-Key/Passwort nötig.
+3. **Automatisches Deployment (empfohlen)**: In der GIT-Sektion die **Webhook-URL** kopieren und in
+   GitHub eintragen: Repo → *Settings* → *Webhooks* → *Add webhook* → URL einfügen, Content-Type
+   `application/json`, „Just the push event", *Active* → speichern. Danach zieht Hostinger nach jedem
+   Build automatisch die neue Version. (Ohne Webhook: in hPanel manuell auf *Deploy* klicken.)
 
-1. **FTP-Konto in Hostinger holen**: hPanel → *Dateien* → *FTP-Konten*. Dort findest/erstellst du:
-   - **FTP-Hostname/IP** (z. B. `ftp.it-market.at` oder eine IP)
-   - **FTP-Benutzername**
-   - **FTP-Passwort**
-2. **In GitHub eintragen**: Repo `arettenegger/it-market` → *Settings* → *Secrets and variables* →
-   *Actions* → *New repository secret*. Lege **drei** Secrets an (Namen exakt so):
-   | Secret-Name    | Wert                          |
-   |----------------|-------------------------------|
-   | `FTP_SERVER`   | dein FTP-Hostname/IP          |
-   | `FTP_USERNAME` | dein FTP-Benutzername         |
-   | `FTP_PASSWORD` | dein FTP-Passwort            |
-3. **Zielordner prüfen**: Der Workflow lädt nach `/public_html/`. Falls dein Web-Root anders heißt
-   (manche Hostinger-Setups: `/domains/it-market.at/public_html/`), passe `server-dir` in
-   `.github/workflows/deploy.yml` an.
-
-> Ich (Claude) trage niemals Zugangsdaten selbst ein – die Secrets kennst nur du.
+> **Falls der erste Actions-Lauf mit „permission denied"/403 fehlschlägt:** Repo → *Settings* →
+> *Actions* → *General* → *Workflow permissions* → **„Read and write permissions"** aktivieren und den
+> Lauf erneut starten. (Nötig, damit GitHub Actions in den `hostinger`-Branch schreiben darf.)
 
 ---
 
@@ -104,8 +107,9 @@ Dann mit deiner **Firebase-E-Mail + Passwort** einloggen → Produkte, Preise, B
 ## Wie künftige Änderungen live gehen
 
 1. Änderung am Code (oder über den Admin bei reinen Inhalten).
-2. `git push` auf `main` → GitHub Actions baut und lädt automatisch auf Hostinger hoch.
-3. Fortschritt sichtbar unter Repo → *Actions*.
+2. `git push` auf `main` → GitHub Actions **baut** und aktualisiert den **`hostinger`-Branch**.
+3. Hostinger zieht die neue Version automatisch (per Webhook) – oder du klickst in hPanel → GIT auf *Deploy*.
+4. Fortschritt sichtbar unter Repo → *Actions*.
 
-**Erster Deploy:** Läuft erst grün durch, sobald die FTP-Secrets aus Schritt 1 gesetzt sind.
-Danach den Workflow unter *Actions* → *Re-run jobs* neu starten (oder einfach erneut pushen).
+**Reihenfolge beim ersten Mal:** erst `main` pushen → warten bis der Actions-Lauf „Build & Publish" grün
+ist und den `hostinger`-Branch erzeugt hat → dann Hostinger mit dem `hostinger`-Branch verbinden (Schritt 1).

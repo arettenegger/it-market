@@ -1,21 +1,27 @@
-name: Deploy zu Hostinger
+name: Build & Publish (Hostinger via GitHub)
 
-# Baut die Seite und lädt das Ergebnis (dist/) per FTP auf Hostinger.
-# Läuft automatisch bei jedem Push auf main – und manuell über den
-# "Run workflow"-Button (workflow_dispatch).
+# Baut die Vite-Seite und legt das FERTIGE Ergebnis (Inhalt von dist/)
+# in den Branch "hostinger". Genau diesen Branch verbindest du in Hostinger
+# (hPanel -> Git). Hostinger klont/aktualisiert dann die fertigen Dateien
+# direkt nach public_html – ohne selbst bauen zu müssen.
+#
+# Läuft automatisch bei jedem Push auf main – und manuell über "Run workflow".
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-# Verhindert parallele Deploys (ein FTP-Upload gleichzeitig)
+# Der Workflow-Token muss in den hostinger-Branch schreiben dürfen
+permissions:
+  contents: write
+
 concurrency:
-  group: hostinger-deploy
+  group: hostinger-publish
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  build-and-publish:
     runs-on: ubuntu-latest
     steps:
       - name: Code auschecken
@@ -32,23 +38,14 @@ jobs:
       - name: Produktions-Build erstellen
         run: bun run build
 
-      - name: Per FTP zu Hostinger hochladen
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: Fertigen Build in Branch "hostinger" veröffentlichen
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          # Zugangsdaten kommen aus den GitHub-Secrets (Settings -> Secrets -> Actions)
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          # Nur der fertige Build wird hochgeladen
-          local-dir: ./dist/
-          # Zielordner auf Hostinger (Web-Root). Bei Bedarf anpassen,
-          # z.B. /public_html/ oder /domains/it-market.at/public_html/
-          server-dir: /public_html/
-          # Inkrementell: nur geänderte Dateien werden übertragen
-          # (Status wird in .ftp-deploy-sync-state.json auf dem Server gehalten)
-          dangerous-clean-slate: false
-          # Diese Dateien nie hochladen
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: hostinger
+          # Immer ein sauberer Einzel-Commit (keine wachsende Historie im Deploy-Branch)
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy (fertiger Build) ${{ github.sha }}'
