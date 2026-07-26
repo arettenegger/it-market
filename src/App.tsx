@@ -279,282 +279,6 @@ export default function App() {
     } else {
       setConfiguratorData(DEFAULT_CONFIGURATOR_DATA);
     }
-
-    // Fetch product config from dedicated Firestore document
-    getDoc(PRODUCT_DOC_REF).then((docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.products) {
-          setProducts(data.products);
-          try {
-            localStorage.setItem("bewacht_vernetzt_products", JSON.stringify(data.products));
-          } catch (e) {}
-        }
-      } else {
-        const initialProductPayload = {
-          products: savedProducts ? JSON.parse(savedProducts) : PRODUCTS
-        };
-        setDoc(PRODUCT_DOC_REF, initialProductPayload, { merge: true }).catch((err) => {
-          console.error("Firestore product initial seed error:", err);
-        });
-      }
-    }).catch((err) => {
-      console.warn("Firestore product initial fetch warning:", err);
-    });
-
-    // Fetch blog config from dedicated Firestore document
-    getDoc(BLOG_DOC_REF).then((docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.blogPosts) {
-          setBlogPosts(data.blogPosts);
-          try {
-            localStorage.setItem("bewacht_vernetzt_blog", JSON.stringify(data.blogPosts));
-          } catch (e) {}
-        }
-      } else {
-        const initialBlogPayload = {
-          blogPosts: savedBlog ? JSON.parse(savedBlog) : INITIAL_BLOG_POSTS
-        };
-        setDoc(BLOG_DOC_REF, initialBlogPayload, { merge: true }).catch((err) => {
-          console.error("Firestore blog initial seed error:", err);
-        });
-      }
-    }).catch((err) => {
-      console.warn("Firestore blog initial fetch warning:", err);
-    });
-
-    // Fetch review config from dedicated Firestore document
-    getDoc(REVIEW_DOC_REF).then((docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.reviews) {
-          setReviews(data.reviews);
-          try {
-            localStorage.setItem("bewacht_vernetzt_reviews", JSON.stringify(data.reviews));
-          } catch (e) {}
-        }
-      } else {
-        const initialReviewPayload = {
-          reviews: savedReviews ? JSON.parse(savedReviews) : REVIEWS
-        };
-        setDoc(REVIEW_DOC_REF, initialReviewPayload, { merge: true }).catch((err) => {
-          console.error("Firestore review initial seed error:", err);
-        });
-      }
-    }).catch((err) => {
-      console.warn("Firestore review initial fetch warning:", err);
-    });
-
-    // Fetch logo config from dedicated Firestore document
-    getDoc(LOGO_DOC_REF).then((docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.logoImage !== undefined) {
-          setLogoImage(data.logoImage);
-          try {
-            localStorage.setItem("bewacht_vernetzt_logo_image", data.logoImage);
-          } catch (e) {}
-        }
-      } else {
-        const initialLogoPayload = {
-          logoImage: savedLogo || ""
-        };
-        setDoc(LOGO_DOC_REF, initialLogoPayload, { merge: true }).catch((err) => {
-          console.error("Firestore logo initial seed error:", err);
-        });
-      }
-    }).catch((err) => {
-      console.warn("Firestore logo initial fetch warning:", err);
-    });
-
-    // Fetch hero config from dedicated Firestore document
-    getDoc(HERO_DOC_REF).then((docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.heroImages) {
-          setHeroImages(data.heroImages);
-          try {
-            localStorage.setItem("bewacht_vernetzt_hero_images", JSON.stringify(data.heroImages));
-          } catch (e) {}
-        }
-        if (data.heroVideos) {
-          setHeroVideos(data.heroVideos);
-          try {
-            localStorage.setItem("bewacht_vernetzt_hero_videos", JSON.stringify(data.heroVideos));
-          } catch (e) {}
-        }
-      } else {
-        const initialHeroPayload = {
-          heroImages: savedHeroImages ? JSON.parse(savedHeroImages) : heroImages,
-          heroVideos: savedHeroVideos ? JSON.parse(savedHeroVideos) : heroVideos
-        };
-        setDoc(HERO_DOC_REF, initialHeroPayload, { merge: true }).catch((err) => {
-          console.error("Firestore hero initial seed error:", err);
-        });
-      }
-    }).catch((err) => {
-      console.warn("Firestore hero initial fetch warning:", err);
-    });
-
-    // Fetch configurator config from dedicated Firestore document
-    getDoc(CONFIG_DOC_REF).then((docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.configuratorData) {
-          setConfiguratorData(data.configuratorData);
-          try {
-            localStorage.setItem("bewacht_vernetzt_configurator", JSON.stringify(data.configuratorData));
-          } catch (e) {}
-        }
-      } else {
-        const initialConfigPayload = {
-          configuratorData: savedConfig ? JSON.parse(savedConfig) : DEFAULT_CONFIGURATOR_DATA
-        };
-        setDoc(CONFIG_DOC_REF, initialConfigPayload, { merge: true }).catch((err) => {
-          console.error("Firestore config initial seed error:", err);
-        });
-      }
-    }).catch((err) => {
-      console.warn("Firestore config initial fetch warning:", err);
-    });
-
-    // Fetch category config from dedicated Firestore document
-    getDoc(CATEGORY_DOC_REF).then((docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.categories) {
-          setCategories(data.categories);
-          try {
-            localStorage.setItem("bewacht_vernetzt_categories", JSON.stringify(data.categories));
-          } catch (e) {}
-        }
-      } else {
-        const initialCategoryPayload = {
-          categories: savedCategories ? JSON.parse(savedCategories) : CATEGORIES
-        };
-        setDoc(CATEGORY_DOC_REF, initialCategoryPayload, { merge: true }).catch((err) => {
-          console.error("Firestore category initial seed error:", err);
-        });
-      }
-    }).catch((err) => {
-      console.warn("Firestore category initial fetch warning:", err);
-    });
-
-    // Real-time synchronization across multiple devices via Firestore
-    const unsubscribeProduct = onSnapshot(PRODUCT_DOC_REF, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.products) {
-          setProducts(data.products);
-          try {
-            localStorage.setItem("bewacht_vernetzt_products", JSON.stringify(data.products));
-          } catch (e) {}
-        }
-      }
-    }, (err) => {
-      console.warn("Firestore product sync warning:", err);
-    });
-
-    const unsubscribeBlog = onSnapshot(BLOG_DOC_REF, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.blogPosts) {
-          setBlogPosts(data.blogPosts);
-          try {
-            localStorage.setItem("bewacht_vernetzt_blog", JSON.stringify(data.blogPosts));
-          } catch (e) {}
-        }
-      }
-    }, (err) => {
-      console.warn("Firestore blog sync warning:", err);
-    });
-
-    const unsubscribeReview = onSnapshot(REVIEW_DOC_REF, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.reviews) {
-          setReviews(data.reviews);
-          try {
-            localStorage.setItem("bewacht_vernetzt_reviews", JSON.stringify(data.reviews));
-          } catch (e) {}
-        }
-      }
-    }, (err) => {
-      console.warn("Firestore review sync warning:", err);
-    });
-
-    const unsubscribeLogo = onSnapshot(LOGO_DOC_REF, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.logoImage !== undefined) {
-          setLogoImage(data.logoImage);
-          try {
-            localStorage.setItem("bewacht_vernetzt_logo_image", data.logoImage);
-          } catch (e) {}
-        }
-      }
-    }, (err) => {
-      console.warn("Firestore logo sync warning:", err);
-    });
-
-    const unsubscribeHero = onSnapshot(HERO_DOC_REF, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.heroImages) {
-          setHeroImages(data.heroImages);
-          try {
-            localStorage.setItem("bewacht_vernetzt_hero_images", JSON.stringify(data.heroImages));
-          } catch (e) {}
-        }
-        if (data.heroVideos) {
-          setHeroVideos(data.heroVideos);
-          try {
-            localStorage.setItem("bewacht_vernetzt_hero_videos", JSON.stringify(data.heroVideos));
-          } catch (e) {}
-        }
-      }
-    }, (err) => {
-      console.warn("Firestore hero sync warning:", err);
-    });
-
-    const unsubscribeConfig = onSnapshot(CONFIG_DOC_REF, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.configuratorData) {
-          setConfiguratorData(data.configuratorData);
-          try {
-            localStorage.setItem("bewacht_vernetzt_configurator", JSON.stringify(data.configuratorData));
-          } catch (e) {}
-        }
-      }
-    }, (err) => {
-      console.warn("Firestore config sync warning:", err);
-    });
-
-    const unsubscribeCategory = onSnapshot(CATEGORY_DOC_REF, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.categories) {
-          setCategories(data.categories);
-          try {
-            localStorage.setItem("bewacht_vernetzt_categories", JSON.stringify(data.categories));
-          } catch (e) {}
-        }
-      }
-    }, (err) => {
-      console.warn("Firestore category sync warning:", err);
-    });
-
-    return () => {
-      unsubscribeProduct();
-      unsubscribeBlog();
-      unsubscribeReview();
-      unsubscribeLogo();
-      unsubscribeHero();
-      unsubscribeConfig();
-      unsubscribeCategory();
-    };
   }, []);
 
   const syncProductToFirestore = async (newData: Record<string, any>) => {
@@ -624,6 +348,62 @@ export default function App() {
       setLastSyncedAt(new Date());
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, "shop_data/category_config");
+    }
+  };
+
+  const handleRefreshFromCloud = async () => {
+    try {
+      const [prodSnap, blogSnap, revSnap, logoSnap, heroSnap, configSnap, catSnap] = await Promise.all([
+        getDoc(PRODUCT_DOC_REF),
+        getDoc(BLOG_DOC_REF),
+        getDoc(REVIEW_DOC_REF),
+        getDoc(LOGO_DOC_REF),
+        getDoc(HERO_DOC_REF),
+        getDoc(CONFIG_DOC_REF),
+        getDoc(CATEGORY_DOC_REF)
+      ]);
+
+      if (prodSnap.exists() && prodSnap.data().products) {
+        setProducts(prodSnap.data().products);
+        localStorage.setItem("bewacht_vernetzt_products", JSON.stringify(prodSnap.data().products));
+      }
+      if (blogSnap.exists() && blogSnap.data().blogPosts) {
+        setBlogPosts(blogSnap.data().blogPosts);
+        localStorage.setItem("bewacht_vernetzt_blog", JSON.stringify(blogSnap.data().blogPosts));
+      }
+      if (revSnap.exists() && revSnap.data().reviews) {
+        setReviews(revSnap.data().reviews);
+        localStorage.setItem("bewacht_vernetzt_reviews", JSON.stringify(revSnap.data().reviews));
+      }
+      if (logoSnap.exists() && logoSnap.data().logoImage !== undefined) {
+        setLogoImage(logoSnap.data().logoImage);
+        localStorage.setItem("bewacht_vernetzt_logo_image", logoSnap.data().logoImage);
+      }
+      if (heroSnap.exists()) {
+        const hData = heroSnap.data();
+        if (hData.heroImages) {
+          setHeroImages(hData.heroImages);
+          localStorage.setItem("bewacht_vernetzt_hero_images", JSON.stringify(hData.heroImages));
+        }
+        if (hData.heroVideos) {
+          setHeroVideos(hData.heroVideos);
+          localStorage.setItem("bewacht_vernetzt_hero_videos", JSON.stringify(hData.heroVideos));
+        }
+      }
+      if (configSnap.exists() && configSnap.data().configuratorData) {
+        setConfiguratorData(configSnap.data().configuratorData);
+        localStorage.setItem("bewacht_vernetzt_configurator", JSON.stringify(configSnap.data().configuratorData));
+      }
+      if (catSnap.exists() && catSnap.data().categories) {
+        setCategories(catSnap.data().categories);
+        localStorage.setItem("bewacht_vernetzt_categories", JSON.stringify(catSnap.data().categories));
+      }
+
+      setToastMessage("☁️ Alle Daten erfolgreich aus der Firestore Cloud aktualisiert!");
+      setTimeout(() => setToastMessage(null), 4000);
+    } catch (err: any) {
+      console.error("Cloud refresh error:", err);
+      alert("Fehler beim Laden aus der Cloud: " + (err.message || "Unbekannter Fehler"));
     }
   };
 
@@ -1019,6 +799,7 @@ export default function App() {
         logoImage={logoImage}
         onUpdateLogoImage={handleUpdateLogoImage}
         lastSyncedAt={lastSyncedAt}
+        onRefreshFromCloud={handleRefreshFromCloud}
       />
 
       {/* Sticky Bottom Mobile Cart Floating Bar */}

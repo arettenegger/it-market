@@ -93,6 +93,7 @@ interface AdminPanelProps {
   logoImage?: string;
   onUpdateLogoImage?: (url: string) => void;
   lastSyncedAt?: Date | null;
+  onRefreshFromCloud?: () => Promise<void>;
 }
 
 export default function AdminPanel({
@@ -110,7 +111,8 @@ export default function AdminPanel({
   onUpdateConfiguratorData,
   logoImage,
   onUpdateLogoImage,
-  lastSyncedAt
+  lastSyncedAt,
+  onRefreshFromCloud
 }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<"products" | "configurator" | "inquiries" | "callbacks" | "newsletter" | "analytics" | "blog" | "reviews" | "categories" | "logo" | "storage">("products");
   const [searchQuery, setSearchQuery] = useState("");
@@ -2274,6 +2276,17 @@ export default function AdminPanel({
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 w-full md:w-auto">
+                  {onRefreshFromCloud && (
+                    <button
+                      type="button"
+                      onClick={onRefreshFromCloud}
+                      className="flex-1 md:flex-initial bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-emerald-600/20"
+                      title="Alle aktuellen Daten (Produkte, Header, Logos, Blog, etc.) direkt aus der Firestore Cloud laden"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      <span>☁️ Cloud-Sync Laden</span>
+                    </button>
+                  )}
                   <input
                     type="file"
                     ref={fullShopFileInputRef}
