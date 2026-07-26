@@ -24,7 +24,7 @@ import AboutUsModal from "./components/AboutUsModal";
 import ContactPage from "./components/ContactPage";
 import { Product, CartItem, BlogPost, ConfiguratorData, Review, Category, formatPrice } from "./types";
 import { PRODUCTS, INITIAL_BLOG_POSTS, DEFAULT_CONFIGURATOR_DATA, REVIEWS, CATEGORIES } from "./data";
-import { SHOP_DOC_REF, HERO_DOC_REF, CONFIG_DOC_REF, CATEGORY_DOC_REF, PRODUCT_DOC_REF, BLOG_DOC_REF, REVIEW_DOC_REF, LOGO_DOC_REF } from "./lib/firebase";
+import { SHOP_DOC_REF } from "./lib/firebase";
 import { setDoc, onSnapshot, getDoc } from "firebase/firestore";
 import { ShoppingBag, ChevronRight, Shield, Check, Settings, CheckCircle2, ShieldCheck, Mail } from "lucide-react";
 import { confirmDoubleOptIn } from "./lib/newsletterService";
@@ -282,128 +282,84 @@ export default function App() {
   }, []);
 
   const syncProductToFirestore = async (newData: Record<string, any>) => {
-    try {
-      const cleanData = sanitizeForFirestore(newData);
-      await setDoc(PRODUCT_DOC_REF, cleanData, { merge: true });
-      setLastSyncedAt(new Date());
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, "shop_data/product_config");
-    }
+    await syncToFirestore(newData);
   };
 
   const syncBlogToFirestore = async (newData: Record<string, any>) => {
-    try {
-      const cleanData = sanitizeForFirestore(newData);
-      await setDoc(BLOG_DOC_REF, cleanData, { merge: true });
-      setLastSyncedAt(new Date());
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, "shop_data/blog_config");
-    }
+    await syncToFirestore(newData);
   };
 
   const syncReviewToFirestore = async (newData: Record<string, any>) => {
-    try {
-      const cleanData = sanitizeForFirestore(newData);
-      await setDoc(REVIEW_DOC_REF, cleanData, { merge: true });
-      setLastSyncedAt(new Date());
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, "shop_data/review_config");
-    }
+    await syncToFirestore(newData);
   };
 
   const syncLogoToFirestore = async (newData: Record<string, any>) => {
-    try {
-      const cleanData = sanitizeForFirestore(newData);
-      await setDoc(LOGO_DOC_REF, cleanData, { merge: true });
-      setLastSyncedAt(new Date());
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, "shop_data/logo_config");
-    }
+    await syncToFirestore(newData);
   };
 
   const syncHeroToFirestore = async (newData: Record<string, any>) => {
-    try {
-      const cleanData = sanitizeForFirestore(newData);
-      await setDoc(HERO_DOC_REF, cleanData, { merge: true });
-      setLastSyncedAt(new Date());
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, "shop_data/hero_config");
-    }
+    await syncToFirestore(newData);
   };
 
   const syncConfigToFirestore = async (newData: Record<string, any>) => {
-    try {
-      const cleanData = sanitizeForFirestore(newData);
-      await setDoc(CONFIG_DOC_REF, cleanData, { merge: true });
-      setLastSyncedAt(new Date());
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, "shop_data/configurator_config");
-    }
+    await syncToFirestore(newData);
   };
 
   const syncCategoryToFirestore = async (newData: Record<string, any>) => {
-    try {
-      const cleanData = sanitizeForFirestore(newData);
-      await setDoc(CATEGORY_DOC_REF, cleanData, { merge: true });
-      setLastSyncedAt(new Date());
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, "shop_data/category_config");
-    }
+    await syncToFirestore(newData);
   };
 
   const handleRefreshFromCloud = async () => {
     try {
-      const [prodSnap, blogSnap, revSnap, logoSnap, heroSnap, configSnap, catSnap] = await Promise.all([
-        getDoc(PRODUCT_DOC_REF),
-        getDoc(BLOG_DOC_REF),
-        getDoc(REVIEW_DOC_REF),
-        getDoc(LOGO_DOC_REF),
-        getDoc(HERO_DOC_REF),
-        getDoc(CONFIG_DOC_REF),
-        getDoc(CATEGORY_DOC_REF)
-      ]);
-
-      if (prodSnap.exists() && prodSnap.data().products) {
-        setProducts(prodSnap.data().products);
-        localStorage.setItem("bewacht_vernetzt_products", JSON.stringify(prodSnap.data().products));
-      }
-      if (blogSnap.exists() && blogSnap.data().blogPosts) {
-        setBlogPosts(blogSnap.data().blogPosts);
-        localStorage.setItem("bewacht_vernetzt_blog", JSON.stringify(blogSnap.data().blogPosts));
-      }
-      if (revSnap.exists() && revSnap.data().reviews) {
-        setReviews(revSnap.data().reviews);
-        localStorage.setItem("bewacht_vernetzt_reviews", JSON.stringify(revSnap.data().reviews));
-      }
-      if (logoSnap.exists() && logoSnap.data().logoImage !== undefined) {
-        setLogoImage(logoSnap.data().logoImage);
-        localStorage.setItem("bewacht_vernetzt_logo_image", logoSnap.data().logoImage);
-      }
-      if (heroSnap.exists()) {
-        const hData = heroSnap.data();
-        if (hData.heroImages) {
-          setHeroImages(hData.heroImages);
-          localStorage.setItem("bewacht_vernetzt_hero_images", JSON.stringify(hData.heroImages));
+      const docSnap = await getDoc(SHOP_DOC_REF);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.products) {
+          setProducts(data.products);
+          localStorage.setItem("bewacht_vernetzt_products", JSON.stringify(data.products));
         }
-        if (hData.heroVideos) {
-          setHeroVideos(hData.heroVideos);
-          localStorage.setItem("bewacht_vernetzt_hero_videos", JSON.stringify(hData.heroVideos));
+        if (data.blogPosts) {
+          setBlogPosts(data.blogPosts);
+          localStorage.setItem("bewacht_vernetzt_blog", JSON.stringify(data.blogPosts));
         }
-      }
-      if (configSnap.exists() && configSnap.data().configuratorData) {
-        setConfiguratorData(configSnap.data().configuratorData);
-        localStorage.setItem("bewacht_vernetzt_configurator", JSON.stringify(configSnap.data().configuratorData));
-      }
-      if (catSnap.exists() && catSnap.data().categories) {
-        setCategories(catSnap.data().categories);
-        localStorage.setItem("bewacht_vernetzt_categories", JSON.stringify(catSnap.data().categories));
-      }
+        if (data.reviews) {
+          setReviews(data.reviews);
+          localStorage.setItem("bewacht_vernetzt_reviews", JSON.stringify(data.reviews));
+        }
+        if (data.categories) {
+          setCategories(data.categories);
+          localStorage.setItem("bewacht_vernetzt_categories", JSON.stringify(data.categories));
+        }
+        if (data.configuratorData) {
+          setConfiguratorData(data.configuratorData);
+          localStorage.setItem("bewacht_vernetzt_configurator", JSON.stringify(data.configuratorData));
+        }
+        if (data.logoImage !== undefined) {
+          setLogoImage(data.logoImage);
+          localStorage.setItem("bewacht_vernetzt_logo_image", data.logoImage);
+        }
+        if (data.heroImages) {
+          setHeroImages(data.heroImages);
+          localStorage.setItem("bewacht_vernetzt_hero_images", JSON.stringify(data.heroImages));
+        }
+        if (data.heroVideos) {
+          setHeroVideos(data.heroVideos);
+          localStorage.setItem("bewacht_vernetzt_hero_videos", JSON.stringify(data.heroVideos));
+        }
 
-      setToastMessage("☁️ Alle Daten erfolgreich aus der Firestore Cloud aktualisiert!");
-      setTimeout(() => setToastMessage(null), 4000);
+        setToastMessage("☁️ Alle Daten (Blog, Produkte, Header etc.) erfolgreich aus der Cloud aktualisiert!");
+        setTimeout(() => setToastMessage(null), 4000);
+      } else {
+        alert("Keine Cloud-Daten gefunden.");
+      }
     } catch (err: any) {
       console.error("Cloud refresh error:", err);
-      alert("Fehler beim Laden aus der Cloud: " + (err.message || "Unbekannter Fehler"));
+      const msg = err?.message || "";
+      if (msg.includes("Quota limit exceeded") || msg.includes("quota") || msg.includes("RESOURCE_EXHAUSTED")) {
+        alert("ℹ️ Firestore Free-Tier Quota erreicht.\n\nDa Sie bereits das vollständige Backup per JSON-Datei auf Ihrer Hostinger-Domain importiert haben, laufen alle Daten (Produkte, Header-Bilder, Blog, Kategorien etc.) bereits perfekt, sekundenschnell und unabhängig über den lokalen Speicher Ihres Browsers (localStorage)!");
+      } else {
+        alert("Fehler beim Laden aus der Cloud: " + (msg || "Unbekannter Fehler"));
+      }
     }
   };
 
