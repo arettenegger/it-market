@@ -57,7 +57,8 @@ import {
   FileUp,
   FileDown,
   AlertCircle,
-  Info
+  Info,
+  Cloud
 } from "lucide-react";
 import { auth, googleProvider, firebaseConfig } from "../lib/firebase";
 import { 
@@ -114,7 +115,7 @@ export default function AdminPanel({
   lastSyncedAt,
   onRefreshFromCloud
 }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<"products" | "configurator" | "inquiries" | "callbacks" | "newsletter" | "analytics" | "blog" | "reviews" | "categories" | "logo" | "storage">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "configurator" | "inquiries" | "callbacks" | "newsletter" | "analytics" | "blog" | "reviews" | "categories" | "logo" | "storage" | "firebase-sync">("products");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
@@ -145,6 +146,47 @@ export default function AdminPanel({
   });
   const [pinError, setPinError] = useState(false);
   const [newPinInput, setNewPinInput] = useState("");
+
+  const [customFirebaseJson, setCustomFirebaseJson] = useState(() => {
+    return localStorage.getItem("custom_firebase_config") || "";
+  });
+  const [showCustomFirebase, setShowCustomFirebase] = useState(false);
+
+  const handleSaveCustomFirebase = () => {
+    try {
+      let text = customFirebaseJson.trim();
+      if (!text) {
+        localStorage.removeItem("custom_firebase_config");
+        alert("Standard Firebase-Konfiguration wiederhergestellt. Seite wird neu geladen.");
+        window.location.reload();
+        return;
+      }
+      // Remove const/let/var declarations if pasted from Firebase Console
+      text = text.replace(/^(const|let|var)\s+[\w$]+\s*=\s*/, '');
+      text = text.replace(/;\s*$/, '');
+
+      let parsed: any = null;
+      try {
+        parsed = JSON.parse(text);
+      } catch (e1) {
+        try {
+          parsed = (new Function(`return (${text});`))();
+        } catch (e2) {
+          throw new Error("Konnte weder als JSON noch als JavaScript-Objekt geparst werden. Bitte kopieren Sie das Objekt { apiKey: '...', ... } korrekt.");
+        }
+      }
+
+      if (!parsed || !parsed.apiKey || !parsed.projectId) {
+        alert("Ungültige Konfiguration: apiKey und projectId werden benötigt.");
+        return;
+      }
+      localStorage.setItem("custom_firebase_config", JSON.stringify(parsed));
+      alert("Eigenes Firebase-Projekt erfolgreich gespeichert! Die Seite wird neu geladen.");
+      window.location.reload();
+    } catch (err: any) {
+      alert("Fehler beim Parsen der Konfiguration: " + err.message);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -2158,6 +2200,21 @@ export default function AdminPanel({
             </span>
           </button>
 
+          <button
+            onClick={() => setActiveTab("firebase-sync")}
+            className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all text-left cursor-pointer ${
+              activeTab === "firebase-sync" 
+                ? "bg-[#FF5E2E] text-white shadow-lg shadow-[#FF5E2E]/10 font-bold" 
+                : "text-slate-400 hover:text-white hover:bg-slate-900"
+            }`}
+          >
+            <Cloud className="w-4 h-4 shrink-0 text-emerald-400" />
+            Firebase & Sync
+            <span className="ml-auto bg-emerald-500/20 text-emerald-300 border border-emerald-500/20 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+              Live
+            </span>
+          </button>
+
           <div className="pt-8 border-t border-slate-800 mt-8 space-y-3 px-2">
             <button
               onClick={handleResetToDefaults}
@@ -2261,57 +2318,70 @@ export default function AdminPanel({
             <div className="space-y-6">
               
               {/* Hostinger & Multi-Device Sync Banner */}
-              <div className="bg-gradient-to-r from-blue-950/80 via-slate-950 to-slate-900 border border-blue-800/60 p-4 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
-                <div className="flex items-start gap-3">
-                  <div className="p-2.5 bg-blue-500/10 border border-blue-500/30 rounded-xl shrink-0 mt-0.5">
-                    <Globe className="w-5 h-5 text-blue-400" />
+              <div className="bg-gradient-to-r from-blue-950/80 via-slate-950 to-slate-900 border border-blue-800/60 p-5 rounded-2xl space-y-4 shadow-xl">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2.5 bg-blue-500/10 border border-blue-500/30 rounded-xl shrink-0 mt-0.5">
+                      <Globe className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-extrabold text-white font-display">
+                        Multi-Device Synchronisation (Hostinger: it-market.at, PC, Laptop & Handy)
+                      </h4>
+                      <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                        Wegen des erreichten Firebase Free-Tier Quota-Limits läuft die Live-Cloud-Synchronisation im Sparmodus. Um neue Blog-Artikel auf dem <strong>Laptop</strong> zu sehen:
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xs sm:text-sm font-extrabold text-white font-display">
-                      Multi-Device Synchronisation (Hostinger: it-market.at, PC, Laptop & Handy)
-                    </h4>
-                    <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
-                      Da jeder Browser (PC, Laptop, Handy oder Hostinger-Domain) einen eigenen lokalen Speicher hat, können Sie Ihren kompletten Shop (Produkte, Blog, Konfigurator, Kategorien) hier mit 1 Klick als Backup sichern und auf anderen Geräten einspielen.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0 w-full md:w-auto">
-                  {onRefreshFromCloud && (
+                  <div className="flex items-center gap-2 shrink-0 w-full md:w-auto">
+                    {onRefreshFromCloud && (
+                      <button
+                        type="button"
+                        onClick={onRefreshFromCloud}
+                        className="flex-1 md:flex-initial bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-emerald-600/20"
+                        title="Alle aktuellen Daten (Produkte, Header, Logos, Blog, etc.) direkt aus der Firestore Cloud laden"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        <span>☁️ Cloud-Sync Laden</span>
+                      </button>
+                    )}
+                    <input
+                      type="file"
+                      ref={fullShopFileInputRef}
+                      accept=".json"
+                      onChange={handleImportFullShop}
+                      className="hidden"
+                    />
                     <button
                       type="button"
-                      onClick={onRefreshFromCloud}
-                      className="flex-1 md:flex-initial bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-emerald-600/20"
-                      title="Alle aktuellen Daten (Produkte, Header, Logos, Blog, etc.) direkt aus der Firestore Cloud laden"
+                      onClick={() => fullShopFileInputRef.current?.click()}
+                      className="flex-1 md:flex-initial bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3.5 py-2.5 rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      title="Vollständiges Shop-Backup auf diesem Gerät einspielen"
                     >
-                      <RefreshCw className="w-4 h-4" />
-                      <span>☁️ Cloud-Sync Laden</span>
+                      <FileUp className="w-4 h-4 text-cyan-400" />
+                      <span>Backup importieren</span>
                     </button>
-                  )}
-                  <input
-                    type="file"
-                    ref={fullShopFileInputRef}
-                    accept=".json"
-                    onChange={handleImportFullShop}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fullShopFileInputRef.current?.click()}
-                    className="flex-1 md:flex-initial bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3.5 py-2.5 rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                    title="Vollständiges Shop-Backup auf diesem Gerät einspielen"
-                  >
-                    <FileUp className="w-4 h-4 text-cyan-400" />
-                    <span>Backup importieren</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleExportFullShop}
-                    className="flex-1 md:flex-initial bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-blue-600/20"
-                    title="Gesamten Shop als JSON-Datei exportieren"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Gesamter Shop Backup</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={handleExportFullShop}
+                      className="flex-1 md:flex-initial bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-blue-600/20"
+                      title="Gesamten Shop als JSON-Datei exportieren"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Gesamter Shop Backup</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl text-xs text-slate-300 space-y-1.5">
+                  <div className="font-bold text-cyan-400 flex items-center gap-1.5">
+                    <span>💡 Anleitung für Laptop & andere Geräte:</span>
+                  </div>
+                  <ol className="list-decimal list-inside space-y-1 text-[11px] text-slate-300">
+                    <li>Klicken Sie auf <strong>&quot;Gesamter Shop Backup&quot;</strong> auf dem Gerät (z.B. Hostinger it-market.at), auf dem Sie die neuen Blog-Artikel erstellt haben.</li>
+                    <li>Öffnen Sie die Website auf Ihrem <strong>Laptop</strong>.</li>
+                    <li>Gehen Sie dort in den Admin-Bereich und klicken Sie auf <strong>&quot;Backup importieren&quot;</strong>, um die heruntergeladene JSON-Datei einzuspielen. Sofort sind alle neuen Blog-Artikel und Einstellungen auch auf dem Laptop sichtbar!</li>
+                  </ol>
                 </div>
               </div>
 
@@ -4854,6 +4924,117 @@ export default function AdminPanel({
           {/* TAB: FIREBASE STORAGE */}
           {activeTab === "storage" && (
             <div className="space-y-6 animate-fadeIn pb-12">
+              {/* Full Shop Backup & Sync Card (Bypasses Quota Limits for Hostinger / Other Devices) */}
+              <div className="bg-slate-950 p-6 rounded-2xl border border-cyan-500/30 shadow-xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-cyan-500/10 border border-cyan-500/20 rounded-xl text-cyan-400">
+                      <FileJson className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-extrabold text-white font-display">
+                        Komplettes Shop-Backup & Geräte-Sync (JSON)
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        Exportieren Sie alle Blog-Artikel, Produkte, Kategorien und Einstellungen in eine JSON-Datei, um sie auf anderen Geräten oder Ihrer Hostinger-Domain (it-market.at) zu importieren.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    100% Zuverlässig (Quota-Unabhängig)
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <button
+                    onClick={handleExportFullShop}
+                    className="p-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 rounded-xl flex items-center gap-3 transition-all cursor-pointer group text-left"
+                  >
+                    <div className="p-2.5 bg-cyan-500/10 rounded-lg text-cyan-400 group-hover:scale-110 transition-transform">
+                      <Download className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-white block">Backup Herunterladen</span>
+                      <span className="text-[10px] text-slate-400">Speichert alle Daten (inkl. neuer Blog-Artikel) als JSON</span>
+                    </div>
+                  </button>
+
+                  <label className="p-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/50 rounded-xl flex items-center gap-3 transition-all cursor-pointer group text-left">
+                    <div className="p-2.5 bg-emerald-500/10 rounded-lg text-emerald-400 group-hover:scale-110 transition-transform">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-white block">Backup Einspielen / Hochladen</span>
+                      <span className="text-[10px] text-slate-400">Importiert JSON-Datei auf dieser Domain (Hostinger)</span>
+                    </div>
+                    <input 
+                      type="file" 
+                      accept=".json" 
+                      ref={fullShopFileInputRef}
+                      onChange={handleImportFullShop} 
+                      className="hidden" 
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Custom Firebase Project Configuration for Unlimited Quota / Realtime */}
+              <div className="bg-slate-950 p-6 rounded-2xl border border-indigo-500/30 shadow-xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400">
+                      <Settings className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-extrabold text-white font-display">
+                        Echtes Live-Realtime für alle Internet-Besucher (Eigenes Firebase-Projekt)
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        Um die Quota-Limits des Standard-Sandboxes zu umgehen und weltweites Realtime für alle Besucher auf <strong className="text-indigo-300">it-market.at</strong> zu ermöglichen, können Sie hier Ihre eigene <code className="text-cyan-400">firebaseConfig</code> eintragen.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomFirebase(!showCustomFirebase)}
+                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+                  >
+                    {showCustomFirebase ? "Ausblenden" : "Eigenes Firebase verbinden"}
+                  </button>
+                </div>
+
+                {showCustomFirebase && (
+                  <div className="space-y-4 pt-3 border-t border-slate-800">
+                    <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-2">
+                      <p className="font-bold text-indigo-300">So erhalten Sie Ihre eigene Firebase-Konfiguration (kostenlos & unbegrenzt):</p>
+                      <ol className="list-decimal list-inside space-y-1 text-[11px] text-slate-300">
+                        <li>Gehen Sie zu <a href="https://console.firebase.google.com" target="_blank" rel="noreferrer" className="text-cyan-400 underline">console.firebase.google.com</a> und erstellen Sie ein neues Projekt.</li>
+                        <li>Fügen Sie eine Web-App hinzu und kopieren Sie das <code className="text-amber-400">firebaseConfig</code> Objekt.</li>
+                        <li>Fügen Sie das JSON hier ein und klicken Sie auf Speichern.</li>
+                      </ol>
+                    </div>
+
+                    <textarea
+                      value={customFirebaseJson}
+                      onChange={(e) => setCustomFirebaseJson(e.target.value)}
+                      placeholder={'{\n  "apiKey": "AIzaSy...",\n  "authDomain": "...",\n  "projectId": "...",\n  "storageBucket": "...",\n  "messagingSenderId": "...",\n  "appId": "..."\n}'}
+                      rows={6}
+                      className="w-full bg-slate-900 border border-slate-800 focus:border-indigo-500 rounded-xl p-3 text-xs font-mono text-slate-200 outline-none"
+                    />
+
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={handleSaveCustomFirebase}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
+                      >
+                        Speichern & Neu Laden
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <FirebaseStorageManager
                 onSelectUrlForLogo={(url) => {
                   setCurrentLogoUrl(url);
@@ -4864,6 +5045,109 @@ export default function AdminPanel({
                   alert(`URL wurde kopiert: ${url}\nSie können diese in den Hero-Einstellungen einfügen.`);
                 }}
               />
+            </div>
+          )}
+          {activeTab === "firebase-sync" && (
+            <div className="space-y-6 animate-fadeIn pb-12">
+              <div className="bg-slate-950 p-6 rounded-2xl border border-emerald-500/30 shadow-xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
+                      <Cloud className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-extrabold text-white font-display">
+                        Echtes Live-Realtime für alle Internet-Besucher (Eigenes Firebase-Projekt)
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        Verbinden Sie Ihr eigenes kostenloses Firebase-Projekt, um Quota-Limits des Sandboxes zu umgehen und weltweites Realtime für alle Besucher auf <strong className="text-emerald-300">it-market.at</strong> zu garantieren.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-2">
+                  <p className="font-bold text-emerald-300">Schritt-für-Schritt Anleitung:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-[11px] text-slate-300">
+                    <li>Öffnen Sie die <a href="https://console.firebase.google.com" target="_blank" rel="noreferrer" className="text-cyan-400 underline font-semibold">Firebase Console</a>.</li>
+                    <li>Erstellen Sie ein kostenloses Projekt (Blaze- oder Spark-Tarif).</li>
+                    <li>Erstellen Sie eine Web-App und kopieren Sie das <code className="text-amber-400">firebaseConfig</code> JSON.</li>
+                    <li>Fügen Sie das JSON unten ein und speichern Sie es ab.</li>
+                  </ol>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-300 block">Ihre Firebase Konfiguration (JSON):</label>
+                  <textarea
+                    value={customFirebaseJson}
+                    onChange={(e) => setCustomFirebaseJson(e.target.value)}
+                    placeholder={'{\n  "apiKey": "AIzaSy...",\n  "authDomain": "...",\n  "projectId": "...",\n  "storageBucket": "...",\n  "messagingSenderId": "...",\n  "appId": "..."\n}'}
+                    rows={6}
+                    className="w-full bg-slate-900 border border-slate-800 focus:border-emerald-500 rounded-xl p-3 text-xs font-mono text-slate-200 outline-none"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSaveCustomFirebase}
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition-all cursor-pointer"
+                  >
+                    Konfiguration speichern & Seite neu laden
+                  </button>
+                </div>
+              </div>
+
+              {/* Full Shop Backup & Sync Card */}
+              <div className="bg-slate-950 p-6 rounded-2xl border border-cyan-500/30 shadow-xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-cyan-500/10 border border-cyan-500/20 rounded-xl text-cyan-400">
+                      <FileJson className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-extrabold text-white font-display">
+                        Komplettes Shop-Backup & Geräte-Sync (JSON)
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        Exportieren oder importieren Sie alle Produkte, Blog-Artikel und Kategorien als JSON-Datei.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <button
+                    onClick={handleExportFullShop}
+                    className="p-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 rounded-xl flex items-center gap-3 transition-all cursor-pointer group text-left"
+                  >
+                    <div className="p-2.5 bg-cyan-500/10 rounded-lg text-cyan-400 group-hover:scale-110 transition-transform">
+                      <Download className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-white block">Backup Herunterladen</span>
+                      <span className="text-[10px] text-slate-400">Speichert alle Shop-Daten als JSON</span>
+                    </div>
+                  </button>
+
+                  <label className="p-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/50 rounded-xl flex items-center gap-3 transition-all cursor-pointer group text-left">
+                    <div className="p-2.5 bg-emerald-500/10 rounded-lg text-emerald-400 group-hover:scale-110 transition-transform">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-white block">Backup Einspielen / Hochladen</span>
+                      <span className="text-[10px] text-slate-400">Importiert JSON-Datei</span>
+                    </div>
+                    <input 
+                      type="file" 
+                      accept=".json" 
+                      ref={fullShopFileInputRef}
+                      onChange={handleImportFullShop} 
+                      className="hidden" 
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
           )}
           {activeTab === "logo" && (

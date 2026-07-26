@@ -281,6 +281,8 @@ export default function App() {
     }
   }, []);
 
+
+
   const syncProductToFirestore = async (newData: Record<string, any>) => {
     await syncToFirestore(newData);
   };

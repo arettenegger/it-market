@@ -2,23 +2,36 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import firebaseConfig from "../../firebase-applet-config.json";
+import defaultFirebaseConfig from "../../firebase-applet-config.json";
+
+let activeConfig = defaultFirebaseConfig;
+try {
+  const custom = localStorage.getItem("custom_firebase_config");
+  if (custom) {
+    const parsed = JSON.parse(custom);
+    if (parsed && parsed.apiKey && parsed.projectId) {
+      activeConfig = parsed;
+    }
+  }
+} catch (e) {
+  // fallback
+}
 
 const app = initializeApp({
-  apiKey: firebaseConfig.apiKey,
-  authDomain: firebaseConfig.authDomain,
-  projectId: firebaseConfig.projectId,
-  storageBucket: firebaseConfig.storageBucket,
-  messagingSenderId: firebaseConfig.messagingSenderId,
-  appId: firebaseConfig.appId,
-  measurementId: firebaseConfig.measurementId,
+  apiKey: activeConfig.apiKey,
+  authDomain: activeConfig.authDomain,
+  projectId: activeConfig.projectId,
+  storageBucket: activeConfig.storageBucket,
+  messagingSenderId: activeConfig.messagingSenderId,
+  appId: activeConfig.appId,
+  measurementId: activeConfig.measurementId,
 });
 
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || "(default)");
+export const db = getFirestore(app, activeConfig.firestoreDatabaseId || "(default)");
 export const storage = getStorage(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
-export { firebaseConfig };
+export const firebaseConfig = activeConfig;
 
 export const SHOP_DOC_REF = doc(db, "shop_data", "main_config");
 export const HERO_DOC_REF = doc(db, "shop_data", "hero_config");
