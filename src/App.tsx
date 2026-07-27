@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
 import Categories from "./components/Categories";
@@ -11,17 +11,19 @@ import Reviews from "./components/Reviews";
 import Faq from "./components/Faq";
 import Newsletter from "./components/Newsletter";
 import Footer from "./components/Footer";
-import CartDrawer from "./components/CartDrawer";
-import Configurator from "./components/Configurator";
-import CallbackModal from "./components/CallbackModal";
-import AdminPanel from "./components/AdminPanel";
-import BlogSection from "./components/BlogSection";
 import BlogTeaser from "./components/BlogTeaser";
-import CategoryPage from "./components/CategoryPage";
-import ImpressumModal from "./components/ImpressumModal";
-import DatenschutzModal from "./components/DatenschutzModal";
-import AboutUsModal from "./components/AboutUsModal";
-import ContactPage from "./components/ContactPage";
+
+// Schwere/selten genutzte Komponenten erst bei Bedarf nachladen (kleineres Start-Bundle → schnelleres Handy-Laden)
+const CartDrawer = lazy(() => import("./components/CartDrawer"));
+const Configurator = lazy(() => import("./components/Configurator"));
+const CallbackModal = lazy(() => import("./components/CallbackModal"));
+const AdminPanel = lazy(() => import("./components/AdminPanel"));
+const BlogSection = lazy(() => import("./components/BlogSection"));
+const CategoryPage = lazy(() => import("./components/CategoryPage"));
+const ImpressumModal = lazy(() => import("./components/ImpressumModal"));
+const DatenschutzModal = lazy(() => import("./components/DatenschutzModal"));
+const AboutUsModal = lazy(() => import("./components/AboutUsModal"));
+const ContactPage = lazy(() => import("./components/ContactPage"));
 import { Product, CartItem, BlogPost, ConfiguratorData, Review, Category, formatPrice } from "./types";
 import { PRODUCTS, INITIAL_BLOG_POSTS, DEFAULT_CONFIGURATOR_DATA, REVIEWS, CATEGORIES } from "./data";
 import { SHOP_DOC_REF } from "./lib/firebase";
@@ -519,6 +521,7 @@ export default function App() {
 
       {/* Main Page Content */}
       <main className="flex-grow">
+        <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center text-slate-400 text-sm">Lädt…</div>}>
         {currentPage === "category" ? (
           <CategoryPage
             categoryId={activeCategoryId}
@@ -562,7 +565,9 @@ export default function App() {
             />
 
             {/* Smart Interactive Kamera-Konfigurator (conversion asset) */}
-            <Configurator onAddToCart={handleAddToCart} />
+            <Suspense fallback={<div className="py-16" />}>
+              <Configurator onAddToCart={handleAddToCart} />
+            </Suspense>
 
             {/* Dynamic Bestsellers list */}
             <Bestsellers
@@ -616,6 +621,7 @@ export default function App() {
             <Newsletter />
           </>
         )}
+        </Suspense>
       </main>
 
       {/* Solid footer links columns */}
@@ -632,41 +638,53 @@ export default function App() {
       />
 
       {/* Slideable Checkout / Cart drawer */}
-      <CartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        cart={cart}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onClearCart={handleClearCart}
-      />
+      {isCartOpen && (
+        <Suspense fallback={null}>
+          <CartDrawer
+            isOpen={isCartOpen}
+            onClose={() => setIsCartOpen(false)}
+            cart={cart}
+            onUpdateQuantity={handleUpdateQuantity}
+            onRemoveItem={handleRemoveItem}
+            onClearCart={handleClearCart}
+          />
+        </Suspense>
+      )}
 
       {/* Consultant callback form pop-up */}
-      <CallbackModal
-        isOpen={isCallbackOpen}
-        onClose={() => setIsCallbackOpen(false)}
-        initialTopic={callbackTopic}
-      />
+      {isCallbackOpen && (
+        <Suspense fallback={null}>
+          <CallbackModal
+            isOpen={isCallbackOpen}
+            onClose={() => setIsCallbackOpen(false)}
+            initialTopic={callbackTopic}
+          />
+        </Suspense>
+      )}
 
       {/* Admin Panel Overlay Dashboard */}
-      <AdminPanel
-        isOpen={isAdminOpen}
-        onClose={() => setIsAdminOpen(false)}
-        products={products}
-        onUpdateProducts={handleUpdateProducts}
-        blogPosts={blogPosts}
-        onUpdateBlogPosts={handleUpdateBlogPosts}
-        reviews={reviews}
-        onUpdateReviews={handleUpdateReviews}
-        categories={categories}
-        onUpdateCategories={handleUpdateCategories}
-        configuratorData={configuratorData}
-        onUpdateConfiguratorData={handleUpdateConfiguratorData}
-        logoImage={logoImage}
-        onUpdateLogoImage={handleUpdateLogoImage}
-        lastSyncedAt={lastSyncedAt}
-        onRefreshFromCloud={handleRefreshFromCloud}
-      />
+      {isAdminOpen && (
+        <Suspense fallback={null}>
+          <AdminPanel
+            isOpen={isAdminOpen}
+            onClose={() => setIsAdminOpen(false)}
+            products={products}
+            onUpdateProducts={handleUpdateProducts}
+            blogPosts={blogPosts}
+            onUpdateBlogPosts={handleUpdateBlogPosts}
+            reviews={reviews}
+            onUpdateReviews={handleUpdateReviews}
+            categories={categories}
+            onUpdateCategories={handleUpdateCategories}
+            configuratorData={configuratorData}
+            onUpdateConfiguratorData={handleUpdateConfiguratorData}
+            logoImage={logoImage}
+            onUpdateLogoImage={handleUpdateLogoImage}
+            lastSyncedAt={lastSyncedAt}
+            onRefreshFromCloud={handleRefreshFromCloud}
+          />
+        </Suspense>
+      )}
 
       {/* Sticky Bottom Mobile Cart Floating Bar */}
       {cartTotalItems > 0 && (

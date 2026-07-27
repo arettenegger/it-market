@@ -11,6 +11,23 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      chunkSizeWarningLimit: 1200,
+      rollupOptions: {
+        output: {
+          // Große Bibliotheken in eigene, cachebare Chunks aufteilen
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('firebase') || id.includes('@firebase')) return 'firebase';
+              if (id.includes('/motion') || id.includes('framer-motion')) return 'motion';
+              if (id.includes('lucide-react')) return 'icons';
+              if (id.includes('react-dom') || id.includes('/react/') || id.includes('scheduler')) return 'react';
+              return 'vendor';
+            }
+          },
+        },
+      },
+    },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
