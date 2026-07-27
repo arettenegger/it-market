@@ -11,7 +11,7 @@ service cloud.firestore {
     // ====================================================================
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.email in ["doris@it-market.at"];
+        && request.auth.token.email in ["office@it-market.at", "andreas@it-market.at"];
     }
 
     // --- Shop-Daten (Produkte, Kategorien, Blog, Reviews, Konfigurator, Logo) ---
