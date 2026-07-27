@@ -4,7 +4,7 @@
 //
 // >>> Trage hier deine GA4-Mess-ID ein (Format "G-XXXXXXXXXX"). <<<
 // Solange leer, ist Tracking komplett aus (kein Script, keine Cookies).
-export const GA_MEASUREMENT_ID = "";
+export const GA_MEASUREMENT_ID = "G-BPRG92PL99";
 
 let initialized = false;
 
