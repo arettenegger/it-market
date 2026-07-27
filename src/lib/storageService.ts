@@ -121,6 +121,38 @@ export async function uploadFileToStorage(
 }
 
 /**
+ * Lädt ein bereits als Base64-Data-URL vorliegendes Bild nach Firebase Storage
+ * hoch und gibt die Download-URL zurück. Ist der Wert keine data:-URL (z. B.
+ * schon eine http-URL oder leer), wird er unverändert zurückgegeben.
+ *
+ * Wird u. a. beim CSV-Import verwendet: Produkte, deren Bild als Base64 in der
+ * Datei steckt, werden so nach Storage ausgelagert (nur die URL landet in
+ * Firestore) – damit bleibt das Firestore-Dokument klein.
+ */
+export async function uploadDataUrlToStorage(
+  dataUrl: string,
+  folder = "products"
+): Promise<string> {
+  if (!dataUrl || !dataUrl.startsWith("data:")) return dataUrl;
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  const type = blob.type || "image/webp";
+  const ext = type.includes("webp")
+    ? "webp"
+    : type.includes("png")
+    ? "png"
+    : type.includes("jpeg") || type.includes("jpg")
+    ? "jpg"
+    : type.includes("gif")
+    ? "gif"
+    : "img";
+  const path = `${folder}/${randomId()}.${ext}`;
+  const storageRef = ref(storage, path);
+  await uploadBytes(storageRef, blob, { contentType: type });
+  return await getDownloadURL(storageRef);
+}
+
+/**
  * Löscht eine zuvor hochgeladene Datei anhand ihrer Download-URL.
  * Fehler werden geschluckt (z. B. wenn die Datei bereits weg ist oder es
  * sich um eine externe URL handelt).

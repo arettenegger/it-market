@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { VideoBackground } from "./VideoBackground";
 import { FirebaseStorageManager } from "./FirebaseStorageManager";
-import { uploadImageToStorage, uploadFileToStorage } from "../lib/storageService";
+import { uploadImageToStorage, uploadFileToStorage, uploadDataUrlToStorage } from "../lib/storageService";
 import { fetchInquiries, fetchCallbacks, deleteInquiry, deleteCallback, updateCallbackStatus } from "../lib/leadsService";
 import { 
   Database, 
@@ -126,6 +126,7 @@ export default function AdminPanel({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importedPreviewProducts, setImportedPreviewProducts] = useState<Product[]>([]);
   const [importMode, setImportMode] = useState<"merge" | "replace">("merge");
+  const [isImportingToStorage, setIsImportingToStorage] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccessMsg, setImportSuccessMsg] = useState<string | null>(null);
   const productFileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -1310,25 +1311,50 @@ export default function AdminPanel({
   };
 
   // CONFIRM IMPORT
-  const handleConfirmProductImport = () => {
+  const handleConfirmProductImport = async () => {
     if (importedPreviewProducts.length === 0) return;
 
-    let updatedList: Product[] = [];
-    if (importMode === "replace") {
-      updatedList = importedPreviewProducts;
-    } else {
-      // Merge mode
-      const map = new Map(products.map(p => [p.id, p]));
-      importedPreviewProducts.forEach(p => {
-        map.set(p.id, p);
-      });
-      updatedList = Array.from(map.values());
-    }
+    setIsImportingToStorage(true);
+    try {
+      // Base64-Bilder aus der CSV nach Firebase Storage auslagern (nur URL speichern),
+      // damit das Firestore-Dokument klein bleibt.
+      const migrated: Product[] = await Promise.all(
+        importedPreviewProducts.map(async (p) => {
+          if (p.image && p.image.startsWith("data:")) {
+            try {
+              const url = await uploadDataUrlToStorage(p.image, "products");
+              return { ...p, image: url };
+            } catch (err) {
+              console.error("Bild-Upload beim Import fehlgeschlagen für", p.name, err);
+              return p; // im Zweifel Base64 behalten, damit kein Bild verloren geht
+            }
+          }
+          return p;
+        })
+      );
 
-    onUpdateProducts(updatedList);
-    setImportSuccessMsg(`Erfolgreich! ${importedPreviewProducts.length} Produkte wurden ${importMode === "replace" ? "ersetzt" : "aktualisiert / hinzugefügt"}.`);
-    setIsImportModalOpen(false);
-    setImportedPreviewProducts([]);
+      let updatedList: Product[] = [];
+      if (importMode === "replace") {
+        updatedList = migrated;
+      } else {
+        // Merge mode
+        const map = new Map(products.map(p => [p.id, p]));
+        migrated.forEach(p => {
+          map.set(p.id, p);
+        });
+        updatedList = Array.from(map.values());
+      }
+
+      onUpdateProducts(updatedList);
+      setImportSuccessMsg(`Erfolgreich! ${migrated.length} Produkte wurden ${importMode === "replace" ? "ersetzt" : "aktualisiert / hinzugefügt"}. Bilder wurden nach Firebase Storage ausgelagert.`);
+      setIsImportModalOpen(false);
+      setImportedPreviewProducts([]);
+    } catch (err: any) {
+      console.error("Import fehlgeschlagen:", err);
+      setImportError("Import fehlgeschlagen: " + (err?.message || "Unbekannter Fehler"));
+    } finally {
+      setIsImportingToStorage(false);
+    }
   };
 
   // DOWNLOAD CSV SAMPLE TEMPLATE
@@ -5130,6 +5156,39 @@ export default function AdminPanel({
                   </p>
                 </form>
               </div>
+
+              {/* GitHub-Repository */}
+              <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 shadow-xl max-w-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <ExternalLink className="w-5 h-5 text-sky-400" />
+                  <h3 className="text-lg font-extrabold text-white font-display">
+                    GitHub-Repository
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-400 mb-5 leading-relaxed">
+                  Quellcode der Website und automatischer Deploy. Ein Push auf <code className="bg-slate-900 text-amber-400 px-1.5 py-0.5 rounded font-mono">main</code> wird gebaut und automatisch auf Hostinger veröffentlicht.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <a
+                    href="https://github.com/arettenegger/it-market"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Repository öffnen</span>
+                  </a>
+                  <a
+                    href="https://github.com/arettenegger/it-market/actions"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Deploy-Status (Actions)</span>
+                  </a>
+                </div>
+              </div>
             </div>
           )}
 
@@ -5282,10 +5341,20 @@ export default function AdminPanel({
                 <button
                   type="button"
                   onClick={handleConfirmProductImport}
-                  className="px-5 py-2.5 bg-[#FF5E2E] hover:bg-[#ff7347] text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-[#FF5E2E]/20"
+                  disabled={isImportingToStorage}
+                  className="px-5 py-2.5 bg-[#FF5E2E] hover:bg-[#ff7347] text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-[#FF5E2E]/20 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Jetzt {importedPreviewProducts.length} Produkte importieren</span>
+                  {isImportingToStorage ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Importiere & lade Bilder hoch…</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Jetzt {importedPreviewProducts.length} Produkte importieren</span>
+                    </>
+                  )}
                 </button>
               </div>
 
