@@ -40,5 +40,12 @@ service cloud.firestore {
       allow create: if true;
       allow read, update, delete: if isAdmin();
     }
+
+    // --- Eigener anonymer Seitenzähler (nur aggregierte Zahlen, keine
+    //     personenbezogenen Daten). Besucher dürfen hochzählen, nur Admin liest. ---
+    match /analytics/{docId} {
+      allow read: if isAdmin();
+      allow write: if true;
+    }
   }
 }

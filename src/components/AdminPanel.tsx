@@ -3,6 +3,7 @@ import { VideoBackground } from "./VideoBackground";
 import { FirebaseStorageManager } from "./FirebaseStorageManager";
 import { uploadImageToStorage, uploadFileToStorage, uploadDataUrlToStorage, uploadImageUrlToStorage } from "../lib/storageService";
 import { fetchInquiries, fetchCallbacks, deleteInquiry, deleteCallback, updateCallbackStatus } from "../lib/leadsService";
+import { fetchPageStats, resetPageStats } from "../lib/pageStats";
 import { 
   Database, 
   Plus, 
@@ -147,6 +148,17 @@ export default function AdminPanel({
   const [seoBlogDraft, setSeoBlogDraft] = useState<BlogPost[]>([]);
   const [seoProductDraft, setSeoProductDraft] = useState<Product[]>([]);
   const [seoSavedMsg, setSeoSavedMsg] = useState<string | null>(null);
+
+  // --- Eigener Seitenzähler ---
+  const [pageStats, setPageStats] = useState<{ counts: Record<string, number>; total: number; updatedAt?: string }>({ counts: {}, total: 0 });
+  const [pageStatsLoading, setPageStatsLoading] = useState(false);
+  const loadPageStats = async () => {
+    setPageStatsLoading(true);
+    try { setPageStats(await fetchPageStats()); } catch (e) {} finally { setPageStatsLoading(false); }
+  };
+  useEffect(() => {
+    if (activeTab === "analytics") loadPageStats();
+  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab === "seo") {
@@ -3415,7 +3427,58 @@ export default function AdminPanel({
 
           {activeTab === "analytics" && (
             <div className="space-y-6 text-left">
-              
+
+              {/* Eigener Seitenzähler + Google Analytics */}
+              <div className="bg-slate-950 rounded-2xl border border-slate-800 p-5 shadow-lg">
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-[#FF5E2E]" />
+                    <h3 className="text-base font-extrabold text-white">Website-Aufrufe je Bereich</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href="https://analytics.google.com/analytics/web/#/p547144659/reports/reportinghub"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-all"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" /> Google Analytics öffnen
+                    </a>
+                    <button onClick={loadPageStats} className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold cursor-pointer transition-all">Aktualisieren</button>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500 mb-4">
+                  Eigener, cookieloser Zähler (anonym, DSGVO-unkritisch). Gesamtaufrufe: <strong className="text-white">{pageStats.total}</strong>
+                  {pageStats.updatedAt ? ` · zuletzt: ${new Date(pageStats.updatedAt).toLocaleString("de-DE")}` : ""}
+                </p>
+                {pageStatsLoading ? (
+                  <p className="text-xs text-slate-500">Lädt…</p>
+                ) : Object.keys(pageStats.counts).length === 0 ? (
+                  <p className="text-xs text-slate-500">Noch keine Aufrufe erfasst. (Hinweis: Zum Anzeigen musst du per Firebase eingeloggt sein.)</p>
+                ) : (
+                  <div className="space-y-2">
+                    {Object.entries(pageStats.counts).sort((a, b) => (b[1] as number) - (a[1] as number)).map(([route, count]) => {
+                      const max = Math.max(...Object.values(pageStats.counts).map((n) => Number(n) || 0), 1);
+                      return (
+                        <div key={route} className="flex items-center gap-3">
+                          <span className="text-xs font-mono text-slate-300 w-32 sm:w-44 truncate" title={route}>{route}</span>
+                          <div className="flex-1 bg-slate-900 rounded-full h-3 overflow-hidden">
+                            <div className="h-full bg-[#FF5E2E] rounded-full" style={{ width: `${(Number(count) / max) * 100}%` }} />
+                          </div>
+                          <span className="text-xs font-bold text-white w-12 text-right">{count as number}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <button
+                  onClick={async () => { if (window.confirm("Zähler wirklich auf 0 zurücksetzen?")) { await resetPageStats(); loadPageStats(); } }}
+                  className="mt-4 text-[11px] text-slate-500 hover:text-rose-400 cursor-pointer"
+                >
+                  Zähler zurücksetzen
+                </button>
+              </div>
+
               {/* Analytics card metrics */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 

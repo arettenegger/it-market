@@ -28,6 +28,7 @@ const ContactPage = lazy(() => import("./components/ContactPage"));
 import { Product, CartItem, BlogPost, ConfiguratorData, Review, Category, PageSeo, formatPrice } from "./types";
 import { PRODUCTS, INITIAL_BLOG_POSTS, DEFAULT_CONFIGURATOR_DATA, REVIEWS, CATEGORIES } from "./data";
 import { initAnalytics, trackPageView } from "./lib/analytics";
+import { recordPageView } from "./lib/pageStats";
 import { ShoppingBag, ChevronRight, Shield, Check, Settings, CheckCircle2, ShieldCheck, Mail } from "lucide-react";
 
 enum OperationType {
@@ -327,6 +328,8 @@ export default function App() {
     }
     // Seitenaufruf an Google Analytics melden (SPA-Navigation)
     trackPageView(routeKey, title);
+    // Eigener anonymer Zähler (cookielos, unabhängig vom Consent)
+    recordPageView(routeKey);
   }, [currentPage, activeCategoryId, categories, pageSeo]);
 
   // Browser Zurück/Vorwärts-Buttons unterstützen (URL -> Ansicht) + Analytics init
