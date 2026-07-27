@@ -437,6 +437,8 @@ export default function Hero({
                 <img
                   src={currentSlideImage}
                   alt={slide.category}
+                  fetchPriority={isCurrent ? "high" : "low"}
+                  decoding="async"
                   referrerPolicy="no-referrer"
                   className={`w-full h-full object-cover object-center transition-transform duration-[7000ms] ease-out ${
                     isCurrent ? "scale-105" : "scale-100"

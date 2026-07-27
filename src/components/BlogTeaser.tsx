@@ -60,7 +60,7 @@ export default function BlogTeaser({ blogPosts, onOpenBlogPage }: BlogTeaserProp
                   src={post.image}
                   alt={post.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  referrerPolicy="no-referrer"
+                  loading="lazy" decoding="async" referrerPolicy="no-referrer"
                 />
                 <div className="absolute top-4 left-4">
                   <span className="px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold uppercase tracking-wider">

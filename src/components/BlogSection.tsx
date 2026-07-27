@@ -179,7 +179,7 @@ const renderFormattedContent = (rawContent: string) => {
               src={imgUrl} 
               alt={altText || "Artikel Bild"} 
               className="w-full max-h-[550px] object-cover hover:scale-[1.01] transition-transform duration-500"
-              referrerPolicy="no-referrer"
+              loading="lazy" decoding="async" referrerPolicy="no-referrer"
               onError={(e) => {
                 console.warn("Image load error:", imgUrl);
               }}
@@ -207,7 +207,7 @@ const renderFormattedContent = (rawContent: string) => {
               src={imgUrl} 
               alt={altText || "Artikel Bild"} 
               className="w-full max-h-[550px] object-cover"
-              referrerPolicy="no-referrer"
+              loading="lazy" decoding="async" referrerPolicy="no-referrer"
             />
           </div>
           {altText && (
@@ -235,7 +235,7 @@ const renderFormattedContent = (rawContent: string) => {
               src={trimmed} 
               alt="Artikel Bild" 
               className="w-full max-h-[550px] object-cover"
-              referrerPolicy="no-referrer"
+              loading="lazy" decoding="async" referrerPolicy="no-referrer"
             />
           </div>
         </figure>
@@ -307,7 +307,7 @@ const renderFormattedContent = (rawContent: string) => {
                       src={imgUrl} 
                       alt={altText || "Artikel Bild"} 
                       className="w-full max-h-[550px] object-cover"
-                      referrerPolicy="no-referrer"
+                      loading="lazy" decoding="async" referrerPolicy="no-referrer"
                     />
                   </div>
                   {altText && altText !== "Cover" && (
@@ -528,7 +528,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
                     src={post.image} 
                     alt={post.title} 
                     className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform"
-                    referrerPolicy="no-referrer"
+                    loading="lazy" decoding="async" referrerPolicy="no-referrer"
                   />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -873,7 +873,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
                     src={featuredPost.image} 
                     alt={featuredPost.title} 
                     className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700 opacity-90"
-                    referrerPolicy="no-referrer"
+                    loading="lazy" decoding="async" referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent md:bg-gradient-to-r md:from-transparent md:to-slate-900"></div>
                   <div className="absolute top-3 left-3 bg-[#FF5E2E] text-white text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1.5">
@@ -938,7 +938,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
                         src={post.image} 
                         alt={post.title} 
                         className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                        referrerPolicy="no-referrer"
+                        loading="lazy" decoding="async" referrerPolicy="no-referrer"
                       />
                       <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-800 shadow-sm border border-slate-200">
                         {post.category}
@@ -1045,7 +1045,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
                     src={activeArticle.image} 
                     alt={activeArticle.title} 
                     className="absolute inset-0 w-full h-full object-cover object-top opacity-75"
-                    referrerPolicy="no-referrer"
+                    loading="lazy" decoding="async" referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/20"></div>
                   
@@ -1144,7 +1144,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
                               src={relPost.image} 
                               alt={relPost.title} 
                               className="w-16 h-14 rounded-xl object-cover shrink-0 border border-slate-200"
-                              referrerPolicy="no-referrer"
+                              loading="lazy" decoding="async" referrerPolicy="no-referrer"
                             />
                             <div className="min-w-0 flex-1">
                               <span className="text-[10px] text-blue-600 font-bold block mb-0.5">{relPost.category}</span>

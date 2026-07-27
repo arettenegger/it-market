@@ -126,7 +126,7 @@ export default function Bestsellers({
                           src={product.image} 
                           alt={product.name} 
                           className="max-h-38 w-auto max-w-full object-contain rounded-lg drop-shadow-md"
-                          referrerPolicy="no-referrer"
+                          loading="lazy" decoding="async" referrerPolicy="no-referrer"
                         />
                       ) : (
                         <div className="w-28 h-28">
@@ -285,7 +285,7 @@ export default function Bestsellers({
                       src={activeQuickDetail.image} 
                       alt={activeQuickDetail.name} 
                       className="max-h-full max-w-full object-contain rounded-xl drop-shadow-xl animate-fadeIn"
-                      referrerPolicy="no-referrer"
+                      loading="lazy" decoding="async" referrerPolicy="no-referrer"
                     />
                   ) : (
                     <div className="w-36 h-36">

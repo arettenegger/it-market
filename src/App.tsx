@@ -238,6 +238,27 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // Eigener Seitentitel je Ansicht (SEO)
+  useEffect(() => {
+    const base = "IT-MARKET — Sicherheit, Netzwerk & IT-Hardware";
+    let title = base;
+    if (currentPage === "category") {
+      const cat = categories.find((c) => c.id === activeCategoryId);
+      title = cat ? `${cat.name} kaufen & Angebot anfordern | IT-MARKET` : base;
+    } else if (currentPage === "blog") {
+      title = "Ratgeber & Technik-Magazin | IT-MARKET";
+    } else if (currentPage === "kontakt") {
+      title = "Kontakt & Beratung | IT-MARKET";
+    } else if (currentPage === "about") {
+      title = "Über uns | IT-MARKET";
+    } else if (currentPage === "impressum") {
+      title = "Impressum | IT-MARKET";
+    } else if (currentPage === "datenschutz") {
+      title = "Datenschutz | IT-MARKET";
+    }
+    document.title = title;
+  }, [currentPage, activeCategoryId, categories]);
+
 
 
   const syncProductToFirestore = async (newData: Record<string, any>) => {

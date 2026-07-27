@@ -233,7 +233,7 @@ export default function CategoryPage({
                 } 
                 alt={categoryName} 
                 className="w-full h-full object-cover opacity-90 animate-ken-burns"
-                referrerPolicy="no-referrer"
+                loading="lazy" decoding="async" referrerPolicy="no-referrer"
               />
             )}
             <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/40 to-slate-950/20" />
@@ -403,7 +403,7 @@ export default function CategoryPage({
                             src={product.image} 
                             alt={product.name} 
                             className="max-h-38 w-auto max-w-full object-contain rounded-lg drop-shadow-md"
-                            referrerPolicy="no-referrer"
+                            loading="lazy" decoding="async" referrerPolicy="no-referrer"
                           />
                         ) : (
                           <div className="w-28 h-28">
@@ -549,7 +549,7 @@ export default function CategoryPage({
                       src={selectedProductForModal.image} 
                       alt={selectedProductForModal.name} 
                       className="max-h-full max-w-full object-contain rounded-xl drop-shadow-xl animate-fadeIn"
-                      referrerPolicy="no-referrer"
+                      loading="lazy" decoding="async" referrerPolicy="no-referrer"
                     />
                   ) : (
                     <div className="w-36 h-36">
