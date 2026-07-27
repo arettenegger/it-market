@@ -116,15 +116,45 @@ export default function DatenschutzModal({ onBackToHome }: DatenschutzProps) {
                 <strong>Firestore & Firebase Storage:</strong> Speicherung von Konfigurationsdaten, Produktkatalogen und hochgeladenen Systemdateien.
               </p>
               <p>
-                <strong>Firebase Authentication:</strong> Bietet sichere Authentifizierung für Administratoren und Nutzer per E-Mail/Passwort oder Google OAuth.
+                <strong>Firebase Authentication:</strong> Bietet ausschließlich für Administratoren eine sichere Anmeldung per E-Mail/Passwort. Für Besucher findet keine Anmeldung statt.
               </p>
             </div>
           </div>
 
-          {/* 5. Betroffenenrechte */}
+          {/* 5. Cookies & Google Analytics */}
           <div className="space-y-3">
             <h2 className="text-base font-extrabold text-white flex items-center gap-2 border-l-2 border-[#FF5E2E] pl-3">
-              5. Ihre Rechte gemäß DSGVO
+              5. Cookies & Google Analytics
+            </h2>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Diese Website verwendet – ausschließlich mit Ihrer vorherigen Einwilligung über das Cookie-Banner – den Webanalysedienst Google Analytics 4 (GA4) der Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland.
+            </p>
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs space-y-2 text-slate-300 leading-relaxed">
+              <p>
+                <strong>Zweck:</strong> Anonyme Reichweitenmessung – wir werten aus, welche Seiten wie häufig besucht werden, um unser Angebot zu verbessern. Dabei werden Cookies gesetzt und Nutzungsdaten (z. B. aufgerufene Seiten, ungefähre Region, Gerätetyp, Referrer) verarbeitet.
+              </p>
+              <p>
+                <strong>Rechtsgrundlage:</strong> Ihre Einwilligung gemäß Art. 6 Abs. 1 lit. a DSGVO i. V. m. § 165 Abs. 3 TKG 2021. Google Analytics wird <strong className="text-white">erst geladen und aktiv, nachdem Sie im Cookie-Banner auf „Akzeptieren" geklickt haben</strong>. Ohne Einwilligung findet kein Tracking statt und es werden keine Analyse-Cookies gesetzt.
+              </p>
+              <p>
+                <strong>IP-Anonymisierung:</strong> GA4 kürzt bzw. anonymisiert IP-Adressen standardmäßig; vollständige IP-Adressen werden nicht gespeichert.
+              </p>
+              <p>
+                <strong>Datenübermittlung in die USA:</strong> Eine Übermittlung an Google LLC in den USA kann nicht ausgeschlossen werden. Diese erfolgt auf Grundlage der EU-Standardvertragsklauseln bzw. des EU-US Data Privacy Framework.
+              </p>
+              <p>
+                <strong>Widerruf:</strong> Sie können Ihre Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen, indem Sie die Cookies in Ihrem Browser löschen (das Banner erscheint dann erneut) oder das Deaktivierungs-Add-on von Google installieren: <span className="text-cyan-400 break-all">https://tools.google.com/dlpage/gaoptout</span>.
+              </p>
+              <p>
+                Weitere Informationen zum Datenschutz bei Google: <span className="text-cyan-400 break-all">https://policies.google.com/privacy</span>.
+              </p>
+            </div>
+          </div>
+
+          {/* 6. Betroffenenrechte */}
+          <div className="space-y-3">
+            <h2 className="text-base font-extrabold text-white flex items-center gap-2 border-l-2 border-[#FF5E2E] pl-3">
+              6. Ihre Rechte gemäß DSGVO
             </h2>
             <p className="text-xs text-slate-300 leading-relaxed">
               Ihnen stehen grundsätzlich die Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerruf und Widerspruch zu.
