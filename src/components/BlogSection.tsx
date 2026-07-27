@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { requestDoubleOptIn } from "../lib/newsletterService";
 import { 
   BookOpen, 
@@ -342,6 +342,13 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
   const [selectedCategory, setSelectedCategory] = useState<string>("Alle");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [activeArticle, setActiveArticle] = useState<BlogPost | null>(null);
+
+  // Beim Öffnen eines Artikels sanft an den Anfang des Blog-Bereichs scrollen
+  useEffect(() => {
+    if (activeArticle) {
+      document.getElementById("ratgeber")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [activeArticle]);
   const [newsletterEmail, setNewsletterEmail] = useState<string>("");
   const [newsletterSubscribed, setNewsletterSubscribed] = useState<boolean>(false);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
@@ -644,8 +651,9 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-100/40 rounded-full blur-3xl -z-10 pointer-events-none"></div>
       <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-amber-100/30 rounded-full blur-3xl -z-10 pointer-events-none"></div>
 
+      {!activeArticle && (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Breadcrumb Navigation */}
         <div className="flex items-center justify-between gap-4 text-xs text-slate-500 mb-6 font-medium">
           <div className="flex items-center gap-2">
@@ -1007,13 +1015,14 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
         </div>
 
       </div>
+      )}
 
-      {/* Article Detail Reader Modal with WordPress Layout */}
+      {/* Article Detail Reader – Vollseiten-Ansicht (kein Modal) */}
       {activeArticle && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-6xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 relative my-auto p-4 sm:p-8">
-            
-            {/* Modal Top Bar */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-fadeIn">
+          <div className="w-full">
+
+            {/* Top Bar */}
             <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
               <button
                 onClick={() => setActiveArticle(null)}
@@ -1022,16 +1031,6 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
                 <ArrowLeft className="w-4 h-4" />
                 <span>Zurück zur Übersicht</span>
               </button>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setActiveArticle(null)}
-                  className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all cursor-pointer"
-                  title="Schließen"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
             </div>
 
             {/* Modal Grid: Main Article Content (Col 8/12) + Sidebar (Col 4/12) */}
