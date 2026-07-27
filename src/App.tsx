@@ -75,9 +75,39 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   throw new Error(JSON.stringify(errInfo));
 }
 
+type PageKey = "home" | "blog" | "category" | "impressum" | "datenschutz" | "about" | "kontakt";
+const CATEGORY_IDS = ["pc-hardware", "netzwerke", "hotspot", "nas", "kameras", "smarthome"];
+
+// URL <-> Ansicht (echte Adressen für SEO & Deep-Links)
+function buildPath(page: PageKey, categoryId?: string): string {
+  switch (page) {
+    case "blog": return "/blog";
+    case "category": return "/kategorie/" + (categoryId || "pc-hardware");
+    case "kontakt": return "/kontakt";
+    case "about": return "/ueber-uns";
+    case "impressum": return "/impressum";
+    case "datenschutz": return "/datenschutz";
+    default: return "/";
+  }
+}
+function parsePath(pathname: string): { page: PageKey; categoryId?: string } {
+  const p = (pathname || "/").replace(/\/+$/, "") || "/";
+  if (p === "/blog") return { page: "blog" };
+  if (p === "/kontakt") return { page: "kontakt" };
+  if (p === "/ueber-uns") return { page: "about" };
+  if (p === "/impressum") return { page: "impressum" };
+  if (p === "/datenschutz") return { page: "datenschutz" };
+  if (p.startsWith("/kategorie/")) {
+    const id = p.slice("/kategorie/".length);
+    return { page: "category", categoryId: CATEGORY_IDS.includes(id) ? id : "pc-hardware" };
+  }
+  return { page: "home" };
+}
+const initialRoute = parsePath(typeof window !== "undefined" ? window.location.pathname : "/");
+
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<"home" | "blog" | "category" | "impressum" | "datenschutz" | "about" | "kontakt">("home");
-  const [activeCategoryId, setActiveCategoryId] = useState<string>("pc-hardware");
+  const [currentPage, setCurrentPage] = useState<PageKey>(initialRoute.page);
+  const [activeCategoryId, setActiveCategoryId] = useState<string>(initialRoute.categoryId || "pc-hardware");
   const [callbackTopic, setCallbackTopic] = useState<string>("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
@@ -258,6 +288,17 @@ export default function App() {
     }
     document.title = title;
   }, [currentPage, activeCategoryId, categories]);
+
+  // Browser Zurück/Vorwärts-Buttons unterstützen (URL -> Ansicht)
+  useEffect(() => {
+    const onPop = () => {
+      const r = parsePath(window.location.pathname);
+      setCurrentPage(r.page);
+      if (r.categoryId) setActiveCategoryId(r.categoryId);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
 
 
@@ -478,6 +519,7 @@ export default function App() {
     setActiveCategoryId(catId);
     setSelectedCategory(catName);
     setCurrentPage("category");
+    window.history.pushState(null, "", buildPath("category", catId));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -489,8 +531,9 @@ export default function App() {
   };
 
   // Page navigation logic
-  const handleNavigatePage = (page: "home" | "blog" | "category" | "impressum" | "datenschutz" | "about" | "kontakt", sectionId?: string) => {
+  const handleNavigatePage = (page: PageKey, sectionId?: string) => {
     setCurrentPage(page);
+    window.history.pushState(null, "", buildPath(page, activeCategoryId));
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     if (page === "home" && sectionId && sectionId !== "hero") {
