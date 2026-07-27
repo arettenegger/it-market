@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { VideoBackground, getYouTubeId } from "./VideoBackground";
-import { uploadImageToStorage, uploadFileToStorage } from "../lib/storageService";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -299,6 +298,7 @@ export default function Hero({
     setIsUploading(true);
     try {
       // Hero-Bild als echte Datei nach Firebase Storage; gespeichert wird nur die URL.
+      const { uploadImageToStorage } = await import("../lib/storageService");
       const url = await uploadImageToStorage(file, "hero", 1920, 0.82);
       setCustomUrlInput(url);
     } catch (err) {
@@ -321,6 +321,7 @@ export default function Hero({
 
     setIsUploading(true);
     try {
+      const { uploadFileToStorage } = await import("../lib/storageService");
       const url = await uploadFileToStorage(file, "hero-videos");
       setCustomVideoInput(url);
     } catch (err) {

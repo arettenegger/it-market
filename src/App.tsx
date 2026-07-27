@@ -26,10 +26,7 @@ const AboutUsModal = lazy(() => import("./components/AboutUsModal"));
 const ContactPage = lazy(() => import("./components/ContactPage"));
 import { Product, CartItem, BlogPost, ConfiguratorData, Review, Category, formatPrice } from "./types";
 import { PRODUCTS, INITIAL_BLOG_POSTS, DEFAULT_CONFIGURATOR_DATA, REVIEWS, CATEGORIES } from "./data";
-import { SHOP_DOC_REF } from "./lib/firebase";
-import { setDoc, onSnapshot, getDoc } from "firebase/firestore";
 import { ShoppingBag, ChevronRight, Shield, Check, Settings, CheckCircle2, ShieldCheck, Mail } from "lucide-react";
-import { confirmDoubleOptIn } from "./lib/newsletterService";
 
 enum OperationType {
   CREATE = 'create',
@@ -146,7 +143,8 @@ export default function App() {
     const confirmEmail = urlParams.get("email");
 
     if (confirmToken) {
-      confirmDoubleOptIn(confirmToken, confirmEmail || undefined)
+      import("./lib/newsletterService")
+        .then(({ confirmDoubleOptIn }) => confirmDoubleOptIn(confirmToken, confirmEmail || undefined))
         .then((res) => {
           setDoiConfirmedInfo({
             email: res.email,
@@ -208,6 +206,10 @@ export default function App() {
   const syncToFirestore = async (newData: Record<string, any>) => {
     try {
       const cleanData = sanitizeForFirestore(newData);
+      const [{ SHOP_DOC_REF }, { setDoc }] = await Promise.all([
+        import("./lib/firebase"),
+        import("firebase/firestore"),
+      ]);
       await setDoc(SHOP_DOC_REF, cleanData, { merge: true });
       setLastSyncedAt(new Date());
     } catch (err) {
@@ -244,28 +246,47 @@ export default function App() {
       }
     };
 
-    const unsubscribe = onSnapshot(
-      SHOP_DOC_REF,
-      (snap) => {
-        if (snap.exists()) {
-          applyCloudData(snap.data());
-        } else {
-          // Noch keine Cloud-Daten vorhanden -> Standardkatalog anzeigen
-          setProducts(PRODUCTS);
-          setBlogPosts(INITIAL_BLOG_POSTS);
-        }
-        setCloudLoaded(true);
-      },
-      (err) => {
-        console.error("Firestore onSnapshot error:", err);
-        // Bei Verbindungsfehler wenigstens den eingebauten Standardkatalog zeigen
+    // Firebase erst NACH dem ersten Rendern nachladen (nicht im kritischen
+    // Ladepfad) -> Startseite erscheint schneller. Danach live via onSnapshot.
+    let unsub = () => {};
+    let settled = false;
+    const markLoaded = () => { if (!settled) { settled = true; setCloudLoaded(true); } };
+    // Sicherheit: Hero nicht ewig warten lassen, falls Firebase langsam ist
+    const timeoutId = setTimeout(markLoaded, 3500);
+
+    (async () => {
+      try {
+        const [{ SHOP_DOC_REF }, { onSnapshot }] = await Promise.all([
+          import("./lib/firebase"),
+          import("firebase/firestore"),
+        ]);
+        unsub = onSnapshot(
+          SHOP_DOC_REF,
+          (snap) => {
+            if (snap.exists()) {
+              applyCloudData(snap.data());
+            } else {
+              setProducts(PRODUCTS);
+              setBlogPosts(INITIAL_BLOG_POSTS);
+            }
+            markLoaded();
+          },
+          (err) => {
+            console.error("Firestore onSnapshot error:", err);
+            setProducts((prev) => (prev.length ? prev : PRODUCTS));
+            setBlogPosts((prev) => (prev.length ? prev : INITIAL_BLOG_POSTS));
+            markLoaded();
+          }
+        );
+      } catch (e) {
+        console.error("Firebase konnte nicht geladen werden:", e);
         setProducts((prev) => (prev.length ? prev : PRODUCTS));
         setBlogPosts((prev) => (prev.length ? prev : INITIAL_BLOG_POSTS));
-        setCloudLoaded(true);
+        markLoaded();
       }
-    );
+    })();
 
-    return () => unsubscribe();
+    return () => { clearTimeout(timeoutId); unsub(); };
   }, []);
 
   // Eigener Seitentitel je Ansicht (SEO)
@@ -332,6 +353,10 @@ export default function App() {
 
   const handleRefreshFromCloud = async () => {
     try {
+      const [{ SHOP_DOC_REF }, { getDoc }] = await Promise.all([
+        import("./lib/firebase"),
+        import("firebase/firestore"),
+      ]);
       const docSnap = await getDoc(SHOP_DOC_REF);
       if (docSnap.exists()) {
         const data = docSnap.data();

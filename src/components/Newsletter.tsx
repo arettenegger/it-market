@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Mail, CheckCircle, Send, Sparkles, ShieldCheck } from "lucide-react";
-import { requestDoubleOptIn } from "../lib/newsletterService";
 
 export default function Newsletter() {
   const [email, setEmail] = useState("");
@@ -14,6 +13,7 @@ export default function Newsletter() {
     if (email.trim() && email.includes("@")) {
       setIsSubmitting(true);
       try {
+        const { requestDoubleOptIn } = await import("../lib/newsletterService");
         const res = await requestDoubleOptIn(email, "Footer Newsletter Formular");
         if (res.isAlreadyConfirmed) {
           setIsAlreadyConfirmed(true);
