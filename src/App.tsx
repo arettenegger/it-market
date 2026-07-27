@@ -103,6 +103,8 @@ export default function App() {
   });
 
   const [doiConfirmedInfo, setDoiConfirmedInfo] = useState<{ email: string; message: string } | null>(null);
+  // true, sobald die Shop-Daten erstmals aus der Cloud geladen sind (verhindert kurzes Aufblitzen der Standard-/Unsplash-Bilder)
+  const [cloudLoaded, setCloudLoaded] = useState(false);
 
   // Initialize and persist state with localStorage
   useEffect(() => {
@@ -220,12 +222,14 @@ export default function App() {
           setProducts(PRODUCTS);
           setBlogPosts(INITIAL_BLOG_POSTS);
         }
+        setCloudLoaded(true);
       },
       (err) => {
         console.error("Firestore onSnapshot error:", err);
         // Bei Verbindungsfehler wenigstens den eingebauten Standardkatalog zeigen
         setProducts((prev) => (prev.length ? prev : PRODUCTS));
         setBlogPosts((prev) => (prev.length ? prev : INITIAL_BLOG_POSTS));
+        setCloudLoaded(true);
       }
     );
 
@@ -539,6 +543,7 @@ export default function App() {
           <>
             {/* Hero Banner with live stateful simulator */}
             <Hero
+              cloudLoaded={cloudLoaded}
               heroImages={heroImages}
               heroVideos={heroVideos}
               onUpdateHeroImages={handleUpdateHeroImages}

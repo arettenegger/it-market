@@ -24,6 +24,7 @@ import {
 import { CATEGORIES } from "../data";
 
 interface HeroProps {
+  cloudLoaded?: boolean;
   heroImages?: Record<string, string>;
   heroVideos?: Record<string, string>;
   onUpdateHeroImages?: (updated: Record<string, string>) => void;
@@ -154,7 +155,8 @@ const VIDEO_PRESETS: Record<string, { name: string; url: string }[]> = {
   ]
 };
 
-export default function Hero({ 
+export default function Hero({
+  cloudLoaded = true,
   heroImages,
   heroVideos,
   onUpdateHeroImages,
@@ -409,7 +411,7 @@ export default function Hero({
           return (
             <div
               key={slide.id}
-              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              className={`absolute inset-0 bg-slate-950 transition-opacity duration-1000 ease-in-out ${
                 isCurrent ? "opacity-100 z-10" : "opacity-0 z-0"
               }`}
             >
@@ -417,8 +419,10 @@ export default function Hero({
               <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/75 to-transparent z-10 pointer-events-none" />
               <div className="absolute inset-0 bg-slate-950/25 z-10 pointer-events-none" />
               <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-slate-950 to-transparent z-10 pointer-events-none" />
-              
-              {isVideo ? (
+
+              {/* Bild/Video erst zeigen, wenn die echten Bilder aus der Cloud geladen sind
+                  (verhindert kurzes Aufblitzen der Standard-/Unsplash-Bilder beim Start) */}
+              {cloudLoaded && (isVideo ? (
                 <VideoBackground
                   src={mediaSrc}
                   onError={() => {
@@ -438,7 +442,7 @@ export default function Hero({
                     isCurrent ? "scale-105" : "scale-100"
                   }`}
                 />
-              )}
+              ))}
             </div>
           );
         })}
