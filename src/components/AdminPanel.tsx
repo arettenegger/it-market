@@ -62,14 +62,17 @@ import {
   Info,
   Cloud
 } from "lucide-react";
-import { auth, googleProvider, firebaseConfig } from "../lib/firebase";
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signInWithPopup, 
-  signOut, 
-  onAuthStateChanged, 
-  User as FirebaseUser 
+import { auth, firebaseConfig } from "../lib/firebase";
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  multiFactor,
+  getMultiFactorResolver,
+  TotpMultiFactorGenerator,
+  User as FirebaseUser,
+  MultiFactorResolver,
+  TotpSecret,
 } from "firebase/auth";
 import { Product, BlogPost, ConfiguratorData, ConfiguratorOption, Review, Category, getSpecLabels } from "../types";
 import { PRODUCTS, INITIAL_BLOG_POSTS, DEFAULT_CONFIGURATOR_DATA, CATEGORIES } from "../data";
@@ -140,6 +143,17 @@ export default function AdminPanel({
   const [fbAuthLoading, setFbAuthLoading] = useState(false);
   const [fbAuthError, setFbAuthError] = useState<string | null>(null);
 
+  // 2FA (TOTP / Authenticator-App)
+  const [mfaResolver, setMfaResolver] = useState<MultiFactorResolver | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [totpSecret, setTotpSecret] = useState<TotpSecret | null>(null);
+  const [totpUri, setTotpUri] = useState<string>("");
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
+  const [enrollCode, setEnrollCode] = useState("");
+  const [mfaBusy, setMfaBusy] = useState(false);
+  const [mfaMsg, setMfaMsg] = useState<string | null>(null);
+  const [mfaEnrolled, setMfaEnrolled] = useState(false);
+
   const [adminPin, setAdminPin] = useState<string>(() => {
     return localStorage.getItem("bewacht_vernetzt_admin_pin") || "1234";
   });
@@ -194,6 +208,11 @@ export default function AdminPanel({
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
+      try {
+        setMfaEnrolled(!!user && multiFactor(user).enrolledFactors.length > 0);
+      } catch (e) {
+        setMfaEnrolled(false);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -210,6 +229,19 @@ export default function AdminPanel({
       setPasswordInput("");
     } catch (err: any) {
       console.error("Firebase Auth Error:", err);
+      // 2FA erforderlich -> zur Code-Eingabe wechseln
+      if (err.code === "auth/multi-factor-auth-required") {
+        try {
+          const resolver = getMultiFactorResolver(auth, err);
+          setMfaResolver(resolver);
+          setPasswordInput("");
+          setFbAuthError(null);
+        } catch (e) {
+          setFbAuthError("Zwei-Faktor-Anmeldung konnte nicht gestartet werden.");
+        }
+        setFbAuthLoading(false);
+        return;
+      }
       let errMsg = err?.message || "Anmeldung fehlgeschlagen.";
       if (err.code === "auth/operation-not-allowed") {
         errMsg = "OPERATION_NOT_ALLOWED";
@@ -225,6 +257,107 @@ export default function AdminPanel({
       setFbAuthError(errMsg);
     } finally {
       setFbAuthLoading(false);
+    }
+  };
+
+  // 2FA: Anmeldung mit dem 6-stelligen Code abschließen
+  const handleMfaSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mfaResolver) return;
+    setFbAuthLoading(true);
+    setFbAuthError(null);
+    try {
+      const hint = mfaResolver.hints[0];
+      const assertion = TotpMultiFactorGenerator.assertionForSignIn(hint.uid, mfaCode.trim());
+      await mfaResolver.resolveSignIn(assertion);
+      setMfaResolver(null);
+      setMfaCode("");
+      setEmailInput("");
+    } catch (err: any) {
+      console.error("MFA sign-in error:", err);
+      setFbAuthError("Ungültiger Code. Bitte den aktuellen 6-stelligen Code aus deiner Authenticator-App eingeben.");
+    } finally {
+      setFbAuthLoading(false);
+    }
+  };
+
+  // 2FA einrichten: Secret + QR-Code erzeugen
+  const handleStartEnroll = async () => {
+    if (!auth.currentUser) return;
+    setMfaBusy(true);
+    setMfaMsg(null);
+    try {
+      const session = await multiFactor(auth.currentUser).getSession();
+      const secret = await TotpMultiFactorGenerator.generateSecret(session);
+      setTotpSecret(secret);
+      const uri = secret.generateQrCodeUrl(auth.currentUser.email || "IT-MARKET Admin", "IT-MARKET");
+      setTotpUri(uri);
+      try {
+        const QRCode = (await import("qrcode")).default;
+        const dataUrl = await QRCode.toDataURL(uri, { width: 210, margin: 1 });
+        setQrDataUrl(dataUrl);
+      } catch (qrErr) {
+        console.warn("QR konnte nicht erzeugt werden, Schlüssel manuell eingeben:", qrErr);
+      }
+    } catch (err: any) {
+      console.error("MFA enroll start error:", err);
+      if (err.code === "auth/requires-recent-login") {
+        setMfaMsg("Bitte kurz abmelden und wieder anmelden, dann 2FA aktivieren (Sicherheitsanforderung von Firebase).");
+      } else if (err.code === "auth/operation-not-allowed" || err.code === "auth/unsupported-first-factor" || /mfa|multi|totp|identity/i.test(err?.message || "")) {
+        setMfaMsg("2FA ist im Firebase-Projekt noch nicht freigeschaltet. Bitte in der Console: Authentication → auf Identity Platform upgraden und MFA (Authenticator-App/TOTP) aktivieren.");
+      } else {
+        setMfaMsg("2FA konnte nicht gestartet werden: " + (err?.message || "Unbekannter Fehler"));
+      }
+    } finally {
+      setMfaBusy(false);
+    }
+  };
+
+  // 2FA-Einrichtung mit Code bestätigen
+  const handleFinishEnroll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!totpSecret || !auth.currentUser) return;
+    setMfaBusy(true);
+    setMfaMsg(null);
+    try {
+      const assertion = TotpMultiFactorGenerator.assertionForEnrollment(totpSecret, enrollCode.trim());
+      await multiFactor(auth.currentUser).enroll(assertion, "Authenticator App");
+      setTotpSecret(null);
+      setTotpUri("");
+      setQrDataUrl("");
+      setEnrollCode("");
+      setMfaEnrolled(true);
+      setMfaMsg("✅ 2-Faktor-Authentifizierung ist jetzt aktiv.");
+    } catch (err: any) {
+      console.error("MFA enroll finish error:", err);
+      setMfaMsg("Code ungültig. Bitte den aktuellen 6-stelligen Code aus der App eingeben.");
+    } finally {
+      setMfaBusy(false);
+    }
+  };
+
+  // 2FA deaktivieren
+  const handleDisableMfa = async () => {
+    if (!auth.currentUser) return;
+    if (!window.confirm("2-Faktor-Authentifizierung wirklich deaktivieren?")) return;
+    setMfaBusy(true);
+    setMfaMsg(null);
+    try {
+      const factors = multiFactor(auth.currentUser).enrolledFactors;
+      for (const f of factors) {
+        await multiFactor(auth.currentUser).unenroll(f);
+      }
+      setMfaEnrolled(false);
+      setMfaMsg("2FA wurde deaktiviert.");
+    } catch (err: any) {
+      console.error("MFA disable error:", err);
+      if (err.code === "auth/requires-recent-login") {
+        setMfaMsg("Bitte kurz abmelden und wieder anmelden, dann erneut versuchen.");
+      } else {
+        setMfaMsg("Konnte nicht deaktiviert werden: " + (err?.message || ""));
+      }
+    } finally {
+      setMfaBusy(false);
     }
   };
 
@@ -1672,9 +1805,44 @@ export default function AdminPanel({
           {authMethod === "firebase" ? (
             <div className="space-y-4">
               <div className="text-center border-b border-slate-800 pb-2">
-                <span className="text-xs font-extrabold text-white uppercase tracking-wider">Admin-Anmeldung</span>
+                <span className="text-xs font-extrabold text-white uppercase tracking-wider">{mfaResolver ? "Zwei-Faktor-Bestätigung" : "Admin-Anmeldung"}</span>
               </div>
 
+              {mfaResolver ? (
+                <form onSubmit={handleMfaSignIn} className="space-y-3.5">
+                  <p className="text-[11px] text-slate-400 text-center leading-relaxed">
+                    Gib den aktuellen 6-stelligen Code aus deiner Authenticator-App ein.
+                  </p>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoFocus
+                    required
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="123456"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-[#FF5E2E] rounded-xl px-4 py-3 text-center text-lg font-mono tracking-[0.4em] text-white outline-none transition-all"
+                  />
+                  {fbAuthError && (
+                    <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs font-semibold">{fbAuthError}</div>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={fbAuthLoading}
+                    className="w-full py-3 bg-gradient-to-r from-[#FF5E2E] to-amber-500 hover:from-[#ff4d17] hover:to-amber-400 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    {fbAuthLoading ? <RefreshCw className="w-4 h-4 animate-spin text-white" /> : <LogIn className="w-4 h-4" />}
+                    <span>Bestätigen & anmelden</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setMfaResolver(null); setMfaCode(""); setFbAuthError(null); }}
+                    className="w-full text-[11px] text-slate-500 hover:text-slate-300 cursor-pointer"
+                  >
+                    Abbrechen
+                  </button>
+                </form>
+              ) : (
               <form onSubmit={handleFirebaseAuthSubmit} className="space-y-3.5">
                 <div className="space-y-1">
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">
@@ -1771,6 +1939,7 @@ export default function AdminPanel({
                   <span>Anmelden</span>
                 </button>
               </form>
+              )}
             </div>
           ) : (
             <form onSubmit={handleLoginWithPin} className="space-y-4">
@@ -5004,6 +5173,72 @@ export default function AdminPanel({
                     Aktueller PIN im System hinterlegt. Standard bei Erstnutzung: <code className="bg-slate-900 text-amber-400 px-1.5 py-0.5 rounded font-mono">1234</code>
                   </p>
                 </form>
+              </div>
+
+              {/* Zwei-Faktor-Authentifizierung (2FA / TOTP) */}
+              <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 shadow-xl max-w-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield className="w-5 h-5 text-emerald-400" />
+                  <h3 className="text-lg font-extrabold text-white font-display">
+                    Zwei-Faktor-Authentifizierung (2FA)
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-400 mb-5 leading-relaxed">
+                  Zusätzlicher Schutz: Nach dem Passwort wird ein 6-stelliger Code aus deiner Authenticator-App (z. B. Google Authenticator) verlangt. Pro Admin-Konto einmal einrichten.
+                </p>
+
+                {!firebaseUser ? (
+                  <p className="text-xs text-amber-400">Bitte zuerst per Firebase (E-Mail/Passwort) anmelden, um 2FA einzurichten.</p>
+                ) : mfaEnrolled ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-emerald-400 text-sm font-bold">
+                      <CheckCircle2 className="w-4 h-4" /> 2FA ist für dieses Konto aktiv
+                    </div>
+                    <button
+                      onClick={handleDisableMfa}
+                      disabled={mfaBusy}
+                      className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-rose-300 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-60"
+                    >
+                      2FA deaktivieren
+                    </button>
+                  </div>
+                ) : totpSecret ? (
+                  <form onSubmit={handleFinishEnroll} className="space-y-4">
+                    <p className="text-xs text-slate-300"><strong>1.</strong> QR-Code mit der Authenticator-App scannen (oder Schlüssel manuell eingeben):</p>
+                    {qrDataUrl && <img src={qrDataUrl} alt="2FA QR-Code" className="w-44 h-44 bg-white p-2 rounded-xl" />}
+                    {totpSecret.secretKey && (
+                      <div className="text-[11px] text-slate-400">Manueller Schlüssel: <code className="bg-slate-900 text-amber-400 px-1.5 py-0.5 rounded font-mono break-all">{totpSecret.secretKey}</code></div>
+                    )}
+                    <p className="text-xs text-slate-300"><strong>2.</strong> Aktuellen 6-stelligen Code aus der App eingeben:</p>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={enrollCode}
+                      onChange={(e) => setEnrollCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="123456"
+                      className="w-full max-w-[220px] bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-center font-mono tracking-widest text-white focus:outline-none focus:border-emerald-500"
+                    />
+                    <div className="flex gap-2">
+                      <button type="submit" disabled={mfaBusy} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-60 flex items-center gap-2">
+                        {mfaBusy && <RefreshCw className="w-4 h-4 animate-spin" />} 2FA aktivieren
+                      </button>
+                      <button type="button" onClick={() => { setTotpSecret(null); setTotpUri(""); setQrDataUrl(""); setEnrollCode(""); }} className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer">
+                        Abbrechen
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <button
+                    onClick={handleStartEnroll}
+                    disabled={mfaBusy}
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-60 flex items-center gap-2"
+                  >
+                    {mfaBusy && <RefreshCw className="w-4 h-4 animate-spin" />}
+                    2FA einrichten
+                  </button>
+                )}
+
+                {mfaMsg && <p className="text-xs text-slate-300 mt-3 leading-relaxed">{mfaMsg}</p>}
               </div>
 
               {/* GitHub-Repository */}
