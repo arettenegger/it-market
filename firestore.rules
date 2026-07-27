@@ -2,35 +2,43 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ====================================================================
+    //  ADMIN-FREIGABE — nur diese E-Mail-Adresse(n) dürfen schreiben und
+    //  Kundendaten (Anfragen/Rückrufe/Abonnenten) sehen.
+    //  WICHTIG: Trage hier GENAU die E-Mail ein, mit der du dich im Admin
+    //  anmeldest. Weitere Admins mit Komma ergänzen, z. B.:
+    //    ["doris@it-market.at", "andreas@it-market.at"]
+    // ====================================================================
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ["doris@it-market.at"];
+    }
+
     // --- Shop-Daten (Produkte, Kategorien, Blog, Reviews, Konfigurator, Logo) ---
-    // Lesen: öffentlich  (die Website muss die Produkte für alle Besucher laden)
-    // Schreiben: nur eingeloggte Admins (Firebase E-Mail/Passwort-Login im Admin-Panel)
+    // Lesen: öffentlich (Website muss Produkte laden). Schreiben: nur Admin.
     match /shop_data/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
 
     // --- Newsletter-Abonnenten (Double-Opt-In) ---
-    // Anonyme Besucher dürfen sich anmelden (create) und ihre Anmeldung
-    // per Bestätigungslink lesen (get) und bestätigen (update).
-    // Die gesamte Liste einsehen oder löschen darf nur ein eingeloggter Admin.
+    // Anmelden (create) + Bestätigen (get/update) offen; Liste/Löschen nur Admin.
     match /newsletter_subscribers/{subscriberId} {
       allow get, create, update: if true;
-      allow list, delete: if request.auth != null;
+      allow list, delete: if isAdmin();
     }
 
-    // --- Angebotsanfragen (Kundendaten aus dem Warenkorb) ---
-    // Besucher dürfen eine Anfrage absenden (create).
-    // Lesen/Ändern/Löschen nur für eingeloggte Admins.
+    // --- Angebotsanfragen (Kundendaten) ---
+    // Absenden (create) offen; Lesen/Ändern/Löschen nur Admin.
     match /inquiries/{inquiryId} {
       allow create: if true;
-      allow read, update, delete: if request.auth != null;
+      allow read, update, delete: if isAdmin();
     }
 
-    // --- Rückruf-Wünsche (Kundendaten aus dem Rückruf-Formular) ---
+    // --- Rückruf-Wünsche (Kundendaten) ---
     match /callbacks/{callbackId} {
       allow create: if true;
-      allow read, update, delete: if request.auth != null;
+      allow read, update, delete: if isAdmin();
     }
   }
 }

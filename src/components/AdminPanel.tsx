@@ -204,11 +204,8 @@ export default function AdminPanel({
     setFbAuthLoading(true);
 
     try {
-      if (authMode === "login") {
-        await signInWithEmailAndPassword(auth, emailInput.trim(), passwordInput);
-      } else {
-        await createUserWithEmailAndPassword(auth, emailInput.trim(), passwordInput);
-      }
+      // Nur Login – keine Selbst-Registrierung mehr (Sicherheit).
+      await signInWithEmailAndPassword(auth, emailInput.trim(), passwordInput);
       setEmailInput("");
       setPasswordInput("");
     } catch (err: any) {
@@ -231,22 +228,6 @@ export default function AdminPanel({
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setFbAuthError(null);
-    setFbAuthLoading(true);
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (err: any) {
-      console.error("Google Sign-In Error:", err);
-      if (err.code === "auth/operation-not-allowed") {
-        setFbAuthError("OPERATION_NOT_ALLOWED");
-      } else if (err.code !== "auth/popup-closed-by-user") {
-        setFbAuthError(err?.message || "Google Anmeldung fehlgeschlagen.");
-      }
-    } finally {
-      setFbAuthLoading(false);
-    }
-  };
 
   const handleFirebaseSignOut = async () => {
     try {
@@ -1690,26 +1671,8 @@ export default function AdminPanel({
 
           {authMethod === "firebase" ? (
             <div className="space-y-4">
-              {/* Login / Register Tab Switch */}
-              <div className="flex justify-center gap-4 text-xs font-bold border-b border-slate-800 pb-2">
-                <button
-                  type="button"
-                  onClick={() => { setAuthMode("login"); setFbAuthError(null); }}
-                  className={`pb-1 border-b-2 transition-all cursor-pointer ${
-                    authMode === "login" ? "border-[#FF5E2E] text-white font-extrabold" : "border-transparent text-slate-500 hover:text-slate-300"
-                  }`}
-                >
-                  Anmelden
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setAuthMode("register"); setFbAuthError(null); }}
-                  className={`pb-1 border-b-2 transition-all cursor-pointer ${
-                    authMode === "register" ? "border-[#FF5E2E] text-white font-extrabold" : "border-transparent text-slate-500 hover:text-slate-300"
-                  }`}
-                >
-                  Neuen Admin Registrieren
-                </button>
+              <div className="text-center border-b border-slate-800 pb-2">
+                <span className="text-xs font-extrabold text-white uppercase tracking-wider">Admin-Anmeldung</span>
               </div>
 
               <form onSubmit={handleFirebaseAuthSubmit} className="space-y-3.5">
@@ -1805,25 +1768,9 @@ export default function AdminPanel({
                   ) : (
                     <LogIn className="w-4 h-4" />
                   )}
-                  <span>{authMode === "login" ? "Mit Firebase anmelden" : "Firebase Account anlegen"}</span>
+                  <span>Anmelden</span>
                 </button>
               </form>
-
-              <div className="relative py-2 flex items-center justify-center">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800" /></div>
-                <span className="relative bg-slate-900 px-3 text-[10px] font-bold text-slate-500 uppercase">Oder</span>
-              </div>
-
-              {/* Google Sign-In */}
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={fbAuthLoading}
-                className="w-full py-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-              >
-                <Sparkles className="w-4 h-4 text-amber-400" />
-                <span>Mit Google Account anmelden</span>
-              </button>
             </div>
           ) : (
             <form onSubmit={handleLoginWithPin} className="space-y-4">

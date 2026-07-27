@@ -2,13 +2,14 @@ rules_version = '2';
 
 // Firebase Storage Sicherheitsregeln
 // - Lesen: öffentlich (Bilder/Videos müssen für alle Besucher sichtbar sein)
-// - Schreiben (Upload/Löschen): nur eingeloggte Admins
-//   (Firebase E-Mail/Passwort-Login im Admin-Bereich)
+// - Schreiben (Upload/Löschen): NUR die Admin-E-Mail(s) unten
+//   WICHTIG: exakt die Login-E-Mail eintragen (gleich wie in firestore.rules).
 service firebase.storage {
   match /b/{bucket}/o {
     match /{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null
+        && request.auth.token.email in ["doris@it-market.at"];
     }
   }
 }
