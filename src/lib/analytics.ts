@@ -8,8 +8,23 @@ export const GA_MEASUREMENT_ID = "G-BPRG92PL99";
 
 let initialized = false;
 
+const CONSENT_KEY = "cookie_consent";
+
+export function getConsent(): "accepted" | "rejected" | null {
+  if (typeof window === "undefined") return null;
+  const v = localStorage.getItem(CONSENT_KEY);
+  return v === "accepted" || v === "rejected" ? v : null;
+}
+
+export function setConsent(value: "accepted" | "rejected"): void {
+  try { localStorage.setItem(CONSENT_KEY, value); } catch (e) {}
+  if (value === "accepted") initAnalytics();
+}
+
 export function initAnalytics(): void {
   if (initialized || !GA_MEASUREMENT_ID || typeof window === "undefined") return;
+  // Nur mit Einwilligung (DSGVO) – ohne Consent kein Tracking, keine Cookies.
+  if (getConsent() !== "accepted") return;
   initialized = true;
 
   const s = document.createElement("script");

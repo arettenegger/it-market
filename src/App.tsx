@@ -12,6 +12,7 @@ import Faq from "./components/Faq";
 import Newsletter from "./components/Newsletter";
 import Footer from "./components/Footer";
 import BlogTeaser from "./components/BlogTeaser";
+import CookieConsent from "./components/CookieConsent";
 
 // Schwere/selten genutzte Komponenten erst bei Bedarf nachladen (kleineres Start-Bundle → schnelleres Handy-Laden)
 const CartDrawer = lazy(() => import("./components/CartDrawer"));
@@ -874,6 +875,9 @@ export default function App() {
       )}
 
       {/* Mini Applet Float Toast Alerts */}
+      {/* Cookie-Consent-Banner (DSGVO) — GA startet erst nach Zustimmung */}
+      <CookieConsent onOpenDatenschutz={() => handleNavigatePage("datenschutz")} />
+
       {toastMessage && (
         <div className="fixed bottom-24 right-6 z-50 bg-slate-900 text-white py-3 px-5 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-2.5 animate-fadeIn">
           <div className="w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
