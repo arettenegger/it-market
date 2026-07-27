@@ -24,8 +24,9 @@ const ImpressumModal = lazy(() => import("./components/ImpressumModal"));
 const DatenschutzModal = lazy(() => import("./components/DatenschutzModal"));
 const AboutUsModal = lazy(() => import("./components/AboutUsModal"));
 const ContactPage = lazy(() => import("./components/ContactPage"));
-import { Product, CartItem, BlogPost, ConfiguratorData, Review, Category, formatPrice } from "./types";
+import { Product, CartItem, BlogPost, ConfiguratorData, Review, Category, PageSeo, formatPrice } from "./types";
 import { PRODUCTS, INITIAL_BLOG_POSTS, DEFAULT_CONFIGURATOR_DATA, REVIEWS, CATEGORIES } from "./data";
+import { initAnalytics, trackPageView } from "./lib/analytics";
 import { ShoppingBag, ChevronRight, Shield, Check, Settings, CheckCircle2, ShieldCheck, Mail } from "lucide-react";
 
 enum OperationType {
@@ -119,6 +120,7 @@ export default function App() {
   const [categories, setCategories] = useState<Category[]>(CATEGORIES);
   const [configuratorData, setConfiguratorData] = useState<ConfiguratorData>(DEFAULT_CONFIGURATOR_DATA);
   const [logoImage, setLogoImage] = useState<string>("");
+  const [pageSeo, setPageSeo] = useState<Record<string, PageSeo>>({});
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(new Date());
   const [heroImages, setHeroImages] = useState<Record<string, string>>({
     kameras: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=1920",
@@ -238,6 +240,7 @@ export default function App() {
       setCategories(Array.isArray(data?.categories) && data.categories.length ? data.categories : CATEGORIES);
       setConfiguratorData(data?.configuratorData || DEFAULT_CONFIGURATOR_DATA);
       if (typeof data?.logoImage === "string") setLogoImage(data.logoImage);
+      if (data?.pageSeo && typeof data.pageSeo === "object") setPageSeo(data.pageSeo);
       if (data?.heroImages && typeof data.heroImages === "object") {
         setHeroImages((prev) => ({ ...prev, ...data.heroImages }));
       }
@@ -292,6 +295,8 @@ export default function App() {
   // Eigener Seitentitel je Ansicht (SEO)
   useEffect(() => {
     const base = "IT-MARKET — Sicherheit, Netzwerk & IT-Hardware";
+    const routeKey = buildPath(currentPage, activeCategoryId);
+    const seo = pageSeo[routeKey];
     let title = base;
     if (currentPage === "category") {
       const cat = categories.find((c) => c.id === activeCategoryId);
@@ -307,11 +312,25 @@ export default function App() {
     } else if (currentPage === "datenschutz") {
       title = "Datenschutz | IT-MARKET";
     }
+    if (seo?.title) title = seo.title;
     document.title = title;
-  }, [currentPage, activeCategoryId, categories]);
+    // Meta-Beschreibung setzen, falls im SEO-Manager hinterlegt
+    if (seo?.description) {
+      let m = document.querySelector('meta[name="description"]');
+      if (!m) {
+        m = document.createElement("meta");
+        m.setAttribute("name", "description");
+        document.head.appendChild(m);
+      }
+      m.setAttribute("content", seo.description);
+    }
+    // Seitenaufruf an Google Analytics melden (SPA-Navigation)
+    trackPageView(routeKey, title);
+  }, [currentPage, activeCategoryId, categories, pageSeo]);
 
-  // Browser Zurück/Vorwärts-Buttons unterstützen (URL -> Ansicht)
+  // Browser Zurück/Vorwärts-Buttons unterstützen (URL -> Ansicht) + Analytics init
   useEffect(() => {
+    initAnalytics();
     const onPop = () => {
       const r = parsePath(window.location.pathname);
       setCurrentPage(r.page);
@@ -430,6 +449,12 @@ export default function App() {
   const handleUpdateLogoImage = (url: string) => {
     setLogoImage(url);
     syncLogoToFirestore({ logoImage: url });
+  };
+
+  const handleUpdatePageSeo = (updated: Record<string, PageSeo>) => {
+    setPageSeo(updated);
+    syncToFirestore({ pageSeo: updated });
+    triggerToast("SEO-Einstellungen gespeichert!");
     triggerToast("Logo Branding synchronisiert!");
   };
 
@@ -769,6 +794,8 @@ export default function App() {
             onUpdateConfiguratorData={handleUpdateConfiguratorData}
             logoImage={logoImage}
             onUpdateLogoImage={handleUpdateLogoImage}
+            pageSeo={pageSeo}
+            onUpdatePageSeo={handleUpdatePageSeo}
             lastSyncedAt={lastSyncedAt}
             onRefreshFromCloud={handleRefreshFromCloud}
           />

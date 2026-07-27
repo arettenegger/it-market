@@ -74,7 +74,7 @@ import {
   MultiFactorResolver,
   TotpSecret,
 } from "firebase/auth";
-import { Product, BlogPost, ConfiguratorData, ConfiguratorOption, Review, Category, getSpecLabels } from "../types";
+import { Product, BlogPost, ConfiguratorData, ConfiguratorOption, Review, Category, PageSeo, getSpecLabels } from "../types";
 import { PRODUCTS, INITIAL_BLOG_POSTS, DEFAULT_CONFIGURATOR_DATA, CATEGORIES } from "../data";
 import { 
   fetchAllSubscribers, 
@@ -98,6 +98,8 @@ interface AdminPanelProps {
   onUpdateConfiguratorData?: (updatedConfig: ConfiguratorData) => void;
   logoImage?: string;
   onUpdateLogoImage?: (url: string) => void;
+  pageSeo?: Record<string, PageSeo>;
+  onUpdatePageSeo?: (updated: Record<string, PageSeo>) => void;
   lastSyncedAt?: Date | null;
   onRefreshFromCloud?: () => Promise<void>;
 }
@@ -117,11 +119,43 @@ export default function AdminPanel({
   onUpdateConfiguratorData,
   logoImage,
   onUpdateLogoImage,
+  pageSeo = {},
+  onUpdatePageSeo,
   lastSyncedAt,
   onRefreshFromCloud
 }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<"products" | "configurator" | "inquiries" | "callbacks" | "newsletter" | "analytics" | "blog" | "reviews" | "categories" | "logo" | "storage">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "configurator" | "inquiries" | "callbacks" | "newsletter" | "analytics" | "blog" | "reviews" | "categories" | "logo" | "storage" | "seo">("products");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // --- SEO-Manager: Unterseiten-Routen + lokale Entwürfe ---
+  const SEO_ROUTES: { key: string; label: string }[] = [
+    { key: "/", label: "Startseite" },
+    { key: "/blog", label: "Blog / Ratgeber" },
+    { key: "/kategorie/kameras", label: "Kategorie: IP-Kameras" },
+    { key: "/kategorie/netzwerke", label: "Kategorie: Netzwerke" },
+    { key: "/kategorie/hotspot", label: "Kategorie: Hotspot" },
+    { key: "/kategorie/nas", label: "Kategorie: NAS" },
+    { key: "/kategorie/pc-hardware", label: "Kategorie: PC-Hardware" },
+    { key: "/kategorie/smarthome", label: "Kategorie: Smart-Home" },
+    { key: "/kontakt", label: "Kontakt" },
+    { key: "/ueber-uns", label: "Über uns" },
+    { key: "/impressum", label: "Impressum" },
+    { key: "/datenschutz", label: "Datenschutz" },
+  ];
+  const [seoSection, setSeoSection] = useState<"pages" | "blog" | "products">("pages");
+  const [seoPageDraft, setSeoPageDraft] = useState<Record<string, PageSeo>>({});
+  const [seoBlogDraft, setSeoBlogDraft] = useState<BlogPost[]>([]);
+  const [seoProductDraft, setSeoProductDraft] = useState<Product[]>([]);
+  const [seoSavedMsg, setSeoSavedMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (activeTab === "seo") {
+      setSeoPageDraft({ ...pageSeo });
+      setSeoBlogDraft(blogPosts.map((p) => ({ ...p })));
+      setSeoProductDraft(products.map((p) => ({ ...p })));
+      setSeoSavedMsg(null);
+    }
+  }, [activeTab]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
 
@@ -2147,6 +2181,18 @@ export default function AdminPanel({
           </button>
 
           <button
+            onClick={() => setActiveTab("seo")}
+            className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all text-left cursor-pointer ${
+              activeTab === "seo"
+                ? "bg-[#FF5E2E] text-white shadow-lg shadow-[#FF5E2E]/10 font-bold"
+                : "text-slate-400 hover:text-white hover:bg-slate-900"
+            }`}
+          >
+            <Search className="w-4 h-4 shrink-0" />
+            SEO &amp; Meta
+          </button>
+
+          <button
             onClick={() => setActiveTab("blog")}
             className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all text-left cursor-pointer ${
               activeTab === "blog" 
@@ -2285,6 +2331,7 @@ export default function AdminPanel({
               { id: "shopconfig", label: "Shop-Texte" },
               { id: "subscribers", label: "Newsletter", count: subscribers.length },
               { id: "analytics", label: "Statistiken" },
+              { id: "seo", label: "SEO & Meta" },
               { id: "blog", label: "Blog", count: blogPosts.length },
               { id: "reviews", label: "Bewertungen", count: reviews.length },
               { id: "categories", label: "Kategorien", count: categories.length },
@@ -3260,6 +3307,112 @@ export default function AdminPanel({
           )}
 
           {/* TAB 4: SYSTEM STATISTICS */}
+          {activeTab === "seo" && (
+            <div className="space-y-6 animate-fadeIn pb-12 text-left">
+              <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 shadow-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Search className="w-5 h-5 text-[#FF5E2E]" />
+                  <h3 className="text-lg font-extrabold text-white font-display">SEO &amp; Meta-Daten</h3>
+                </div>
+                <p className="text-xs text-slate-400 mb-4 leading-relaxed">
+                  Titel und Beschreibung bestimmen, wie deine Seiten bei Google erscheinen. Keywords sind ergänzend (Google gewichtet vor allem Titel, Beschreibung &amp; Inhalt).
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  {([["pages", "Unterseiten"], ["blog", "Blog-Artikel"], ["products", "Produkte"]] as const).map(([id, label]) => (
+                    <button key={id} type="button" onClick={() => setSeoSection(id)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${seoSection === id ? "bg-[#FF5E2E] text-white" : "bg-slate-900 text-slate-400 hover:text-white border border-slate-800"}`}>{label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {seoSection === "pages" && (
+                <div className="space-y-4">
+                  {SEO_ROUTES.map((r) => {
+                    const v = seoPageDraft[r.key] || {};
+                    return (
+                      <div key={r.key} className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-bold text-white">{r.label}</span>
+                          <code className="text-[10px] text-slate-500 font-mono">it-market.at{r.key}</code>
+                        </div>
+                        <div className="grid gap-3">
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">SEO-Titel</label>
+                            <input value={v.title || ""} onChange={(e) => setSeoPageDraft((d) => ({ ...d, [r.key]: { ...d[r.key], title: e.target.value } }))} placeholder="Wird sonst automatisch gesetzt" className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E] mt-1" />
+                            <span className={`text-[10px] ${(v.title || "").length > 60 ? "text-amber-400" : "text-slate-500"}`}>{(v.title || "").length}/60 Zeichen</span>
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Meta-Beschreibung</label>
+                            <textarea value={v.description || ""} onChange={(e) => setSeoPageDraft((d) => ({ ...d, [r.key]: { ...d[r.key], description: e.target.value } }))} rows={2} placeholder="1–2 Sätze, die bei Google unter dem Titel erscheinen" className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E] mt-1 resize-none" />
+                            <span className={`text-[10px] ${(v.description || "").length > 160 ? "text-amber-400" : "text-slate-500"}`}>{(v.description || "").length}/160 Zeichen</span>
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Keywords (kommagetrennt)</label>
+                            <input value={v.keywords || ""} onChange={(e) => setSeoPageDraft((d) => ({ ...d, [r.key]: { ...d[r.key], keywords: e.target.value } }))} placeholder="z. B. IP-Kamera, Überwachung, Netzwerk" className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E] mt-1" />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <button onClick={() => { onUpdatePageSeo?.(seoPageDraft); setSeoSavedMsg("Unterseiten-SEO gespeichert. Für das vorgerenderte HTML einmal neu deployen (Hostinger → GIT/Deploy)."); }} className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold cursor-pointer transition-all">Unterseiten-SEO speichern</button>
+                </div>
+              )}
+
+              {seoSection === "blog" && (
+                <div className="space-y-4">
+                  {seoBlogDraft.length === 0 && <p className="text-xs text-slate-500">Keine Blog-Artikel vorhanden.</p>}
+                  {seoBlogDraft.map((p, i) => (
+                    <div key={p.id} className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
+                      <span className="text-sm font-bold text-white block mb-3">{p.title}</span>
+                      <div className="grid gap-3">
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">SEO-Titel</label>
+                          <input value={p.seoTitle || ""} onChange={(e) => setSeoBlogDraft((d) => d.map((x, xi) => (xi === i ? { ...x, seoTitle: e.target.value } : x)))} placeholder={p.title} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E] mt-1" />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Meta-Beschreibung</label>
+                          <textarea value={p.metaDescription || ""} onChange={(e) => setSeoBlogDraft((d) => d.map((x, xi) => (xi === i ? { ...x, metaDescription: e.target.value } : x)))} rows={2} placeholder={p.excerpt} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E] mt-1 resize-none" />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Keywords / Tags (kommagetrennt)</label>
+                          <input value={(p.tags || []).join(", ")} onChange={(e) => setSeoBlogDraft((d) => d.map((x, xi) => (xi === i ? { ...x, tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) } : x)))} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E] mt-1" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {seoBlogDraft.length > 0 && <button onClick={() => { onUpdateBlogPosts(seoBlogDraft); setSeoSavedMsg("Blog-SEO gespeichert."); }} className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold cursor-pointer transition-all">Blog-SEO speichern</button>}
+                </div>
+              )}
+
+              {seoSection === "products" && (
+                <div className="space-y-4">
+                  {seoProductDraft.length === 0 && <p className="text-xs text-slate-500">Keine Produkte vorhanden.</p>}
+                  {seoProductDraft.map((p, i) => (
+                    <div key={p.id} className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
+                      <span className="text-sm font-bold text-white block mb-3">{p.name}</span>
+                      <div className="grid gap-3">
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">SEO-Titel</label>
+                          <input value={p.seoTitle || ""} onChange={(e) => setSeoProductDraft((d) => d.map((x, xi) => (xi === i ? { ...x, seoTitle: e.target.value } : x)))} placeholder={p.name} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E] mt-1" />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Meta-Beschreibung</label>
+                          <textarea value={p.metaDescription || ""} onChange={(e) => setSeoProductDraft((d) => d.map((x, xi) => (xi === i ? { ...x, metaDescription: e.target.value } : x)))} rows={2} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E] mt-1 resize-none" />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Keywords (kommagetrennt)</label>
+                          <input value={p.keywords || ""} onChange={(e) => setSeoProductDraft((d) => d.map((x, xi) => (xi === i ? { ...x, keywords: e.target.value } : x)))} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E] mt-1" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {seoProductDraft.length > 0 && <button onClick={() => { onUpdateProducts(seoProductDraft); setSeoSavedMsg("Produkt-SEO gespeichert."); }} className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold cursor-pointer transition-all">Produkt-SEO speichern</button>}
+                </div>
+              )}
+
+              {seoSavedMsg && <p className="text-xs text-emerald-400 font-semibold">{seoSavedMsg}</p>}
+            </div>
+          )}
+
           {activeTab === "analytics" && (
             <div className="space-y-6 text-left">
               

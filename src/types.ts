@@ -22,6 +22,17 @@ export interface Product {
     storage: string;
     power: string;
   };
+  // SEO (optional)
+  seoTitle?: string;
+  metaDescription?: string;
+  keywords?: string;
+}
+
+// SEO-Daten für Unterseiten (Startseite, Kategorien, Blog, Kontakt …)
+export interface PageSeo {
+  title?: string;
+  description?: string;
+  keywords?: string;
 }
 
 export interface CartItem {
@@ -82,6 +93,9 @@ export interface BlogPost {
   tags: string[];
   isPublished: boolean;
   featured?: boolean;
+  // SEO (optional; tags dienen zugleich als Keywords)
+  seoTitle?: string;
+  metaDescription?: string;
 }
 
 export interface ConfiguratorOption {
