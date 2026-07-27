@@ -20,7 +20,7 @@ function randomId(): string {
  * zurück (z. B. SVG).
  */
 export async function compressImageToBlob(
-  file: File,
+  file: Blob,
   maxSize = 1000,
   quality = 0.85
 ): Promise<Blob> {
@@ -143,6 +143,49 @@ export async function uploadDataUrlToStorage(
     ? "png"
     : type.includes("jpeg") || type.includes("jpg")
     ? "jpg"
+    : type.includes("gif")
+    ? "gif"
+    : "img";
+  const path = `${folder}/${randomId()}.${ext}`;
+  const storageRef = ref(storage, path);
+  await uploadBytes(storageRef, blob, { contentType: type });
+  return await getDownloadURL(storageRef);
+}
+
+/**
+ * Kopiert ein Bild von einer beliebigen (externen) URL nach Firebase Storage,
+ * komprimiert es dabei und gibt die neue Storage-URL zurück.
+ *
+ * Wird u. a. für Blogbilder genutzt, die von Drittanbietern (z. B. WorkRocket)
+ * kommen – so werden sie unabhängig vom externen Anbieter und klein gerechnet.
+ * - Leere Werte / bereits-Storage-URLs werden unverändert zurückgegeben.
+ * - Base64-Data-URLs werden an uploadDataUrlToStorage weitergereicht.
+ * - Schlägt der Download fehl (z. B. fehlendes CORS), wirft die Funktion –
+ *   der Aufrufer soll dann die Original-URL behalten.
+ */
+export async function uploadImageUrlToStorage(
+  url: string,
+  folder = "blog",
+  maxSize = 1200,
+  quality = 0.82
+): Promise<string> {
+  if (!url) return url;
+  if (url.startsWith("data:")) return uploadDataUrlToStorage(url, folder);
+  if (url.includes("firebasestorage.googleapis.com")) return url;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Download fehlgeschlagen: HTTP " + res.status);
+  const raw = await res.blob();
+  const blob = await compressImageToBlob(raw, maxSize, quality);
+  const type = blob.type || "image/webp";
+  const ext = type.includes("webp")
+    ? "webp"
+    : type.includes("png")
+    ? "png"
+    : type.includes("jpeg") || type.includes("jpg")
+    ? "jpg"
+    : type.includes("svg")
+    ? "svg"
     : type.includes("gif")
     ? "gif"
     : "img";

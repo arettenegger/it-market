@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { VideoBackground } from "./VideoBackground";
 import { FirebaseStorageManager } from "./FirebaseStorageManager";
-import { uploadImageToStorage, uploadFileToStorage, uploadDataUrlToStorage } from "../lib/storageService";
+import { uploadImageToStorage, uploadFileToStorage, uploadDataUrlToStorage, uploadImageUrlToStorage } from "../lib/storageService";
 import { fetchInquiries, fetchCallbacks, deleteInquiry, deleteCallback, updateCallbackStatus } from "../lib/leadsService";
 import { 
   Database, 
@@ -733,6 +733,7 @@ export default function AdminPanel({
   const [blogIsPublished, setBlogIsPublished] = useState(true);
   const [blogIsFeatured, setBlogIsFeatured] = useState(false);
   const [isUploadingBlogImage, setIsUploadingBlogImage] = useState(false);
+  const [isSavingBlog, setIsSavingBlog] = useState(false);
 
   // WordRocket Quick Import State
   const [isWordRocketImportOpen, setIsWordRocketImportOpen] = useState(false);
@@ -1500,11 +1501,27 @@ export default function AdminPanel({
   };
 
   // Save Blog Post
-  const handleSaveBlogPost = (e: React.FormEvent) => {
+  const handleSaveBlogPost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!blogTitle.trim()) {
       alert("Bitte geben Sie einen Titel ein.");
       return;
+    }
+
+    // Blogbild nach Firebase Storage übernehmen (falls externe URL, z. B. von
+    // WorkRocket) – komprimiert und unabhängig vom Drittanbieter. Bei Fehler
+    // (z. B. kein CORS) bleibt die Original-URL erhalten, kein Bild geht verloren.
+    let finalImage = blogImage;
+    if (blogImage && !blogImage.includes("firebasestorage.googleapis.com")) {
+      setIsSavingBlog(true);
+      try {
+        finalImage = await uploadImageUrlToStorage(blogImage, "blog", 1200, 0.82);
+      } catch (err) {
+        console.warn("Blogbild konnte nicht nach Storage kopiert werden – Original-URL bleibt erhalten:", err);
+        finalImage = blogImage;
+      } finally {
+        setIsSavingBlog(false);
+      }
     }
 
     const tagsArray = blogTags
@@ -1526,7 +1543,7 @@ export default function AdminPanel({
         author: blogAuthor,
         date: blogDate.trim() || formattedDate,
         readTime: blogReadTime,
-        image: blogImage || "https://images.unsplash.com/photo-1557597774-9d273605dfa9?q=80&w=800&auto=format&fit=crop",
+        image: finalImage || "https://images.unsplash.com/photo-1557597774-9d273605dfa9?q=80&w=800&auto=format&fit=crop",
         tags: tagsArray,
         isPublished: blogIsPublished,
         featured: blogIsFeatured
@@ -1545,7 +1562,7 @@ export default function AdminPanel({
             date: blogDate.trim() || post.date,
             readTime: blogReadTime,
             tags: tagsArray,
-            image: blogImage || post.image,
+            image: finalImage || post.image,
             isPublished: blogIsPublished,
             featured: blogIsFeatured
           };
@@ -3856,9 +3873,11 @@ export default function AdminPanel({
 
                       <button
                         type="submit"
-                        className="px-6 py-2 bg-[#FF5E2E] hover:bg-[#e04e22] text-white rounded-xl text-xs font-extrabold transition-all shadow-lg shadow-[#FF5E2E]/20 cursor-pointer"
+                        disabled={isSavingBlog}
+                        className="px-6 py-2 bg-[#FF5E2E] hover:bg-[#e04e22] text-white rounded-xl text-xs font-extrabold transition-all shadow-lg shadow-[#FF5E2E]/20 cursor-pointer flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        {isAddingNewBlog ? "Artikel erstellen" : "Änderungen speichern"}
+                        {isSavingBlog && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                        {isSavingBlog ? "Speichere & lade Bild…" : (isAddingNewBlog ? "Artikel erstellen" : "Änderungen speichern")}
                       </button>
                     </div>
                   </div>
