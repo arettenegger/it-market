@@ -13,6 +13,11 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
 RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
 RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 
+# --- Alte WordPress/Yoast-Sitemaps sind entfernt -> 410 Gone (statt SPA-HTML) ---
+# (betrifft NICHT die aktuelle /sitemap.xml)
+RewriteRule ^sitemap_index\.xml$ - [G]
+RewriteRule ^[a-z0-9_-]+-sitemap[0-9]*\.xml$ - [G]
+
 # --- SPA-Fallback: alle nicht existierenden Pfade -> index.html
 # Wichtig u.a. für die Newsletter-Bestätigung (?confirm_newsletter=…)
 # und Deep-Links. Echte Dateien/Ordner werden direkt ausgeliefert.
