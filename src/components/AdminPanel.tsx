@@ -117,7 +117,7 @@ export default function AdminPanel({
   lastSyncedAt,
   onRefreshFromCloud
 }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<"products" | "configurator" | "inquiries" | "callbacks" | "newsletter" | "analytics" | "blog" | "reviews" | "categories" | "logo" | "storage" | "firebase-sync">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "configurator" | "inquiries" | "callbacks" | "newsletter" | "analytics" | "blog" | "reviews" | "categories" | "logo" | "storage">("products");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
@@ -2085,20 +2085,6 @@ export default function AdminPanel({
             </span>
           </button>
 
-          <button
-            onClick={() => setActiveTab("firebase-sync")}
-            className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all text-left cursor-pointer ${
-              activeTab === "firebase-sync" 
-                ? "bg-[#FF5E2E] text-white shadow-lg shadow-[#FF5E2E]/10 font-bold" 
-                : "text-slate-400 hover:text-white hover:bg-slate-900"
-            }`}
-          >
-            <Cloud className="w-4 h-4 shrink-0 text-emerald-400" />
-            Firebase & Sync
-            <span className="ml-auto bg-emerald-500/20 text-emerald-300 border border-emerald-500/20 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-              Live
-            </span>
-          </button>
 
           <div className="pt-8 border-t border-slate-800 mt-8 space-y-3 px-2">
             <button
@@ -4930,109 +4916,6 @@ export default function AdminPanel({
                   alert(`URL wurde kopiert: ${url}\nSie können diese in den Hero-Einstellungen einfügen.`);
                 }}
               />
-            </div>
-          )}
-          {activeTab === "firebase-sync" && (
-            <div className="space-y-6 animate-fadeIn pb-12">
-              <div className="bg-slate-950 p-6 rounded-2xl border border-emerald-500/30 shadow-xl space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
-                      <Cloud className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-extrabold text-white font-display">
-                        Echtes Live-Realtime für alle Internet-Besucher (Eigenes Firebase-Projekt)
-                      </h3>
-                      <p className="text-xs text-slate-400">
-                        Verbinden Sie Ihr eigenes kostenloses Firebase-Projekt, um Quota-Limits des Sandboxes zu umgehen und weltweites Realtime für alle Besucher auf <strong className="text-emerald-300">it-market.at</strong> zu garantieren.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-2">
-                  <p className="font-bold text-emerald-300">Schritt-für-Schritt Anleitung:</p>
-                  <ol className="list-decimal list-inside space-y-1 text-[11px] text-slate-300">
-                    <li>Öffnen Sie die <a href="https://console.firebase.google.com" target="_blank" rel="noreferrer" className="text-cyan-400 underline font-semibold">Firebase Console</a>.</li>
-                    <li>Erstellen Sie ein kostenloses Projekt (Blaze- oder Spark-Tarif).</li>
-                    <li>Erstellen Sie eine Web-App und kopieren Sie das <code className="text-amber-400">firebaseConfig</code> JSON.</li>
-                    <li>Fügen Sie das JSON unten ein und speichern Sie es ab.</li>
-                  </ol>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-300 block">Ihre Firebase Konfiguration (JSON):</label>
-                  <textarea
-                    value={customFirebaseJson}
-                    onChange={(e) => setCustomFirebaseJson(e.target.value)}
-                    placeholder={'{\n  "apiKey": "AIzaSy...",\n  "authDomain": "...",\n  "projectId": "...",\n  "storageBucket": "...",\n  "messagingSenderId": "...",\n  "appId": "..."\n}'}
-                    rows={6}
-                    className="w-full bg-slate-900 border border-slate-800 focus:border-emerald-500 rounded-xl p-3 text-xs font-mono text-slate-200 outline-none"
-                  />
-                </div>
-
-                <div className="flex items-center justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={handleSaveCustomFirebase}
-                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition-all cursor-pointer"
-                  >
-                    Konfiguration speichern & Seite neu laden
-                  </button>
-                </div>
-              </div>
-
-              {/* Full Shop Backup & Sync Card */}
-              <div className="bg-slate-950 p-6 rounded-2xl border border-cyan-500/30 shadow-xl space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-cyan-500/10 border border-cyan-500/20 rounded-xl text-cyan-400">
-                      <FileJson className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-extrabold text-white font-display">
-                        Komplettes Shop-Backup & Geräte-Sync (JSON)
-                      </h3>
-                      <p className="text-xs text-slate-400">
-                        Exportieren oder importieren Sie alle Produkte, Blog-Artikel und Kategorien als JSON-Datei.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                  <button
-                    onClick={handleExportFullShop}
-                    className="p-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 rounded-xl flex items-center gap-3 transition-all cursor-pointer group text-left"
-                  >
-                    <div className="p-2.5 bg-cyan-500/10 rounded-lg text-cyan-400 group-hover:scale-110 transition-transform">
-                      <Download className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-white block">Backup Herunterladen</span>
-                      <span className="text-[10px] text-slate-400">Speichert alle Shop-Daten als JSON</span>
-                    </div>
-                  </button>
-
-                  <label className="p-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/50 rounded-xl flex items-center gap-3 transition-all cursor-pointer group text-left">
-                    <div className="p-2.5 bg-emerald-500/10 rounded-lg text-emerald-400 group-hover:scale-110 transition-transform">
-                      <Upload className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-white block">Backup Einspielen / Hochladen</span>
-                      <span className="text-[10px] text-slate-400">Importiert JSON-Datei</span>
-                    </div>
-                    <input 
-                      type="file" 
-                      accept=".json" 
-                      ref={fullShopFileInputRef}
-                      onChange={handleImportFullShop} 
-                      className="hidden" 
-                    />
-                  </label>
-                </div>
-              </div>
             </div>
           )}
           {activeTab === "logo" && (
