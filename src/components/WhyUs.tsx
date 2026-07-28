@@ -45,16 +45,6 @@ export default function WhyUs() {
                 }}
               />
               
-              {/* Floating translucent feature glass-overlay inside image */}
-              <div className="absolute bottom-6 inset-x-6 bg-slate-950/85 backdrop-blur-md rounded-2xl p-5 border border-white/10 text-white flex items-center gap-4 shadow-xl">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white flex-shrink-0 animate-bounce">
-                  <Award className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold font-display">TÜV SÜD Zertifiziert</h4>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Höchste Standards für Datenschutz & DSGVO-Konformität.</p>
-                </div>
-              </div>
             </div>
 
             {/* Overlapping small visual micro-stats */}
