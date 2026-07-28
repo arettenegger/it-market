@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { VideoBackground } from "./VideoBackground";
 import { Category, Product, ConfiguratorData, getSpecLabels, formatPrice } from "../types";
 import { CATEGORIES } from "../data";
+import { productSlug } from "../lib/slug";
 import { 
   ArrowLeft, Cpu, Shield, Server, RotateCw, Eye, CheckCircle2, 
   Sparkles, Wrench, Headphones, Award, ShoppingBag, Heart, Star, 
@@ -20,6 +21,7 @@ interface CategoryPageProps {
   onBackToHome: () => void;
   onOpenCallback: (prefilledMsg?: string) => void;
   onSelectCategory: (catName: string) => void;
+  onOpenProduct: (product: Product) => void;
   configuratorData?: ConfiguratorData;
 }
 
@@ -32,6 +34,7 @@ export default function CategoryPage({
   onBackToHome,
   onOpenCallback,
   onSelectCategory,
+  onOpenProduct,
   configuratorData
 }: CategoryPageProps) {
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
@@ -395,7 +398,11 @@ export default function CategoryPage({
                     </button>
 
                     {/* Product Visual Area */}
-                    <div className="relative h-48 sm:h-52 bg-slate-50 rounded-xl flex items-center justify-center p-2 mb-3 overflow-hidden group-hover:scale-[1.01] transition-transform">
+                    <a
+                      href={`/produkt/${productSlug(product)}`}
+                      onClick={(e) => { e.preventDefault(); onOpenProduct(product); }}
+                      aria-label={product.name}
+                      className="relative h-48 sm:h-52 bg-slate-50 rounded-xl flex items-center justify-center p-2 mb-3 overflow-hidden group-hover:scale-[1.01] transition-transform block cursor-pointer">
                       <div className="absolute inset-0 bg-gradient-to-tr from-blue-50/20 via-transparent to-slate-100/50"></div>
                       <div className="w-full h-full relative transition-transform duration-500 group-hover:scale-[1.03] flex items-center justify-center">
                         {product.image && (product.image.startsWith("http") || product.image.startsWith("data:")) ? (
@@ -416,7 +423,7 @@ export default function CategoryPage({
                           </div>
                         )}
                       </div>
-                    </div>
+                    </a>
 
                     {/* Rating */}
                     <div className="flex items-center gap-1.5 mb-1.5">
@@ -428,9 +435,11 @@ export default function CategoryPage({
                     </div>
 
                     {/* Title */}
-                    <h3 className="font-extrabold font-display text-sm text-slate-900 mb-2 leading-snug group-hover:text-red-600 transition-colors line-clamp-2">
-                      {product.name}
-                    </h3>
+                    <a href={`/produkt/${productSlug(product)}`} onClick={(e) => { e.preventDefault(); onOpenProduct(product); }}>
+                      <h3 className="font-extrabold font-display text-sm text-slate-900 mb-2 leading-snug group-hover:text-red-600 transition-colors line-clamp-2 cursor-pointer">
+                        {product.name}
+                      </h3>
+                    </a>
 
                     {/* Divider */}
                     <hr className="border-t border-slate-100 my-2" />

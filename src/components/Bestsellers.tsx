@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Heart, ShoppingCart, Check, Info, ShieldAlert, Sparkles, X } from "lucide-react";
 import { Product, getSpecLabels, formatPrice } from "../types";
 import { PRODUCTS } from "../data";
+import { productSlug } from "../lib/slug";
 import CameraSvg from "./CameraSvg";
 
 interface BestsellersProps {
@@ -9,6 +10,7 @@ interface BestsellersProps {
   wishlist: string[];
   onToggleWishlist: (id: string) => void;
   onAddToCart: (product: Product, color: string) => void;
+  onOpenProduct: (product: Product) => void;
   selectedCategory: string | null;
 }
 
@@ -17,6 +19,7 @@ export default function Bestsellers({
   wishlist,
   onToggleWishlist,
   onAddToCart,
+  onOpenProduct,
   selectedCategory
 }: BestsellersProps) {
   const [activeQuickDetail, setActiveQuickDetail] = useState<Product | null>(null);
@@ -120,7 +123,12 @@ export default function Bestsellers({
                       <Sparkles className="w-3.5 h-3.5 animate-pulse-subtle" />
                     </div>
 
-                    <div className="w-full h-full relative transition-transform duration-500 group-hover:scale-[1.03] flex items-center justify-center">
+                    <a
+                      href={`/produkt/${productSlug(product)}`}
+                      onClick={(e) => { e.preventDefault(); onOpenProduct(product); }}
+                      aria-label={product.name}
+                      className="w-full h-full relative transition-transform duration-500 group-hover:scale-[1.03] flex items-center justify-center cursor-pointer"
+                    >
                       {product.image.startsWith("http") || product.image.startsWith("data:") ? (
                         <img 
                           src={product.image} 
@@ -138,7 +146,7 @@ export default function Bestsellers({
                           />
                         </div>
                       )}
-                    </div>
+                    </a>
 
                     {/* Stock Alert Status */}
                     <span className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-md text-[9px] text-emerald-600 font-bold px-2 py-0.5 rounded-full border border-slate-100 shadow-sm flex items-center gap-1">
@@ -169,9 +177,11 @@ export default function Bestsellers({
                       </div>
                     </div>
 
-                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-red-600 transition-colors font-display line-clamp-1 mb-1.5">
-                      {product.name}
-                    </h3>
+                    <a href={`/produkt/${productSlug(product)}`} onClick={(e) => { e.preventDefault(); onOpenProduct(product); }}>
+                      <h3 className="text-sm font-bold text-slate-900 group-hover:text-red-600 transition-colors font-display line-clamp-1 mb-1.5 cursor-pointer">
+                        {product.name}
+                      </h3>
+                    </a>
 
                     {/* Specifications on Card */}
                     {(() => {

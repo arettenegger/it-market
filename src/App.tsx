@@ -25,7 +25,9 @@ const ImpressumModal = lazy(() => import("./components/ImpressumModal"));
 const DatenschutzModal = lazy(() => import("./components/DatenschutzModal"));
 const AboutUsModal = lazy(() => import("./components/AboutUsModal"));
 const ContactPage = lazy(() => import("./components/ContactPage"));
+const ProductPage = lazy(() => import("./components/ProductPage"));
 import { Product, CartItem, BlogPost, ConfiguratorData, Review, Category, PageSeo, formatPrice } from "./types";
+import { productSlug, resolveProduct } from "./lib/slug";
 import { PRODUCTS, INITIAL_BLOG_POSTS, DEFAULT_CONFIGURATOR_DATA, REVIEWS, CATEGORIES } from "./data";
 import { initAnalytics, trackPageView } from "./lib/analytics";
 import { recordPageView } from "./lib/pageStats";
@@ -75,14 +77,15 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   throw new Error(JSON.stringify(errInfo));
 }
 
-type PageKey = "home" | "blog" | "category" | "impressum" | "datenschutz" | "about" | "kontakt";
+type PageKey = "home" | "blog" | "category" | "product" | "impressum" | "datenschutz" | "about" | "kontakt";
 const CATEGORY_IDS = ["pc-hardware", "netzwerke", "hotspot", "nas", "kameras", "smarthome"];
 
 // URL <-> Ansicht (echte Adressen für SEO & Deep-Links)
-function buildPath(page: PageKey, categoryId?: string): string {
+function buildPath(page: PageKey, categoryId?: string, slug?: string): string {
   switch (page) {
     case "blog": return "/blog";
     case "category": return "/kategorie/" + (categoryId || "pc-hardware");
+    case "product": return "/produkt/" + (slug || "");
     case "kontakt": return "/kontakt";
     case "about": return "/ueber-uns";
     case "impressum": return "/impressum";
@@ -90,13 +93,16 @@ function buildPath(page: PageKey, categoryId?: string): string {
     default: return "/";
   }
 }
-function parsePath(pathname: string): { page: PageKey; categoryId?: string } {
+function parsePath(pathname: string): { page: PageKey; categoryId?: string; productSlug?: string } {
   const p = (pathname || "/").replace(/\/+$/, "") || "/";
   if (p === "/blog") return { page: "blog" };
   if (p === "/kontakt") return { page: "kontakt" };
   if (p === "/ueber-uns") return { page: "about" };
   if (p === "/impressum") return { page: "impressum" };
   if (p === "/datenschutz") return { page: "datenschutz" };
+  if (p.startsWith("/produkt/")) {
+    return { page: "product", productSlug: decodeURIComponent(p.slice("/produkt/".length)) };
+  }
   if (p.startsWith("/kategorie/")) {
     const id = p.slice("/kategorie/".length);
     return { page: "category", categoryId: CATEGORY_IDS.includes(id) ? id : "pc-hardware" };
@@ -108,6 +114,7 @@ const initialRoute = parsePath(typeof window !== "undefined" ? window.location.p
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageKey>(initialRoute.page);
   const [activeCategoryId, setActiveCategoryId] = useState<string>(initialRoute.categoryId || "pc-hardware");
+  const [activeProductSlug, setActiveProductSlug] = useState<string>(initialRoute.productSlug || "");
   const [callbackTopic, setCallbackTopic] = useState<string>("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
@@ -297,12 +304,19 @@ export default function App() {
   // Eigener Seitentitel je Ansicht (SEO)
   useEffect(() => {
     const base = "IT-MARKET — Sicherheit, Netzwerk & IT-Hardware";
-    const routeKey = buildPath(currentPage, activeCategoryId);
+    const routeKey = buildPath(currentPage, activeCategoryId, activeProductSlug);
     const seo = pageSeo[routeKey];
     let title = base;
+    let description = "";
     if (currentPage === "category") {
       const cat = categories.find((c) => c.id === activeCategoryId);
       title = cat ? `${cat.name} kaufen & Angebot anfordern | IT-MARKET` : base;
+    } else if (currentPage === "product") {
+      const prod = resolveProduct(products, activeProductSlug);
+      if (prod) {
+        title = prod.seoTitle || `${prod.name} kaufen & Angebot anfordern | IT-MARKET`;
+        description = prod.metaDescription || `${prod.name} bei IT-MARKET Österreich – ${(prod.description || "").slice(0, 130)}`;
+      }
     } else if (currentPage === "blog") {
       title = "Ratgeber & Technik-Magazin | IT-MARKET";
     } else if (currentPage === "kontakt") {
@@ -315,22 +329,47 @@ export default function App() {
       title = "Datenschutz | IT-MARKET";
     }
     if (seo?.title) title = seo.title;
+    if (seo?.description) description = seo.description;
     document.title = title;
-    // Meta-Beschreibung setzen, falls im SEO-Manager hinterlegt
-    if (seo?.description) {
+
+    // Meta-Beschreibung setzen (falls für diese Route bekannt)
+    if (description) {
       let m = document.querySelector('meta[name="description"]');
       if (!m) {
         m = document.createElement("meta");
         m.setAttribute("name", "description");
         document.head.appendChild(m);
       }
-      m.setAttribute("content", seo.description);
+      m.setAttribute("content", description);
     }
+
+    // Canonical + Open Graph bei jeder (auch client-seitigen) Navigation aktualisieren
+    const canonicalUrl = "https://it-market.at" + routeKey;
+    let linkC = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!linkC) {
+      linkC = document.createElement("link");
+      linkC.setAttribute("rel", "canonical");
+      document.head.appendChild(linkC);
+    }
+    linkC.setAttribute("href", canonicalUrl);
+    const setOg = (prop: string, val: string) => {
+      if (!val) return;
+      let el = document.querySelector(`meta[property="${prop}"]`);
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute("property", prop);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", val);
+    };
+    setOg("og:url", canonicalUrl);
+    setOg("og:title", title);
+    if (description) setOg("og:description", description);
     // Seitenaufruf an Google Analytics melden (SPA-Navigation)
     trackPageView(routeKey, title);
     // Eigener anonymer Zähler (cookielos, unabhängig vom Consent)
     recordPageView(routeKey);
-  }, [currentPage, activeCategoryId, categories, pageSeo]);
+  }, [currentPage, activeCategoryId, activeProductSlug, products, categories, pageSeo]);
 
   // Browser Zurück/Vorwärts-Buttons unterstützen (URL -> Ansicht) + Analytics init
   useEffect(() => {
@@ -339,6 +378,7 @@ export default function App() {
       const r = parsePath(window.location.pathname);
       setCurrentPage(r.page);
       if (r.categoryId) setActiveCategoryId(r.categoryId);
+      setActiveProductSlug(r.productSlug || "");
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -577,6 +617,15 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleNavigateProduct = (product: Product) => {
+    if (!product) return;
+    const slug = productSlug(product);
+    setActiveProductSlug(slug);
+    setCurrentPage("product");
+    window.history.pushState(null, "", buildPath("product", undefined, slug));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleOpenCallbackWithTopic = (topicMsg?: string) => {
     if (topicMsg) {
       setCallbackTopic(topicMsg);
@@ -650,7 +699,18 @@ export default function App() {
             onBackToHome={() => handleNavigatePage("home")}
             onOpenCallback={handleOpenCallbackWithTopic}
             onSelectCategory={handleSelectCategory}
+            onOpenProduct={handleNavigateProduct}
             configuratorData={configuratorData}
+          />
+        ) : currentPage === "product" ? (
+          <ProductPage
+            product={resolveProduct(products, activeProductSlug) || null}
+            allProducts={products}
+            onAddToCart={handleAddToCart}
+            onBackToHome={() => handleNavigatePage("home")}
+            onSelectCategory={handleSelectCategory}
+            onOpenProduct={handleNavigateProduct}
+            onOpenCallback={handleOpenCallbackWithTopic}
           />
         ) : currentPage === "impressum" ? (
           <ImpressumModal onBackToHome={() => handleNavigatePage("home")} />
@@ -693,6 +753,7 @@ export default function App() {
               wishlist={wishlist}
               onToggleWishlist={handleToggleWishlist}
               onAddToCart={handleAddToCart}
+              onOpenProduct={handleNavigateProduct}
               selectedCategory={selectedCategory}
             />
 
