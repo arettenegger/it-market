@@ -208,12 +208,21 @@ export default function Header({
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 md:h-20">
-            {/* Logo */}
-            <div 
-              onClick={() => handleNavClick("hero")} 
-              className="flex items-center cursor-pointer group py-1"
+            {/* Logo + Dienstleistungen (scharfe Textzeile statt winzigem Bild-Untertitel) */}
+            <div
+              onClick={() => handleNavClick("hero")}
+              className="flex items-center gap-3 cursor-pointer group py-1"
             >
               <Logo variant="dark" size="lg" showSubtitle={false} showText={false} logoImage={logoImage} />
+              {/* In der engen lg-Zone (Menü sichtbar, noch schmal) ausgeblendet */}
+              <div className="hidden md:flex lg:hidden xl:flex flex-col justify-center pl-3 border-l border-slate-200 leading-tight">
+                <span className="text-[11px] xl:text-xs font-bold uppercase tracking-wide text-slate-600 whitespace-nowrap">
+                  Netzwerk <span className="text-blue-500">•</span> Hardware
+                </span>
+                <span className="text-[11px] xl:text-xs font-bold uppercase tracking-wide text-slate-600 whitespace-nowrap">
+                  NAS <span className="text-blue-500">•</span> IP-Kameras
+                </span>
+              </div>
             </div>
 
             {/* Desktop Navigation with requested 8 menu items */}
