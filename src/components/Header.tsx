@@ -213,7 +213,7 @@ export default function Header({
               onClick={() => handleNavClick("hero")} 
               className="flex items-center cursor-pointer group py-1"
             >
-              <Logo variant="dark" size="md" showSubtitle={false} showText={false} logoImage={logoImage} />
+              <Logo variant="dark" size="lg" showSubtitle={false} showText={false} logoImage={logoImage} />
             </div>
 
             {/* Desktop Navigation with requested 8 menu items */}
