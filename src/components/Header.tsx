@@ -15,7 +15,8 @@ import {
   HelpCircle,
   Plus,
   Settings,
-  Phone
+  Phone,
+  Mail
 } from "lucide-react";
 import { Product, CartItem, formatPrice } from "../types";
 
@@ -196,6 +197,11 @@ export default function Header({
             <a href="tel:+43725521100" className="flex items-center gap-1.5 font-bold text-white hover:text-emerald-400 transition-colors">
               <Phone className="w-3.5 h-3.5" />
               +43 7255 211 00
+            </a>
+            <span>•</span>
+            <a href="mailto:support@it-market.at" className="flex items-center gap-1.5 font-bold text-white hover:text-emerald-400 transition-colors">
+              <Mail className="w-3.5 h-3.5" />
+              support@it-market.at
             </a>
             <span>•</span>
             <button onClick={onOpenCallback} className="hover:text-white transition-colors cursor-pointer">
