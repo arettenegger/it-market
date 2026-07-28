@@ -433,7 +433,7 @@ export default function CartDrawer({
                         {item.product.image && (item.product.image.startsWith("http") || item.product.image.startsWith("data:")) ? (
                           <img 
                             src={item.product.image} 
-                            alt={item.product.name} 
+                            alt={item.product.imageAlt || item.product.name}
                             className="w-full h-full object-contain"
                             referrerPolicy="no-referrer"
                           />

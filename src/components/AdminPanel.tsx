@@ -847,6 +847,7 @@ export default function AdminPanel({
   const [formFeatures, setFormFeatures] = useState<string[]>([]);
   const [newFeatureText, setNewFeatureText] = useState("");
   const [formImage, setFormImage] = useState("");
+  const [formImageAlt, setFormImageAlt] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   // Specifications
@@ -1032,7 +1033,8 @@ export default function AdminPanel({
     setFormColors(product.colors);
     setFormFeatures(product.features);
     setFormImage(product.image);
-    
+    setFormImageAlt(product.imageAlt || "");
+
     setSpecResolution(product.specs.resolution);
     setSpecViewAngle(product.specs.viewAngle);
     setSpecNightVision(product.specs.nightVision);
@@ -1060,7 +1062,8 @@ export default function AdminPanel({
       "Deutsche Steuerungs-App"
     ]);
     setFormImage("");
-    
+    setFormImageAlt("");
+
     setSpecResolution("2560 x 1440 (4 Megapixel)");
     setSpecViewAngle("110° Horizontal");
     setSpecNightVision("Smart IR-Sicht bis 25m");
@@ -1133,6 +1136,7 @@ export default function AdminPanel({
         rating: 5.0,
         reviewsCount: 1,
         image: formImage ? formImage.trim() : (categoryToSave === "IP-Kameras" ? "bullet" : categoryToSave === "Smart Home" ? "smarthome" : categoryToSave === "NAS-Systeme" ? "nas" : "netzwerk"),
+        imageAlt: formImageAlt.trim() || undefined,
         features: Array.isArray(formFeatures) && formFeatures.length > 0 ? formFeatures : ["Smart AI-Erkennung", "Wetterfest IP67"],
         isBestseller: Boolean(formIsBestseller),
         discount: sanitizedOldPrice > sanitizedPrice && sanitizedOldPrice > 0 ? `-${Math.round((1 - sanitizedPrice / sanitizedOldPrice) * 100)}%` : "0%",
@@ -1164,6 +1168,7 @@ export default function AdminPanel({
             price: sanitizedPrice,
             oldPrice: sanitizedOldPrice,
             image: formImage ? formImage.trim() : p.image,
+            imageAlt: formImageAlt.trim() || undefined,
             features: formFeatures,
             isBestseller: Boolean(formIsBestseller),
             inStock: Boolean(formInStock),
@@ -2821,6 +2826,22 @@ export default function AdminPanel({
                               placeholder="https://images.unsplash.com/... oder leer lassen"
                               className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-200 outline-none focus:border-[#FF5E2E] transition-all font-mono text-[11px]"
                             />
+                          </div>
+
+                          {/* Alt-Text (Bildbeschreibung für SEO & Barrierefreiheit) */}
+                          <div className="space-y-1">
+                            <span className="block text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Alt-Text (Bildbeschreibung)</span>
+                            <input
+                              type="text"
+                              value={formImageAlt}
+                              onChange={(e) => setFormImageAlt(e.target.value)}
+                              placeholder="z. B. SwitchBot Video-Türklingel mit Kamera, weiß"
+                              maxLength={125}
+                              className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-200 outline-none focus:border-[#FF5E2E] transition-all text-[11px]"
+                            />
+                            <span className="block text-[9px] text-slate-500 leading-snug">
+                              Beschreibt das Foto für Google &amp; Screenreader. Leer lassen = automatisch der Produktname.
+                            </span>
                           </div>
 
                           {/* Preview container */}

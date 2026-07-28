@@ -124,7 +124,7 @@ export default function Bestsellers({
                       {product.image.startsWith("http") || product.image.startsWith("data:") ? (
                         <img 
                           src={product.image} 
-                          alt={product.name} 
+                          alt={product.imageAlt || product.name}
                           className="max-h-full w-auto max-w-full object-contain rounded-lg drop-shadow-md"
                           loading="lazy" decoding="async" referrerPolicy="no-referrer"
                         />
@@ -283,7 +283,7 @@ export default function Bestsellers({
                   {activeQuickDetail.image.startsWith("http") || activeQuickDetail.image.startsWith("data:") ? (
                     <img 
                       src={activeQuickDetail.image} 
-                      alt={activeQuickDetail.name} 
+                      alt={activeQuickDetail.imageAlt || activeQuickDetail.name}
                       className="max-h-full max-w-full object-contain rounded-xl drop-shadow-xl animate-fadeIn"
                       loading="lazy" decoding="async" referrerPolicy="no-referrer"
                     />

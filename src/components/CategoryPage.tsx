@@ -401,7 +401,7 @@ export default function CategoryPage({
                         {product.image && (product.image.startsWith("http") || product.image.startsWith("data:")) ? (
                           <img 
                             src={product.image} 
-                            alt={product.name} 
+                            alt={product.imageAlt || product.name}
                             className="max-h-full w-auto max-w-full object-contain rounded-lg drop-shadow-md"
                             loading="lazy" decoding="async" referrerPolicy="no-referrer"
                           />
@@ -547,7 +547,7 @@ export default function CategoryPage({
                   {selectedProductForModal.image && (selectedProductForModal.image.startsWith("http") || selectedProductForModal.image.startsWith("data:")) ? (
                     <img 
                       src={selectedProductForModal.image} 
-                      alt={selectedProductForModal.name} 
+                      alt={selectedProductForModal.imageAlt || selectedProductForModal.name} 
                       className="max-h-full max-w-full object-contain rounded-xl drop-shadow-xl animate-fadeIn"
                       loading="lazy" decoding="async" referrerPolicy="no-referrer"
                     />

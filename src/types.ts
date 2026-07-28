@@ -8,6 +8,7 @@ export interface Product {
   rating: number;
   reviewsCount: number;
   image: string;
+  imageAlt?: string;
   video?: string;
   features: string[];
   isBestseller?: boolean;
