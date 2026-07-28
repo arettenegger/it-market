@@ -40,7 +40,7 @@ const DEFAULT_SLIDES = [
   {
     id: "kameras",
     category: "IP-Kameras",
-    title: "Smarte IP-Kameras mit künstlicher Intelligenz",
+    title: "IP-Kameras & Videoüberwachung aus Österreich",
     subtitle: "Sicherheits- & Überwachungskameras",
     description: "Hochauflösende 4K IP-Kameras mit intelligenter KI-Erkennung für den Innen- und Außenbereich. Schützen Sie Ihr Eigentum mit modernster, vollfarbiger Nachtsicht.",
     image: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=1920",
@@ -56,7 +56,7 @@ const DEFAULT_SLIDES = [
   {
     id: "smarthome",
     category: "Smart Home",
-    title: "Dein Zuhause. Smart vernetzt.",
+    title: "Smart Home & Gebäudesicherheit für Österreich",
     subtitle: "Smart Home & Videoüberwachung",
     description: "Smart Home & Videoüberwachung aus einer Hand – persönlich, aus der Region.",
     image: "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=80&w=1920",
@@ -72,7 +72,7 @@ const DEFAULT_SLIDES = [
   {
     id: "nas",
     category: "NAS-Systeme",
-    title: "Zentrale Datensicherheit & volle Datenhoheit",
+    title: "NAS-Systeme & lokale Datensicherheit in Österreich",
     subtitle: "Zentrale Datenspeicherung",
     description: "Netzwerkspeicher für die sichere, lokale Langzeitaufzeichnung Ihrer Überwachungsdaten und private Backups. 100% datenschutzkonform und vollkommen cloudfrei.",
     image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=1920",
@@ -88,7 +88,7 @@ const DEFAULT_SLIDES = [
   {
     id: "netzwerk",
     category: "Heimnetzwerke",
-    title: "Stabile & professionelle PoE-Heimnetzwerke",
+    title: "Netzwerktechnik & PoE-Switches für Ihr Unternehmen",
     subtitle: "Sichere & stabile Verbindungen",
     description: "Professionelle PoE-Switches, Router und Access Points für eine ausfallsichere Netzwerk-Infrastruktur. Maximale Bandbreite für Ihre IP-Sicherheitskameras.",
     image: "/netzwerk-hero-section.jpg",

@@ -23,14 +23,16 @@
     />
     <meta property="og:url" content="https://it-market.at/" />
     <meta property="og:locale" content="de_AT" />
-    <!-- Für ein Vorschaubild beim Teilen: 1200x630 Bild als public/og-image.jpg ablegen und nächste Zeile aktivieren -->
-    <!-- <meta property="og:image" content="https://it-market.at/og-image.jpg" /> -->
+    <meta property="og:image" content="https://it-market.at/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="IT-MARKET — Sicherheit, Netzwerk & IT-Hardware" />
     <meta
       name="twitter:description"
       content="IP-Kameras, Netzwerktechnik, NAS, Hotspot-Lösungen, PC-Hardware & Smart-Home. Unverbindliches Angebot per E-Mail anfordern."
     />
+    <meta name="twitter:image" content="https://it-market.at/og-image.jpg" />
 
     <!-- Schnellere Verbindung zu Firebase (Daten & Bilder) -->
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
@@ -55,6 +57,94 @@
         "name": "IT-MARKET",
         "url": "https://it-market.at/",
         "inLanguage": "de-AT"
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ElectronicsStore",
+        "@id": "https://it-market.at/#localbusiness",
+        "name": "IT-MARKET",
+        "legalName": "IT Service Rettenegger",
+        "description": "Premium-Shop für IP-Kameras, Netzwerktechnik, DSGVO-konforme WLAN-Hotspots, NAS-Systeme, PC-Hardware und Smart-Home mit individuellem Angebotsservice.",
+        "url": "https://it-market.at/",
+        "logo": "https://it-market.at/logo.png",
+        "image": "https://it-market.at/logo.png",
+        "telephone": "+43725521100",
+        "email": "support@it-market.at",
+        "founder": { "@type": "Person", "name": "Doris Rettenegger" },
+        "priceRange": "€€",
+        "currenciesAccepted": "EUR",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Sulzbachstraße 2",
+          "postalCode": "4462",
+          "addressLocality": "Reichraming",
+          "addressRegion": "Oberösterreich",
+          "addressCountry": "AT"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 47.8342,
+          "longitude": 14.4869
+        },
+        "areaServed": {
+          "@type": "Country",
+          "name": "Österreich"
+        },
+        "sameAs": [
+          "https://www.facebook.com/bewachtundvernetzt",
+          "https://www.instagram.com/support1085/",
+          "https://www.youtube.com/@BewachtVernetzt"
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Wie erhalte ich mein Angebot?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ganz unkompliziert: Fügen Sie Ihre Wunschkomponenten einfach dem Warenkorb hinzu und klicken Sie auf 'Unverbindliche Anfrage senden'. Unser Experten-Team kalkuliert Ihr persönliches Angebot (inklusive Rabatten bei größeren Mengen) und sendet Ihnen dieses innerhalb von 24 Stunden per E-Mail zu."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Sind die Kameras und Smart-Home-Produkte miteinander kompatibel?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja. Alle unsere angebotenen Komponenten sind perfekt aufeinander abgestimmt. Sie können Kameras, Alarmsensoren und NAS-Rekorder in einer einzigen App steuern und automatisieren."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Was genau bedeutet PoE (Power over Ethernet)?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "PoE ist eine Technologie, bei der Netzwerkgeräte direkt über das LAN-Kabel mit Strom versorgt werden. Sie benötigen an der Kamera keine separate Steckdose mehr. Die Stromversorgung erfolgt zentral über einen PoE-Switch oder direkt über den Netzwerk-Videorekorder (NVR)."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Wie funktioniert die Aufzeichnung meiner Daten?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Wir setzen auf maximale Datensouveränität: Alle Aufzeichnungen werden lokal und abogebührenfrei auf Ihrem eigenen NAS-System gespeichert. Keine Zwangs-Cloud im Ausland, kein unbefugter Zugriff von außen."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Kommen zusätzliche Lizenz- oder Abogebühren auf mich zu?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nein, bei uns gibt es keine Abonnements oder monatliche Lizenzgebühren. Sie kaufen die Hardware einmalig und besitzen die volle Kontrolle über Ihre gesamte Sicherheits- und Netzwerkinfrastruktur."
+            }
+          }
+        ]
       }
     </script>
   </head>

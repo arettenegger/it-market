@@ -2,6 +2,7 @@ import React from "react";
 import { ArrowRight, Shield, Eye, RotateCw, Cpu } from "lucide-react";
 import { CATEGORIES } from "../data";
 import { Category } from "../types";
+import { categoryIdFromName } from "../lib/slug";
 
 interface CategoriesProps {
   onSelectCategory: (categoryName: string) => void;
@@ -51,12 +52,13 @@ export default function Categories({ onSelectCategory, selectedCategory, categor
           {displayCategories.map((cat) => {
             const isSelected = selectedCategory === cat.name;
             return (
-              <div
+              <a
                 key={cat.id}
-                onClick={() => onSelectCategory(cat.name)}
-                className={`group relative bg-slate-50 hover:bg-white rounded-3xl p-6 border transition-all duration-300 ease-out cursor-pointer flex flex-col justify-between overflow-hidden ${
-                  isSelected 
-                    ? "border-blue-600 ring-2 ring-blue-600/10 bg-white shadow-xl" 
+                href={`/kategorie/${categoryIdFromName(cat.name)}`}
+                onClick={(e) => { e.preventDefault(); onSelectCategory(cat.name); }}
+                className={`group relative bg-slate-50 hover:bg-white rounded-3xl p-6 border transition-all duration-300 ease-out cursor-pointer flex flex-col justify-between overflow-hidden no-underline ${
+                  isSelected
+                    ? "border-blue-600 ring-2 ring-blue-600/10 bg-white shadow-xl"
                     : "border-slate-100 hover:border-blue-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.01]"
                 }`}
                 id={`cat-card-${cat.id}`}
@@ -102,7 +104,7 @@ export default function Categories({ onSelectCategory, selectedCategory, categor
                   <span>Jetzt entdecken</span>
                   <ArrowRight className="w-4 h-4" />
                 </div>
-              </div>
+              </a>
             );
           })}
         </div>

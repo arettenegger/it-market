@@ -19,6 +19,7 @@ import {
   Mail
 } from "lucide-react";
 import { Product, CartItem, formatPrice } from "../types";
+import { categoryIdFromName } from "../lib/slug";
 
 interface HeaderProps {
   cart: CartItem[];
@@ -152,7 +153,14 @@ export default function Header({
     { name: "Warenkorb", type: "cart", categoryName: "" },
   ];
 
-  const handleMenuItemClick = (item: typeof menuBarItems[0]) => {
+  const menuItemHref = (item: typeof menuBarItems[0]): string => {
+    if (item.type === "blog") return "/blog";
+    if (item.type === "category") return "/kategorie/" + categoryIdFromName(item.categoryName);
+    return "#";
+  };
+
+  const handleMenuItemClick = (item: typeof menuBarItems[0], e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     setIsMobileMenuOpen(false);
     if (item.type === "category") {
       if (onSelectCategory) {
@@ -258,17 +266,18 @@ export default function Header({
                 }
 
                 return (
-                  <button
+                  <a
                     key={idx}
-                    onClick={() => handleMenuItemClick(item)}
-                    className={`px-2.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                    href={menuItemHref(item)}
+                    onClick={(e) => handleMenuItemClick(item, e)}
+                    className={`px-2.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap no-underline ${
                       isActive
                         ? "text-red-600 bg-red-50 border border-red-100 shadow-xs font-bold"
                         : "text-slate-700 hover:text-blue-600 hover:bg-slate-100"
                     }`}
                   >
                     {item.name}
-                  </button>
+                  </a>
                 );
               })}
             </nav>
@@ -397,29 +406,42 @@ export default function Header({
         {isMobileMenuOpen && (
           <div className="lg:hidden fixed inset-x-0 top-16 bg-white border-b border-gray-100 shadow-2xl z-40 max-h-[calc(100vh-4rem)] overflow-y-auto animate-fadeIn">
             <div className="px-4 pt-3 pb-8 space-y-2">
-              {menuBarItems.map((item, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleMenuItemClick(item)}
-                  className={`w-full text-left py-3.5 px-4 rounded-xl text-sm font-semibold transition-all flex justify-between items-center active:scale-[0.99] ${
-                    item.type === "cart"
-                      ? "bg-blue-600 text-white shadow-md my-2"
-                      : "text-slate-800 hover:text-blue-600 hover:bg-blue-50 active:bg-blue-100"
-                  }`}
-                >
-                  <span className="flex items-center gap-2.5">
-                    {item.type === "cart" && <ShoppingBag className="w-4 h-4" />}
-                    {item.name}
-                  </span>
-                  {item.type === "cart" && cartTotalItems > 0 ? (
-                    <span className="bg-white text-blue-600 text-xs font-extrabold px-2.5 py-1 rounded-full shadow-xs">
-                      {cartTotalItems}
+              {menuBarItems.map((item, idx) => {
+                if (item.type === "cart") {
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleMenuItemClick(item)}
+                      className="w-full text-left py-3.5 px-4 rounded-xl text-sm font-semibold transition-all flex justify-between items-center active:scale-[0.99] bg-blue-600 text-white shadow-md my-2"
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <ShoppingBag className="w-4 h-4" />
+                        {item.name}
+                      </span>
+                      {cartTotalItems > 0 ? (
+                        <span className="bg-white text-blue-600 text-xs font-extrabold px-2.5 py-1 rounded-full shadow-xs">
+                          {cartTotalItems}
+                        </span>
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-white/80" />
+                      )}
+                    </button>
+                  );
+                }
+                return (
+                  <a
+                    key={idx}
+                    href={menuItemHref(item)}
+                    onClick={(e) => handleMenuItemClick(item, e)}
+                    className="w-full text-left py-3.5 px-4 rounded-xl text-sm font-semibold transition-all flex justify-between items-center active:scale-[0.99] no-underline text-slate-800 hover:text-blue-600 hover:bg-blue-50 active:bg-blue-100"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      {item.name}
                     </span>
-                  ) : (
-                    <ChevronRight className={`w-4 h-4 ${item.type === "cart" ? "text-white/80" : "text-slate-400"}`} />
-                  )}
-                </button>
-              ))}
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                  </a>
+                );
+              })}
               <div className="pt-4 border-t border-gray-100 flex flex-col gap-2 px-1">
                 <button
                   onClick={() => {

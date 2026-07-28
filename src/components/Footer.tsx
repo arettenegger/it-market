@@ -104,7 +104,7 @@ export default function Footer({
               <a href="https://www.instagram.com/support1085/" target="_blank" rel="noreferrer" className="p-2 bg-slate-900 hover:bg-blue-600 hover:text-white rounded-xl transition-all" aria-label="Instagram Link">
                 <Instagram className="w-4.5 h-4.5" />
               </a>
-              <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="p-2 bg-slate-900 hover:bg-blue-600 hover:text-white rounded-xl transition-all" aria-label="LinkedIn Link">
+              <a href="https://www.linkedin.com/in/andreas-rettenegger-b026193aa/" target="_blank" rel="noreferrer" className="p-2 bg-slate-900 hover:bg-blue-600 hover:text-white rounded-xl transition-all" aria-label="LinkedIn Link">
                 <Linkedin className="w-4.5 h-4.5" />
               </a>
               <a href="https://www.youtube.com/@BewachtVernetzt" target="_blank" rel="noreferrer" className="p-2 bg-slate-900 hover:bg-blue-600 hover:text-white rounded-xl transition-all" aria-label="YouTube Link">
