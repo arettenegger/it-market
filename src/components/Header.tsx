@@ -14,7 +14,8 @@ import {
   CheckCircle,
   HelpCircle,
   Plus,
-  Settings
+  Settings,
+  Phone
 } from "lucide-react";
 import { Product, CartItem, formatPrice } from "../types";
 
@@ -263,7 +264,18 @@ export default function Header({
 
             {/* Actions Panel (Right) */}
             <div className="flex items-center gap-2 md:gap-4">
-              
+
+              {/* Telefon – direkt anrufbar (auch mobil sichtbar) */}
+              <a
+                href="tel:+43725521100"
+                className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 font-bold text-sm transition-colors"
+                aria-label="Anrufen: +43 7255 211 00"
+                title="Jetzt anrufen"
+              >
+                <Phone className="w-5 h-5" />
+                <span className="hidden sm:inline whitespace-nowrap">+43 7255 211 00</span>
+              </a>
+
               {/* Active Search Button & Container */}
               <div ref={searchRef} className="relative">
                 {isSearchOpen ? (
