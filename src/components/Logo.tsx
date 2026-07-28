@@ -22,7 +22,7 @@ export default function Logo({
   const sizeHeights = {
     sm: "h-7 sm:h-8",
     md: "h-9 sm:h-10",
-    lg: "h-12 sm:h-14"
+    lg: "h-12 sm:h-16"
   };
 
   const textSizes = {
