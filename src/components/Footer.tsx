@@ -1,5 +1,6 @@
 import React from "react";
 import { Shield, Facebook, Instagram, Linkedin, Youtube, ArrowUp, Settings } from "lucide-react";
+import { categoryIdFromName } from "../lib/slug";
 
 interface FooterProps {
   scrollToSection: (id: string) => void;
@@ -118,13 +119,14 @@ export default function Footer({
             <h4 className="text-xs font-bold text-white uppercase tracking-wider font-display mb-4">Shop & Kategorien</h4>
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
               {footerLinks.shop.map((link, i) => (
-                <button
+                <a
                   key={i}
-                  onClick={() => handleCategoryClick(link.categoryName)}
-                  className="hover:text-white transition-colors text-left cursor-pointer"
+                  href={`/kategorie/${categoryIdFromName(link.categoryName)}`}
+                  onClick={(e) => { e.preventDefault(); handleCategoryClick(link.categoryName); }}
+                  className="hover:text-white transition-colors text-left cursor-pointer no-underline text-slate-400"
                 >
                   {link.name}
-                </button>
+                </a>
               ))}
             </div>
           </div>

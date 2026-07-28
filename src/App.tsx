@@ -310,7 +310,10 @@ export default function App() {
     let description = "";
     if (currentPage === "category") {
       const cat = categories.find((c) => c.id === activeCategoryId);
-      title = cat ? `${cat.name} kaufen & Angebot anfordern | IT-MARKET` : base;
+      if (cat) {
+        title = `${cat.name} kaufen & Angebot anfordern | IT-MARKET`;
+        description = `${cat.name} bei IT-MARKET Österreich – ${(cat.description || "Top-Produkte zum besten Preis").slice(0, 120)}. Jetzt unverbindliches Angebot anfordern.`;
+      }
     } else if (currentPage === "product") {
       const prod = resolveProduct(products, activeProductSlug);
       if (prod) {
