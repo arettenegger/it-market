@@ -193,6 +193,11 @@ export default function Header({
             <span>Fachberatung & Support</span>
           </div>
           <div className="flex items-center gap-3">
+            <a href="tel:+43725521100" className="flex items-center gap-1.5 font-bold text-white hover:text-emerald-400 transition-colors">
+              <Phone className="w-3.5 h-3.5" />
+              +43 7255 211 00
+            </a>
+            <span>•</span>
             <button onClick={onOpenCallback} className="hover:text-white transition-colors cursor-pointer">
               Kostenlose Fachberatung anfordern
             </button>
@@ -265,15 +270,14 @@ export default function Header({
             {/* Actions Panel (Right) */}
             <div className="flex items-center gap-2 md:gap-4">
 
-              {/* Telefon – direkt anrufbar (auch mobil sichtbar) */}
+              {/* Telefon – kleines Icon nur auf Handys (Nummer steht oben im Info-Band) */}
               <a
                 href="tel:+43725521100"
-                className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 font-bold text-sm transition-colors"
+                className="md:hidden flex items-center text-blue-600 hover:text-blue-700 transition-colors"
                 aria-label="Anrufen: +43 7255 211 00"
                 title="Jetzt anrufen"
               >
                 <Phone className="w-5 h-5" />
-                <span className="hidden sm:inline whitespace-nowrap">+43 7255 211 00</span>
               </a>
 
               {/* Active Search Button & Container */}
