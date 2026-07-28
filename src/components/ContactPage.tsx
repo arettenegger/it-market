@@ -183,11 +183,11 @@ export default function ContactPage({ onBackToHome, onOpenCallback }: ContactPag
               </div>
               <div>
                 <h3 className="text-base font-bold text-white font-display">Firmensitz & Zentrale</h3>
-                <p className="text-xs text-slate-400 mt-1">IT-Market / Bewacht & Vernetzt</p>
+                <p className="text-xs text-slate-400 mt-1">IT-Service Rettenegger Doris</p>
               </div>
               <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1 text-xs text-slate-300">
-                <p className="font-semibold text-white">Barichgasse 40-42</p>
-                <p className="text-slate-400">1030 Wien, Österreich</p>
+                <p className="font-semibold text-white">Sulzbachstraße 2</p>
+                <p className="text-slate-400">4462 Reichraming, Österreich</p>
               </div>
             </div>
             <div className="mt-6 flex items-center gap-2 text-xs text-slate-400 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
