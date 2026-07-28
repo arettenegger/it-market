@@ -112,7 +112,7 @@ export default function Bestsellers({
                   </div>
 
                   {/* Product Visual Area - Gradient Glass look */}
-                  <div className="relative h-44 sm:h-48 bg-slate-50 rounded-xl flex items-center justify-center p-3 mb-3 overflow-hidden group-hover:scale-[1.01] transition-transform">
+                  <div className="relative h-48 sm:h-52 bg-slate-50 rounded-xl flex items-center justify-center p-2 mb-3 overflow-hidden group-hover:scale-[1.01] transition-transform">
                     <div className="absolute inset-0 bg-gradient-to-tr from-blue-50/20 via-transparent to-slate-100/50"></div>
                     
                     {/* Micro Sparkles icon representing Premium quality */}
@@ -125,7 +125,7 @@ export default function Bestsellers({
                         <img 
                           src={product.image} 
                           alt={product.name} 
-                          className="max-h-38 w-auto max-w-full object-contain rounded-lg drop-shadow-md"
+                          className="max-h-full w-auto max-w-full object-contain rounded-lg drop-shadow-md"
                           loading="lazy" decoding="async" referrerPolicy="no-referrer"
                         />
                       ) : (
