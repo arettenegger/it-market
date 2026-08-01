@@ -148,6 +148,7 @@ export default function Header({
     { name: "Hotspot & Wireless", type: "category", categoryName: "Hotspot & Wireless-Lösungen" },
     { name: "NAS-Systeme", type: "category", categoryName: "NAS-Systeme" },
     { name: "IP-Kameras", type: "category", categoryName: "IP-Kameras" },
+    { name: "Netzwerkrekorder NVR", type: "category", categoryName: "Netzwerkrekorder NVR" },
     { name: "Smart-Home", type: "category", categoryName: "Smart-Home" },
     { name: "Blog", type: "blog", categoryName: "" },
     { name: "Warenkorb", type: "cart", categoryName: "" },

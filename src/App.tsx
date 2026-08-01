@@ -26,8 +26,8 @@ const DatenschutzModal = lazy(() => import("./components/DatenschutzModal"));
 const AboutUsModal = lazy(() => import("./components/AboutUsModal"));
 const ContactPage = lazy(() => import("./components/ContactPage"));
 const ProductPage = lazy(() => import("./components/ProductPage"));
-import { Product, CartItem, BlogPost, ConfiguratorData, Review, Category, PageSeo, formatPrice } from "./types";
-import { productSlug, resolveProduct } from "./lib/slug";
+import { Product, CartItem, BlogPost, ConfiguratorData, Review, Category, PageSeo, formatPrice, registerCategorySpecLabels } from "./types";
+import { productSlug, resolveProduct, categoryIdFromName } from "./lib/slug";
 import { PRODUCTS, INITIAL_BLOG_POSTS, DEFAULT_CONFIGURATOR_DATA, REVIEWS, CATEGORIES } from "./data";
 import { initAnalytics, trackPageView } from "./lib/analytics";
 import { recordPageView } from "./lib/pageStats";
@@ -78,7 +78,14 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 }
 
 type PageKey = "home" | "blog" | "category" | "product" | "impressum" | "datenschutz" | "about" | "kontakt";
-const CATEGORY_IDS = ["pc-hardware", "netzwerke", "hotspot", "nas", "kameras", "smarthome"];
+const CATEGORY_IDS = ["pc-hardware", "netzwerke", "hotspot", "nas", "kameras", "nvr", "smarthome"];
+
+// Stellt sicher, dass die NVR-Kategorie vorhanden ist (auch wenn Firestore-Altdaten sie noch nicht kennen).
+const NVR_CATEGORY = CATEGORIES.find((c) => c.id === "nvr")!;
+function withNvrCategory(cats: Category[]): Category[] {
+  const has = cats.some((c) => c.id === "nvr" || /nvr|rekorder|recorder/i.test(c.name || ""));
+  return has ? cats : [...cats, NVR_CATEGORY];
+}
 
 // URL <-> Ansicht (echte Adressen für SEO & Deep-Links)
 function buildPath(page: PageKey, categoryId?: string, slug?: string): string {
@@ -126,7 +133,9 @@ export default function App() {
   const [products, setProducts] = useState<Product[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [reviews, setReviews] = useState<Review[]>(REVIEWS);
-  const [categories, setCategories] = useState<Category[]>(CATEGORIES);
+  const [categories, setCategories] = useState<Category[]>(withNvrCategory(CATEGORIES));
+  // Frei benennbare Spec-Feld-Bezeichnungen je Kategorie registrieren (für getSpecLabels).
+  useEffect(() => { registerCategorySpecLabels(categories); }, [categories]);
   const [configuratorData, setConfiguratorData] = useState<ConfiguratorData>(DEFAULT_CONFIGURATOR_DATA);
   const [logoImage, setLogoImage] = useState<string>("");
   const [pageSeo, setPageSeo] = useState<Record<string, PageSeo>>({});
@@ -246,7 +255,7 @@ export default function App() {
       setProducts(Array.isArray(data?.products) && data.products.length ? data.products : PRODUCTS);
       setBlogPosts(Array.isArray(data?.blogPosts) ? data.blogPosts : INITIAL_BLOG_POSTS);
       setReviews(Array.isArray(data?.reviews) && data.reviews.length ? data.reviews : REVIEWS);
-      setCategories(Array.isArray(data?.categories) && data.categories.length ? data.categories : CATEGORIES);
+      setCategories(withNvrCategory(Array.isArray(data?.categories) && data.categories.length ? data.categories : CATEGORIES));
       // Fehlende Felder (z.B. baseConfigurations bei Altdaten) aus den Defaults auffüllen,
       // vorhandene Firestore-Werte (Banner, Zusatzoptionen) bleiben erhalten.
       setConfiguratorData({ ...DEFAULT_CONFIGURATOR_DATA, ...(data?.configuratorData || {}) });
@@ -311,7 +320,8 @@ export default function App() {
     let title = base;
     let description = "";
     if (currentPage === "category") {
-      const cat = categories.find((c) => c.id === activeCategoryId);
+      // Kategorien im Admin haben ggf. eine cat-… ID; darum über den Namen auf die semantische ID abbilden.
+      const cat = categories.find((c) => categoryIdFromName(c.name) === activeCategoryId) || categories.find((c) => c.id === activeCategoryId);
       if (cat) {
         title = `${cat.name} kaufen & Angebot anfordern | IT-MARKET`;
         description = `${cat.name} bei IT-MARKET Österreich – ${(cat.description || "Top-Produkte zum besten Preis").slice(0, 120)}. Jetzt unverbindliches Angebot anfordern.`;
@@ -431,7 +441,7 @@ export default function App() {
         if (data.products) setProducts(data.products);
         if (data.blogPosts) setBlogPosts(data.blogPosts);
         if (data.reviews) setReviews(data.reviews);
-        if (data.categories) setCategories(data.categories);
+        if (data.categories) setCategories(withNvrCategory(data.categories));
         if (data.configuratorData) setConfiguratorData({ ...DEFAULT_CONFIGURATOR_DATA, ...data.configuratorData });
         if (data.logoImage !== undefined) setLogoImage(data.logoImage);
         if (data.heroImages) setHeroImages(data.heroImages);
@@ -604,6 +614,7 @@ export default function App() {
   // Category selection navigation logic
   const getCategoryId = (name: string): string => {
     const norm = name.toLowerCase();
+    if (norm.includes("nvr") || norm.includes("rekorder") || norm.includes("recorder")) return "nvr";
     if (norm.includes("hardware") || norm.includes("pc")) return "pc-hardware";
     if (norm.includes("netzwerk")) return "netzwerke";
     if (norm.includes("hotspot") || norm.includes("wireless")) return "hotspot";

@@ -59,6 +59,14 @@ export interface Review {
   date: string;
 }
 
+export interface SpecLabels {
+  resolution: string;
+  viewAngle: string;
+  nightVision: string;
+  storage: string;
+  power: string;
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -66,6 +74,8 @@ export interface Category {
   tagline: string;
   iconName: string;
   image: string;
+  // Optional pro Kategorie frei benennbare Bezeichnungen der 5 Spezifikations-Felder.
+  specLabels?: Partial<SpecLabels>;
 }
 
 export interface ApplicationArea {
@@ -147,8 +157,38 @@ export interface ConfiguratorData {
   ssdOptions?: ConfiguratorOption[];
 }
 
-export function getSpecLabels(category: string): { resolution: string; viewAngle: string; nightVision: string; storage: string; power: string } {
+const SPEC_KEYS: (keyof SpecLabels)[] = ["resolution", "viewAngle", "nightVision", "storage", "power"];
+const normCatName = (s: string) => (s || "").toLowerCase().replace(/[\s_-]+/g, "");
+
+// Vom Admin pro Kategorie frei gesetzte Spec-Label-Bezeichnungen (Laufzeit-Registry).
+// App ruft registerCategorySpecLabels() bei jedem Laden/Ändern der Kategorien auf.
+let specLabelOverrides: Record<string, Partial<SpecLabels>> = {};
+export function registerCategorySpecLabels(categories: { name: string; specLabels?: Partial<SpecLabels> }[]): void {
+  const map: Record<string, Partial<SpecLabels>> = {};
+  for (const c of categories || []) {
+    if (!c || !c.name || !c.specLabels) continue;
+    const cleaned: Partial<SpecLabels> = {};
+    for (const k of SPEC_KEYS) {
+      const v = (c.specLabels as any)[k];
+      if (v && String(v).trim()) cleaned[k] = String(v).trim();
+    }
+    if (Object.keys(cleaned).length) map[normCatName(c.name)] = cleaned;
+  }
+  specLabelOverrides = map;
+}
+
+function getDefaultSpecLabels(category: string): SpecLabels {
   const cat = (category || "").toLowerCase();
+  // NVR zuerst prüfen (Name enthält "netzwerk"/"rekorder"), sonst würde die Netzwerk-Regel greifen.
+  if (cat.includes("nvr") || cat.includes("rekorder") || cat.includes("recorder")) {
+    return {
+      resolution: "Kanäle / Kameras",
+      viewAngle: "Max. Auflösung",
+      nightVision: "Videokompression",
+      storage: "Speicher / HDD-Bays",
+      power: "Netzwerk / PoE"
+    };
+  }
   if (cat.includes("pc") || cat.includes("hardware") || cat.includes("server") || cat.includes("workstation")) {
     return {
       resolution: "Prozessor / CPU",
@@ -201,6 +241,13 @@ export function getSpecLabels(category: string): { resolution: string; viewAngle
     storage: "Speicherung",
     power: "Stromversorgung"
   };
+}
+
+// Öffentliche Funktion: Standard-Labels je Kategorie, überlagert von Admin-Overrides.
+export function getSpecLabels(category: string): SpecLabels {
+  const base = getDefaultSpecLabels(category);
+  const override = specLabelOverrides[normCatName(category)];
+  return override ? { ...base, ...override } : base;
 }
 
 export function formatPrice(price: number): string {

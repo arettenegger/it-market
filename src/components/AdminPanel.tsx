@@ -489,6 +489,12 @@ export default function AdminPanel({
   const [catDesc, setCatDesc] = useState("");
   const [catImage, setCatImage] = useState("");
   const [catIconName, setCatIconName] = useState("Shield");
+  // Frei benennbare Spezifikations-Felder je Kategorie (leer = Standard-Bezeichnung)
+  const [catSpecResolution, setCatSpecResolution] = useState("");
+  const [catSpecViewAngle, setCatSpecViewAngle] = useState("");
+  const [catSpecNightVision, setCatSpecNightVision] = useState("");
+  const [catSpecStorage, setCatSpecStorage] = useState("");
+  const [catSpecPower, setCatSpecPower] = useState("");
 
   const handleNewCategory = () => {
     setEditingCategory(null);
@@ -497,6 +503,7 @@ export default function AdminPanel({
     setCatDesc("");
     setCatImage("https://images.unsplash.com/photo-1544197150-b99a580bb7a8?q=80&w=800&auto=format&fit=crop");
     setCatIconName("Shield");
+    setCatSpecResolution(""); setCatSpecViewAngle(""); setCatSpecNightVision(""); setCatSpecStorage(""); setCatSpecPower("");
     setIsAddingCategory(true);
   };
 
@@ -523,6 +530,12 @@ export default function AdminPanel({
     setFormCategory(trimmed);
   };
 
+  const resetCategoryForm = () => {
+    setEditingCategory(null);
+    setCatName(""); setCatTagline(""); setCatDesc(""); setCatImage(""); setCatIconName("Shield");
+    setCatSpecResolution(""); setCatSpecViewAngle(""); setCatSpecNightVision(""); setCatSpecStorage(""); setCatSpecPower("");
+  };
+
   const handleEditCategory = (c: Category) => {
     setEditingCategory(c);
     setCatName(c.name);
@@ -530,6 +543,11 @@ export default function AdminPanel({
     setCatDesc(c.description);
     setCatImage(c.image);
     setCatIconName(c.iconName || "Shield");
+    setCatSpecResolution(c.specLabels?.resolution || "");
+    setCatSpecViewAngle(c.specLabels?.viewAngle || "");
+    setCatSpecNightVision(c.specLabels?.nightVision || "");
+    setCatSpecStorage(c.specLabels?.storage || "");
+    setCatSpecPower(c.specLabels?.power || "");
     setIsAddingCategory(true);
   };
 
@@ -537,13 +555,21 @@ export default function AdminPanel({
     e.preventDefault();
     if (!catName.trim() || !catDesc.trim()) return;
 
+    const specLabels: Partial<Category["specLabels"]> = {};
+    if (catSpecResolution.trim()) (specLabels as any).resolution = catSpecResolution.trim();
+    if (catSpecViewAngle.trim()) (specLabels as any).viewAngle = catSpecViewAngle.trim();
+    if (catSpecNightVision.trim()) (specLabels as any).nightVision = catSpecNightVision.trim();
+    if (catSpecStorage.trim()) (specLabels as any).storage = catSpecStorage.trim();
+    if (catSpecPower.trim()) (specLabels as any).power = catSpecPower.trim();
+
     const updatedCat: Category = {
       id: editingCategory ? editingCategory.id : `cat-${Date.now()}`,
       name: catName,
       tagline: catTagline,
       description: catDesc,
       image: catImage || "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?q=80&w=800&auto=format&fit=crop",
-      iconName: catIconName
+      iconName: catIconName,
+      ...(Object.keys(specLabels).length ? { specLabels } : {}),
     };
 
     let updated: Category[];
@@ -556,7 +582,7 @@ export default function AdminPanel({
       onUpdateCategories(updated);
     }
     setIsAddingCategory(false);
-    setEditingCategory(null);
+    resetCategoryForm();
   };
 
   const handleDeleteCategory = (id: string) => {
@@ -5323,6 +5349,19 @@ export default function AdminPanel({
                         placeholder="Kurze Beschreibung der Kategorie..."
                         className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#FF5E2E]"
                       />
+                    </div>
+
+                    {/* Spezifikations-Feld-Bezeichnungen je Kategorie */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 mb-1">Spezifikations-Felder (optional)</label>
+                      <p className="text-[10px] text-slate-500 mb-2">Eigene Bezeichnungen für die 5 Spezifikations-Zeilen der Produkte dieser Kategorie (z.B. bei NVR: „Kanäle / Kameras"). Leer lassen = Standard-Bezeichnung.</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input type="text" value={catSpecResolution} onChange={(e) => setCatSpecResolution(e.target.value)} placeholder={`Feld 1 – Standard: ${getSpecLabels(catName).resolution}`} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E]" />
+                        <input type="text" value={catSpecViewAngle} onChange={(e) => setCatSpecViewAngle(e.target.value)} placeholder={`Feld 2 – Standard: ${getSpecLabels(catName).viewAngle}`} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E]" />
+                        <input type="text" value={catSpecNightVision} onChange={(e) => setCatSpecNightVision(e.target.value)} placeholder={`Feld 3 – Standard: ${getSpecLabels(catName).nightVision}`} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E]" />
+                        <input type="text" value={catSpecStorage} onChange={(e) => setCatSpecStorage(e.target.value)} placeholder={`Feld 4 – Standard: ${getSpecLabels(catName).storage}`} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E]" />
+                        <input type="text" value={catSpecPower} onChange={(e) => setCatSpecPower(e.target.value)} placeholder={`Feld 5 – Standard: ${getSpecLabels(catName).power}`} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E]" />
+                      </div>
                     </div>
 
                     {catImage && (

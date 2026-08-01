@@ -49,8 +49,9 @@ export default function CategoryPage({
   const filteredProducts = products.filter(p => {
     if (!p || !p.category) return false;
     const pCatNorm = p.category.toLowerCase().replace(/[\s_-]+/g, "");
+    if (categoryId === "nvr") return pCatNorm.includes("nvr") || pCatNorm.includes("rekorder") || pCatNorm.includes("recorder");
     if (categoryId === "pc-hardware") return pCatNorm.includes("hardware") || pCatNorm.includes("pc");
-    if (categoryId === "netzwerke") return pCatNorm.includes("netzwerk") || pCatNorm.includes("heimnetzwerk");
+    if (categoryId === "netzwerke") return (pCatNorm.includes("netzwerk") || pCatNorm.includes("heimnetzwerk")) && !pCatNorm.includes("nvr") && !pCatNorm.includes("rekorder");
     if (categoryId === "hotspot") return pCatNorm.includes("hotspot");
     if (categoryId === "nas") return pCatNorm.includes("nas");
     if (categoryId === "kameras") return pCatNorm.includes("kamera") || pCatNorm.includes("ip");
@@ -161,6 +162,28 @@ export default function CategoryPage({
             }
           ]
         };
+      case "nvr":
+        return {
+          title: "Netzwerkrekorder (NVR) für lückenlose Aufzeichnung",
+          subtitle: "Zentrale Aufzeichnung und Verwaltung Ihrer IP-Kameras – mit PoE-Versorgung, großzügigem Speicher und intelligenter Suche.",
+          features: [
+            {
+              title: "Zentrale Kameraverwaltung",
+              desc: "Alle IP-Kameras auf einem Gerät bündeln – Live-Ansicht, Aufzeichnung und Wiedergabe an einem Ort.",
+              icon: Eye
+            },
+            {
+              title: "PoE-Anschlüsse & einfache Installation",
+              desc: "Kameras werden direkt am NVR mit Strom & Daten versorgt – ein Kabel pro Kamera, plug & play.",
+              icon: CheckCircle2
+            },
+            {
+              title: "Großer Speicher & smarte Suche",
+              desc: "Tage- bis wochenlange Aufzeichnung mit Bewegungs- und KI-gestützter Ereignissuche zum schnellen Auffinden.",
+              icon: Shield
+            }
+          ]
+        };
       case "smarthome":
       case "smart-home":
         return {
@@ -216,7 +239,7 @@ export default function CategoryPage({
       
       {/* Category Subpage Hero Banner */}
       <div className="bg-slate-950 text-white relative overflow-hidden pt-20 pb-28 sm:pt-28 sm:pb-36 px-4 sm:px-6 lg:px-8 border-b border-slate-800">
-        {["netzwerke", "hotspot", "nas", "kameras", "pc-hardware", "smarthome", "smart-home"].includes(categoryId) && (
+        {["netzwerke", "hotspot", "nas", "kameras", "nvr", "pc-hardware", "smarthome", "smart-home"].includes(categoryId) && (
           <div className="absolute inset-0 z-0">
             {(categoryId === "smarthome" || categoryId === "smart-home") && configuratorData?.smartHomeBannerVideo && !videoError ? (
               <VideoBackground
@@ -232,6 +255,7 @@ export default function CategoryPage({
                   categoryId === "hotspot" ? (configuratorData?.hotspotBannerImage || "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=1920") :
                   categoryId === "nas" ? (configuratorData?.nasBannerImage || "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?auto=format&fit=crop&q=80&w=1920") :
                   categoryId === "kameras" ? (configuratorData?.camerasBannerImage || "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=1920") :
+                  categoryId === "nvr" ? "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?auto=format&fit=crop&q=80&w=1920" :
                   categoryId === "smarthome" || categoryId === "smart-home" ? (configuratorData?.smartHomeBannerImage || "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=80&w=1920") :
                   (configuratorData?.hardwareBannerImage || "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&q=80&w=1920")
                 } 

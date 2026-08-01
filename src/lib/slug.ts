@@ -35,6 +35,7 @@ export function resolveProduct(products: Product[], slug: string): Product | und
 // wie in /kategorie/<id> verwendet.
 export function categoryIdFromName(category: string): string {
   const n = (category || "").toLowerCase().replace(/[\s_-]+/g, "");
+  if (n.includes("nvr") || n.includes("rekorder") || n.includes("recorder")) return "nvr";
   if (n.includes("hardware") || n.includes("pc")) return "pc-hardware";
   if (n.includes("netzwerk")) return "netzwerke";
   if (n.includes("hotspot") || n.includes("wireless")) return "hotspot";
