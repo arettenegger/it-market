@@ -75,7 +75,7 @@ import {
   MultiFactorResolver,
   TotpSecret,
 } from "firebase/auth";
-import { Product, BlogPost, ConfiguratorData, ConfiguratorOption, Review, Category, PageSeo, getSpecLabels } from "../types";
+import { Product, BlogPost, ConfiguratorData, ConfiguratorOption, BaseConfiguration, Review, Category, PageSeo, getSpecLabels } from "../types";
 import { PRODUCTS, INITIAL_BLOG_POSTS, DEFAULT_CONFIGURATOR_DATA, CATEGORIES } from "../data";
 import { 
   fetchAllSubscribers, 
@@ -653,13 +653,27 @@ export default function AdminPanel({
 
   // Configurator management state
   const [localConfig, setLocalConfig] = useState<ConfiguratorData>(configuratorData || DEFAULT_CONFIGURATOR_DATA);
-  const [configSection, setConfigSection] = useState<"cpuOptions" | "gpuOptions" | "ramOptions" | "ssdOptions" | "networkOptions" | "chassisOptions" | "serviceOptions">("cpuOptions");
+  const [configSection, setConfigSection] = useState<"networkOptions" | "serviceOptions">("networkOptions");
   const [editingOption, setEditingOption] = useState<{ section: string; option: ConfiguratorOption } | null>(null);
   const [isAddingOption, setIsAddingOption] = useState(false);
   const [optName, setOptName] = useState("");
   const [optPrice, setOptPrice] = useState(0);
   const [optSpec, setOptSpec] = useState("");
   const [optRecommended, setOptRecommended] = useState(false);
+
+  // Basiskonfigurationen (Komplettsysteme) — Formular-State
+  const [editingBaseConfig, setEditingBaseConfig] = useState<BaseConfiguration | null>(null);
+  const [isAddingBaseConfig, setIsAddingBaseConfig] = useState(false);
+  const [bcName, setBcName] = useState("");
+  const [bcPrice, setBcPrice] = useState(0);
+  const [bcCpu, setBcCpu] = useState("");
+  const [bcMainboard, setBcMainboard] = useState("");
+  const [bcRam, setBcRam] = useState("");
+  const [bcSsd, setBcSsd] = useState("");
+  const [bcChassis, setBcChassis] = useState("");
+  const [bcGpu, setBcGpu] = useState("");
+  const [bcDescription, setBcDescription] = useState("");
+  const [bcRecommended, setBcRecommended] = useState(false);
 
   useEffect(() => {
     if (configuratorData) {
@@ -736,6 +750,56 @@ export default function AdminPanel({
     if (onUpdateConfiguratorData) {
       onUpdateConfiguratorData(updatedConfig);
     }
+  };
+
+  // --- Basiskonfigurationen (Komplettsysteme) ---
+  const resetBaseConfigForm = () => {
+    setEditingBaseConfig(null);
+    setIsAddingBaseConfig(false);
+    setBcName(""); setBcPrice(0); setBcCpu(""); setBcMainboard(""); setBcRam("");
+    setBcSsd(""); setBcChassis(""); setBcGpu(""); setBcDescription(""); setBcRecommended(false);
+  };
+
+  const startEditBaseConfig = (cfg: BaseConfiguration) => {
+    setEditingBaseConfig(cfg);
+    setIsAddingBaseConfig(false);
+    setBcName(cfg.name); setBcPrice(cfg.price); setBcCpu(cfg.cpu); setBcMainboard(cfg.mainboard);
+    setBcRam(cfg.ram); setBcSsd(cfg.ssd); setBcChassis(cfg.chassis);
+    setBcGpu(cfg.gpu || ""); setBcDescription(cfg.description || ""); setBcRecommended(!!cfg.recommended);
+  };
+
+  const handleSaveBaseConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bcName.trim()) return;
+    const newCfg: BaseConfiguration = {
+      id: editingBaseConfig ? editingBaseConfig.id : `cfg-${Date.now()}`,
+      name: bcName.trim(),
+      price: Number(bcPrice),
+      cpu: bcCpu.trim(),
+      mainboard: bcMainboard.trim(),
+      ram: bcRam.trim(),
+      ssd: bcSsd.trim(),
+      chassis: bcChassis.trim(),
+      gpu: bcGpu.trim() || undefined,
+      description: bcDescription.trim() || undefined,
+      recommended: bcRecommended,
+    };
+    const list = localConfig.baseConfigurations || [];
+    const updatedList = editingBaseConfig
+      ? list.map(c => c.id === newCfg.id ? newCfg : c)
+      : [...list, newCfg];
+    const updatedConfig = { ...localConfig, baseConfigurations: updatedList };
+    setLocalConfig(updatedConfig);
+    if (onUpdateConfiguratorData) onUpdateConfiguratorData(updatedConfig);
+    resetBaseConfigForm();
+  };
+
+  const handleDeleteBaseConfig = (id: string) => {
+    if (!window.confirm("Diese Basiskonfiguration wirklich löschen?")) return;
+    const updatedList = (localConfig.baseConfigurations || []).filter(c => c.id !== id);
+    const updatedConfig = { ...localConfig, baseConfigurations: updatedList };
+    setLocalConfig(updatedConfig);
+    if (onUpdateConfiguratorData) onUpdateConfiguratorData(updatedConfig);
   };
 
   const handleUpdateBaseBoardPrice = (newPrice: number) => {
@@ -4264,29 +4328,14 @@ export default function AdminPanel({
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
               
               {/* Header card */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Cpu className="w-5 h-5 text-cyan-400" />
-                    <h2 className="text-xl font-extrabold text-white">PC- & Workstation-Konfigurator verwalten</h2>
-                  </div>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Passen Sie hier die verfügbaren Prozessoren, Grafikkarten, Arbeitsspeicher, SSDs, Netzwerkkarten & Aufpreise des Konfigurators an.
-                  </p>
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6">
+                <div className="flex items-center gap-2">
+                  <Cpu className="w-5 h-5 text-cyan-400" />
+                  <h2 className="text-xl font-extrabold text-white">PC- & Workstation-Konfigurator verwalten</h2>
                 </div>
-
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="bg-slate-950 border border-slate-800 px-3.5 py-2 rounded-xl flex items-center gap-2">
-                    <span className="text-xs text-slate-400 font-semibold">Sockel-Basispreis:</span>
-                    <input
-                      type="number"
-                      value={localConfig.baseBoardPrice ?? 349}
-                      onChange={(e) => handleUpdateBaseBoardPrice(Number(e.target.value))}
-                      className="w-20 bg-slate-900 border border-slate-700 text-white text-xs font-mono font-bold px-2 py-1 rounded-lg focus:ring-1 focus:ring-cyan-500 focus:outline-none"
-                    />
-                    <span className="text-xs text-slate-400 font-extrabold">€</span>
-                  </div>
-                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Verwalten Sie die vordefinierten Basiskonfigurationen (Komplettsysteme) sowie die optionalen Zusätze (Netzwerkkarte, Service &amp; Montage). Jede Basiskonfiguration ist ein garantiert kompatibles System.
+                </p>
               </div>
 
               {/* Banner Image Customization Card - Netzwerke */}
@@ -4572,16 +4621,148 @@ export default function AdminPanel({
                 </div>
               </div>
 
+              {/* === BASISKONFIGURATIONEN (Komplettsysteme) === */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-cyan-400" />
+                      Basiskonfigurationen ({(localConfig.baseConfigurations || []).length})
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Komplettsysteme, aus denen der Kunde eines auswählt. Jede besteht aus CPU, Mainboard, RAM, SSD, Gehäuse (+ optional GPU).</p>
+                  </div>
+                  <button
+                    onClick={() => { resetBaseConfigForm(); setIsAddingBaseConfig(true); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Neue Basiskonfiguration</span>
+                  </button>
+                </div>
+
+                {(isAddingBaseConfig || editingBaseConfig) && (
+                  <form onSubmit={handleSaveBaseConfig} className="bg-slate-900 border border-cyan-500/40 rounded-2xl p-5 space-y-4 animate-fadeIn">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                      <h4 className="text-sm font-extrabold text-white flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-cyan-400" />
+                        {editingBaseConfig ? "Basiskonfiguration bearbeiten" : "Neue Basiskonfiguration"}
+                      </h4>
+                      <button type="button" onClick={resetBaseConfigForm} className="text-slate-500 hover:text-white p-1"><X className="w-4 h-4" /></button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 mb-1">Name des Systems *</label>
+                        <input type="text" required value={bcName} onChange={(e) => setBcName(e.target.value)} placeholder="z.B. Business Pro Workstation" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 mb-1">Gesamtpreis in Euro (€) *</label>
+                        <input type="number" required min="0" value={bcPrice} onChange={(e) => setBcPrice(Number(e.target.value))} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 mb-1">Prozessor (CPU) *</label>
+                        <input type="text" required value={bcCpu} onChange={(e) => setBcCpu(e.target.value)} placeholder="z.B. AMD Ryzen 9 7950X" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 mb-1">Mainboard *</label>
+                        <input type="text" required value={bcMainboard} onChange={(e) => setBcMainboard(e.target.value)} placeholder="z.B. AMD X670E ATX" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 mb-1">Arbeitsspeicher (RAM) *</label>
+                        <input type="text" required value={bcRam} onChange={(e) => setBcRam(e.target.value)} placeholder="z.B. 64GB DDR5-5600" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 mb-1">Speicher (SSD) *</label>
+                        <input type="text" required value={bcSsd} onChange={(e) => setBcSsd(e.target.value)} placeholder="z.B. 2TB NVMe PCIe 5.0" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 mb-1">Gehäuse *</label>
+                        <input type="text" required value={bcChassis} onChange={(e) => setBcChassis(e.target.value)} placeholder="z.B. Silent Tower Workstation" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 mb-1">Grafikkarte (GPU) — optional</label>
+                        <input type="text" value={bcGpu} onChange={(e) => setBcGpu(e.target.value)} placeholder="z.B. NVIDIA RTX 4070 Super / leer lassen" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Kurzbeschreibung — optional</label>
+                      <input type="text" value={bcDescription} onChange={(e) => setBcDescription(e.target.value)} placeholder="z.B. Leistungsstarke Workstation für CAD & Videobearbeitung" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                      <label className="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer">
+                        <input type="checkbox" checked={bcRecommended} onChange={(e) => setBcRecommended(e.target.checked)} className="w-4 h-4 rounded text-cyan-500 focus:ring-0 bg-slate-950 border-slate-800" />
+                        <span>Als &quot;Empfohlen&quot; kennzeichnen (Badge &amp; Vorauswahl)</span>
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <button type="button" onClick={resetBaseConfigForm} className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer">Abbrechen</button>
+                        <button type="submit" className="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-xl text-xs font-extrabold transition-all shadow-md shadow-cyan-500/20 cursor-pointer">{editingBaseConfig ? "Speichern" : "Hinzufügen"}</button>
+                      </div>
+                    </div>
+                  </form>
+                )}
+
+                {(localConfig.baseConfigurations || []).length === 0 ? (
+                  <div className="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-4 text-xs text-rose-300 flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>Es sind noch keine Basiskonfigurationen hinterlegt — im Konfigurator erscheint aktuell nur &quot;Angebot anfordern&quot;. Legen Sie oben Ihre Systeme an.</span>
+                  </div>
+                ) : (
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-x-auto shadow-xl">
+                    <table className="w-full text-left text-xs text-slate-300 min-w-[720px]">
+                      <thead className="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-800">
+                        <tr>
+                          <th className="py-3 px-4">System</th>
+                          <th className="py-3 px-4">CPU / Mainboard</th>
+                          <th className="py-3 px-4">RAM / SSD</th>
+                          <th className="py-3 px-4">Gehäuse / GPU</th>
+                          <th className="py-3 px-4 text-right">Preis (€)</th>
+                          <th className="py-3 px-4 text-right">Aktionen</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 font-medium">
+                        {(localConfig.baseConfigurations || []).map((cfg) => (
+                          <tr key={cfg.id} className="hover:bg-slate-800/40 transition-colors align-top">
+                            <td className="py-3 px-4 font-bold text-white">
+                              <div className="flex items-center gap-2">
+                                <span>{cfg.name}</span>
+                                {cfg.recommended && (<span className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[9px] px-1.5 py-0.2 rounded font-extrabold uppercase">Empfohlen</span>)}
+                              </div>
+                              {cfg.description && <div className="text-[10px] text-slate-500 font-normal mt-0.5 max-w-[220px]">{cfg.description}</div>}
+                            </td>
+                            <td className="py-3 px-4 text-slate-400">{cfg.cpu}<br /><span className="text-slate-500">{cfg.mainboard}</span></td>
+                            <td className="py-3 px-4 text-slate-400">{cfg.ram}<br /><span className="text-slate-500">{cfg.ssd}</span></td>
+                            <td className="py-3 px-4 text-slate-400">{cfg.chassis}<br /><span className="text-slate-500">{cfg.gpu || "—"}</span></td>
+                            <td className="py-3 px-4 text-right font-mono font-bold text-cyan-400">{cfg.price.toLocaleString("de-DE")} €</td>
+                            <td className="py-3 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <button onClick={() => startEditBaseConfig(cfg)} className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer" title="Bearbeiten"><Edit2 className="w-3.5 h-3.5" /></button>
+                                <button onClick={() => handleDeleteBaseConfig(cfg.id)} className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer" title="Löschen"><Trash2 className="w-3.5 h-3.5" /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* === ZUSATZOPTIONEN (Netzwerk & Service) === */}
+              <div>
+                <h3 className="text-sm font-extrabold text-white flex items-center gap-2 mb-1">
+                  <Sliders className="w-4 h-4 text-cyan-400" />
+                  Zusatzoptionen
+                </h3>
+                <p className="text-[11px] text-slate-400 mb-3">Optionale Extras, die der Kunde zusätzlich zur Basiskonfiguration wählen kann. Leere Kategorie = wird im Konfigurator ausgeblendet.</p>
+              </div>
+
               {/* Sub-Category Navigation Tabs */}
               <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800 scrollbar-none">
                 {[
-                  { key: "cpuOptions", label: "Prozessor (CPU)", count: localConfig.cpuOptions.length, icon: Cpu },
-                  { key: "gpuOptions", label: "Grafikkarte (GPU)", count: localConfig.gpuOptions.length, icon: Zap },
-                  { key: "ramOptions", label: "Arbeitsspeicher (RAM)", count: localConfig.ramOptions.length, icon: Layers },
-                  { key: "ssdOptions", label: "Speicher (SSD / NVMe)", count: localConfig.ssdOptions.length, icon: HardDrive },
-                  { key: "networkOptions", label: "Netzwerkkarte", count: localConfig.networkOptions.length, icon: Globe },
-                  { key: "chassisOptions", label: "Gehäuse", count: localConfig.chassisOptions.length, icon: Server },
-                  { key: "serviceOptions", label: "Service & Montage", count: localConfig.serviceOptions.length, icon: Settings },
+                  { key: "networkOptions", label: "Netzwerkkarte", count: (localConfig.networkOptions || []).length, icon: Globe },
+                  { key: "serviceOptions", label: "Service & Montage", count: (localConfig.serviceOptions || []).length, icon: Settings },
                 ].map((tab) => {
                   const Icon = tab.icon;
                   const isActive = configSection === tab.key;
@@ -4613,18 +4794,13 @@ export default function AdminPanel({
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
-                    {configSection === "cpuOptions" && "Verfügbare Prozessoren"}
-                    {configSection === "gpuOptions" && "Verfügbare Grafikkarten"}
-                    {configSection === "ramOptions" && "Verfügbare RAM-Module"}
-                    {configSection === "ssdOptions" && "Verfügbare SSD-Laufwerke"}
                     {configSection === "networkOptions" && "Verfügbare Netzwerkkarten"}
-                    {configSection === "chassisOptions" && "Verfügbare Gehäuse"}
                     {configSection === "serviceOptions" && "Verfügbare Service-Pakete"}
                   </span>
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleClearSection(configSection, ({ cpuOptions: "Prozessor (CPU)", gpuOptions: "Grafikkarte (GPU)", ramOptions: "Arbeitsspeicher (RAM)", ssdOptions: "Speicher (SSD / NVMe)", networkOptions: "Netzwerkkarte", chassisOptions: "Gehäuse", serviceOptions: "Service & Montage" } as Record<string, string>)[configSection] || "Kategorie")}
+                      onClick={() => handleClearSection(configSection, ({ networkOptions: "Netzwerkkarte", serviceOptions: "Service & Montage" } as Record<string, string>)[configSection] || "Kategorie")}
                       disabled={((localConfig[configSection] as ConfiguratorOption[]) || []).length === 0}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       title="Ganze Kategorie aus dem Konfigurator entfernen (alle Optionen löschen)"

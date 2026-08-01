@@ -108,8 +108,29 @@ export interface ConfiguratorOption {
   recommended?: boolean;
 }
 
+// Vordefinierte, garantiert kompatible Komplett-Konfiguration.
+// Der Kunde wählt genau eine davon aus (statt Einzelkomponenten frei zu kombinieren).
+export interface BaseConfiguration {
+  id: string;
+  name: string;
+  price: number;
+  cpu: string;
+  mainboard: string;
+  ram: string;
+  ssd: string;
+  chassis: string;
+  gpu?: string;
+  description?: string;
+  recommended?: boolean;
+}
+
 export interface ConfiguratorData {
-  baseBoardPrice: number;
+  // Aktives Modell: vordefinierte Basiskonfigurationen
+  baseConfigurations: BaseConfiguration[];
+  // Optionale Zusätze (kompatibel mit jeder Basis)
+  networkOptions: ConfiguratorOption[];
+  serviceOptions: ConfiguratorOption[];
+  // Kategorie-Banner (von CategoryPage genutzt – NICHT Teil des PC-Builds)
   netzwerkeBannerImage?: string;
   hotspotBannerImage?: string;
   nasBannerImage?: string;
@@ -117,13 +138,13 @@ export interface ConfiguratorData {
   hardwareBannerImage?: string;
   smartHomeBannerImage?: string;
   smartHomeBannerVideo?: string;
-  chassisOptions: ConfiguratorOption[];
-  cpuOptions: ConfiguratorOption[];
-  ramOptions: ConfiguratorOption[];
-  gpuOptions: ConfiguratorOption[];
-  ssdOptions: ConfiguratorOption[];
-  networkOptions: ConfiguratorOption[];
-  serviceOptions: ConfiguratorOption[];
+  // Legacy – ersetzt durch baseConfigurations (nur für Abwärtskompatibilität bestehender Firestore-Daten/Backups)
+  baseBoardPrice?: number;
+  chassisOptions?: ConfiguratorOption[];
+  cpuOptions?: ConfiguratorOption[];
+  ramOptions?: ConfiguratorOption[];
+  gpuOptions?: ConfiguratorOption[];
+  ssdOptions?: ConfiguratorOption[];
 }
 
 export function getSpecLabels(category: string): { resolution: string; viewAngle: string; nightVision: string; storage: string; power: string } {

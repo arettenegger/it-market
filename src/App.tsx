@@ -247,7 +247,9 @@ export default function App() {
       setBlogPosts(Array.isArray(data?.blogPosts) ? data.blogPosts : INITIAL_BLOG_POSTS);
       setReviews(Array.isArray(data?.reviews) && data.reviews.length ? data.reviews : REVIEWS);
       setCategories(Array.isArray(data?.categories) && data.categories.length ? data.categories : CATEGORIES);
-      setConfiguratorData(data?.configuratorData || DEFAULT_CONFIGURATOR_DATA);
+      // Fehlende Felder (z.B. baseConfigurations bei Altdaten) aus den Defaults auffüllen,
+      // vorhandene Firestore-Werte (Banner, Zusatzoptionen) bleiben erhalten.
+      setConfiguratorData({ ...DEFAULT_CONFIGURATOR_DATA, ...(data?.configuratorData || {}) });
       if (typeof data?.logoImage === "string") setLogoImage(data.logoImage);
       if (data?.pageSeo && typeof data.pageSeo === "object") setPageSeo(data.pageSeo);
       if (data?.heroImages && typeof data.heroImages === "object") {
@@ -430,7 +432,7 @@ export default function App() {
         if (data.blogPosts) setBlogPosts(data.blogPosts);
         if (data.reviews) setReviews(data.reviews);
         if (data.categories) setCategories(data.categories);
-        if (data.configuratorData) setConfiguratorData(data.configuratorData);
+        if (data.configuratorData) setConfiguratorData({ ...DEFAULT_CONFIGURATOR_DATA, ...data.configuratorData });
         if (data.logoImage !== undefined) setLogoImage(data.logoImage);
         if (data.heroImages) setHeroImages(data.heroImages);
         if (data.heroVideos) setHeroVideos(data.heroVideos);
