@@ -604,7 +604,7 @@ export default function App() {
     const norm = name.toLowerCase();
     if (norm.includes("hardware") || norm.includes("pc")) return "pc-hardware";
     if (norm.includes("netzwerk")) return "netzwerke";
-    if (norm.includes("hotspot")) return "hotspot";
+    if (norm.includes("hotspot") || norm.includes("wireless")) return "hotspot";
     if (norm.includes("nas")) return "nas";
     if (norm.includes("kamera")) return "kameras";
     if (norm.includes("smart")) return "smarthome";

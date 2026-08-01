@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import PcConfigurator from "./PcConfigurator";
 import NetworkSections from "./NetworkSections";
+import WirelessSections from "./WirelessSections";
 import CameraSvg from "./CameraSvg";
 
 interface CategoryPageProps {
@@ -118,8 +119,8 @@ export default function CategoryPage({
         };
       case "hotspot":
         return {
-          title: "DSGVO-konforme Gäste-WLAN & Hotspotlösungen",
-          subtitle: "Lösungen für Gastronomie, Praxisräume, Hotels und Filialen. Rechtssichere Trennung von Gast- und Unternehmensnetzwerk.",
+          title: "Hotspot, Outdoor-WLAN & Richtfunklösungen",
+          subtitle: "WLAN für Gastronomie & Hotels, großflächige Funkabdeckung für Freizeitparks, Lagerhallen und öffentliche Plätze sowie Richtfunk zur Standortvernetzung.",
           features: [
             {
               title: "Rechtssichere Gästeanmeldung",
@@ -262,12 +263,12 @@ export default function CategoryPage({
             <div className="mt-6 flex flex-wrap gap-4">
               <button
                 onClick={() => {
-                  const target = document.getElementById("kategorie-produkte");
+                  const target = document.getElementById(categoryId === "hotspot" ? "kategorie-loesungen" : "kategorie-produkte");
                   target?.scrollIntoView({ behavior: "smooth" });
                 }}
                 className="bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs sm:text-sm px-6 py-3 rounded-xl shadow-lg shadow-red-600/20 transition-all flex items-center gap-2 cursor-pointer"
               >
-                <span>Produkte ansehen</span>
+                <span>{categoryId === "hotspot" ? "Unsere Lösungen ansehen" : "Produkte ansehen"}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
@@ -284,7 +285,8 @@ export default function CategoryPage({
         </div>
       </div>
 
-      {/* SECTION 1: Service & Dienstleistungen Explanation */}
+      {/* SECTION 1: Service & Dienstleistungen Explanation — für Hotspot in WirelessSections verschoben */}
+      {categoryId !== "hotspot" && (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <span className="text-xs font-extrabold text-red-600 uppercase tracking-widest">
@@ -320,6 +322,7 @@ export default function CategoryPage({
           })}
         </div>
       </div>
+      )}
 
       {/* SECTION 2: PC-Konfigurator (Specifically embedded on PC-Hardware) */}
       {categoryId === "pc-hardware" && (
@@ -335,7 +338,15 @@ export default function CategoryPage({
         </div>
       )}
 
-      {/* SECTION 3: Auszug aus den Produkten (Product Grid) */}
+      {/* SECTION 2C: Wireless & Hotspot Service Landing (Dienstleistung, keine Produkte) */}
+      {categoryId === "hotspot" && (
+        <div id="kategorie-loesungen" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <WirelessSections onOpenCallback={onOpenCallback} />
+        </div>
+      )}
+
+      {/* SECTION 3: Auszug aus den Produkten (Product Grid) — nicht für reine Dienstleistungs-Kategorien */}
+      {categoryId !== "hotspot" && (
       <div id="kategorie-produkte" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 pb-4 border-b border-slate-200 gap-4">
           <div>
@@ -514,6 +525,7 @@ export default function CategoryPage({
           </div>
         )}
       </div>
+      )}
 
       {/* Advisory Banner */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

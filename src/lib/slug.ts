@@ -37,7 +37,7 @@ export function categoryIdFromName(category: string): string {
   const n = (category || "").toLowerCase().replace(/[\s_-]+/g, "");
   if (n.includes("hardware") || n.includes("pc")) return "pc-hardware";
   if (n.includes("netzwerk")) return "netzwerke";
-  if (n.includes("hotspot")) return "hotspot";
+  if (n.includes("hotspot") || n.includes("wireless")) return "hotspot";
   if (n.includes("nas")) return "nas";
   if (n.includes("kamera") || n.includes("ip")) return "kameras";
   if (n.includes("smart")) return "smarthome";

@@ -145,7 +145,7 @@ export default function Header({
   const menuBarItems = [
     { name: "PC-Hardware", type: "category", categoryName: "PC-Hardware" },
     { name: "Netzwerke", type: "category", categoryName: "Netzwerke" },
-    { name: "Hotspotlösungen", type: "category", categoryName: "Hotspotlösungen" },
+    { name: "Hotspot & Wireless", type: "category", categoryName: "Hotspot & Wireless-Lösungen" },
     { name: "NAS-Systeme", type: "category", categoryName: "NAS-Systeme" },
     { name: "IP-Kameras", type: "category", categoryName: "IP-Kameras" },
     { name: "Smart-Home", type: "category", categoryName: "Smart-Home" },

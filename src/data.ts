@@ -19,10 +19,10 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: "hotspot",
-    name: "Hotspotlösungen",
-    tagline: "Gäste-WLAN & Captive Portals",
-    description: "DSGVO-konforme WLAN-Hotspots mit Ticket-System und rechtssicherer Pro-Gästesteuerung.",
-    iconName: "RotateCw",
+    name: "Hotspot & Wireless-Lösungen",
+    tagline: "Gäste-WLAN · Outdoor-Wireless · Richtfunk",
+    description: "WLAN-Hotspots, Outdoor-Funkausleuchtung für Freizeitparks, Lagerhallen und öffentliche Plätze sowie Richtfunkverbindungen zur Standortvernetzung.",
+    iconName: "Wifi",
     image: "https://images.unsplash.com/photo-1563770660941-20978e870e26?q=80&w=800&auto=format&fit=crop"
   },
   {
@@ -257,29 +257,6 @@ export const PRODUCTS: Product[] = [
       nightVision: "Aluminium Kühlkörper",
       storage: "Optimiert für Intel Xeon / AMD EPYC",
       power: "Geringer Stromverbrauch"
-    }
-  },
-  {
-    id: "hotspot-gateway-pro",
-    name: "V-Spot Pro Gäste-WLAN Gateway",
-    category: "Hotspotlösungen",
-    description: "Rechtssicherer Hotspot-Server für Gastronomie, Hotels und Gewerbe mit anpassbarem Landing-Page-Portal und Voucher-Drucker.",
-    price: 329,
-    oldPrice: 389,
-    rating: 4.89,
-    reviewsCount: 205,
-    image: "netzwerk",
-    features: ["DSGVO-konforme Gästeanmeldung", "Voucher & Ticket-Generierung", "Bandbreiten-Drosselung pro Gast", "Integriertes Captive Portal", "Rechtssichere Protokollierung"],
-    isBestseller: true,
-    discount: "-15%",
-    inStock: true,
-    colors: ["Space Grau"],
-    specs: {
-      resolution: "Unterstützt 500+ aktive Nutzer",
-      viewAngle: "Gigabit WAN + 4x LAN",
-      nightVision: "Integrierte Firewall & Isolation",
-      storage: "Cloud-Management & On-Premise",
-      power: "PoE (802.3af) oder 12V Netzteil"
     }
   },
   {

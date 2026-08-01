@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowRight, Shield, Eye, RotateCw, Cpu } from "lucide-react";
+import { ArrowRight, Shield, Eye, RotateCw, Cpu, Wifi } from "lucide-react";
 import { CATEGORIES } from "../data";
 import { Category } from "../types";
 import { categoryIdFromName } from "../lib/slug";
@@ -25,6 +25,8 @@ export default function Categories({ onSelectCategory, selectedCategory, categor
         return <RotateCw className={iconClass} />;
       case "Cpu":
         return <Cpu className={iconClass} />;
+      case "Wifi":
+        return <Wifi className={iconClass} />;
       default:
         return <Shield className={iconClass} />;
     }

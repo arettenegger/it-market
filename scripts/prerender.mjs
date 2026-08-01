@@ -20,7 +20,7 @@ const routes = [
   { path: "/blog", title: "Ratgeber & Technik-Magazin | IT-MARKET", description: "Praxisnahe Ratgeber zu IP-Kameras, Netzwerk, NAS, Smart-Home & IT-Sicherheit. Tipps, Vergleiche und Anleitungen von IT-MARKET.", priority: "0.8" },
   { path: "/kategorie/kameras", title: "IP-Kameras kaufen & Angebot anfordern | IT-MARKET", description: "4K IP-Überwachungskameras mit KI-Erkennung für innen & außen. Unverbindliches Angebot per E-Mail bei IT-MARKET anfordern.", priority: "0.9" },
   { path: "/kategorie/netzwerke", title: "Netzwerktechnik & PoE-Switches | IT-MARKET", description: "Professionelle PoE-Switches, Router & Access Points. Unverbindliches Angebot per E-Mail bei IT-MARKET anfordern.", priority: "0.9" },
-  { path: "/kategorie/hotspot", title: "Gäste-WLAN & Hotspot-Lösungen | IT-MARKET", description: "DSGVO-konforme WLAN-Hotspots mit Ticket-System. Unverbindliches Angebot per E-Mail bei IT-MARKET anfordern.", priority: "0.9" },
+  { path: "/kategorie/hotspot", title: "Hotspot & Wireless-Lösungen | IT-MARKET", description: "Professionelle WLAN-Hotspots, Outdoor-Funk für Freizeitparks & Lagerhallen sowie Richtfunk zur Standortvernetzung. Kostenlose Beratung bei IT-MARKET.", priority: "0.9" },
   { path: "/kategorie/nas", title: "NAS-Systeme & Netzwerkspeicher | IT-MARKET", description: "NAS-Systeme für sichere lokale Speicherung & Backups. Unverbindliches Angebot per E-Mail bei IT-MARKET anfordern.", priority: "0.9" },
   { path: "/kategorie/pc-hardware", title: "PC- & Server-Hardware | IT-MARKET", description: "Profi-Mainboards, Workstation-Komponenten & Server-Hardware. Unverbindliches Angebot per E-Mail bei IT-MARKET anfordern.", priority: "0.9" },
   { path: "/kategorie/smarthome", title: "Smart-Home & Alarmanlagen | IT-MARKET", description: "Smarte Sensoren, Alarmanlagen & Türschlösser. Unverbindliches Angebot per E-Mail bei IT-MARKET anfordern.", priority: "0.9" },
@@ -31,7 +31,7 @@ const routes = [
 ];
 
 const CATEGORY_NAMES = {
-  "pc-hardware": "PC-Hardware", "netzwerke": "Netzwerke", "hotspot": "Hotspotlösungen",
+  "pc-hardware": "PC-Hardware", "netzwerke": "Netzwerke", "hotspot": "Hotspot & Wireless-Lösungen",
   "nas": "NAS-Systeme", "kameras": "IP-Kameras", "smarthome": "Smart-Home",
 };
 

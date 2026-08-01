@@ -60,7 +60,7 @@ export default function Footer({
     shop: [
       { name: "PC-Hardware", categoryName: "PC-Hardware" },
       { name: "Netzwerke", categoryName: "Netzwerke" },
-      { name: "Hotspotlösungen", categoryName: "Hotspotlösungen" },
+      { name: "Hotspot & Wireless", categoryName: "Hotspot & Wireless-Lösungen" },
       { name: "NAS-Systeme", categoryName: "NAS-Systeme" },
       { name: "IP-Kameras", categoryName: "IP-Kameras" },
       { name: "Smart-Home", categoryName: "Smart-Home" }
@@ -94,7 +94,7 @@ export default function Footer({
 
 
             <p className="text-xs text-slate-500 leading-relaxed max-w-sm mb-6">
-              IT-MARKET ist Ihr kompetenter Premium-Shop für PC-Hardware, Netzwerke, Hotspotlösungen, NAS-Systeme, IP-Kameras und Smart-Home-Lösungen mit individuellem Angebotsservice.
+              IT-MARKET ist Ihr kompetenter Premium-Shop für PC-Hardware, Netzwerke, Hotspot & Wireless-Lösungen, NAS-Systeme, IP-Kameras und Smart-Home-Lösungen mit individuellem Angebotsservice.
             </p>
 
             {/* Social Icons row */}
