@@ -80,11 +80,32 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 type PageKey = "home" | "blog" | "category" | "product" | "impressum" | "datenschutz" | "about" | "kontakt";
 const CATEGORY_IDS = ["pc-hardware", "netzwerke", "hotspot", "nas", "kameras", "nvr", "smarthome"];
 
-// Stellt sicher, dass die NVR-Kategorie vorhanden ist (auch wenn Firestore-Altdaten sie noch nicht kennen).
+// Stellt die NVR-Kategorie sicher und belegt eine nur generisch angelegte NVR-Gruppe
+// mit sinnvollen Standard-Texten & Spec-Feldern vor (selbstheilend: sobald der Admin
+// eigene Werte speichert, werden diese nicht mehr überschrieben).
 const NVR_CATEGORY = CATEGORIES.find((c) => c.id === "nvr")!;
 function withNvrCategory(cats: Category[]): Category[] {
-  const has = cats.some((c) => c.id === "nvr" || /nvr|rekorder|recorder/i.test(c.name || ""));
-  return has ? cats : [...cats, NVR_CATEGORY];
+  const idx = cats.findIndex((c) => c.id === "nvr" || /nvr|rekorder|recorder/i.test(c.name || ""));
+  if (idx === -1) return [...cats, NVR_CATEGORY];
+  const ex = cats[idx];
+  // "Bare" = automatisch über "Neue Gruppe" angelegt und noch nicht angepasst.
+  const isBare =
+    ex.tagline === "Neue Produktgruppe" ||
+    !ex.description ||
+    ex.description === "Individuelle Produktgruppe für professionelle Lösungen";
+  if (!isBare) return cats;
+  const upgraded: Category = {
+    ...ex,
+    name: NVR_CATEGORY.name,
+    tagline: NVR_CATEGORY.tagline,
+    description: NVR_CATEGORY.description,
+    iconName: NVR_CATEGORY.iconName,
+    image: NVR_CATEGORY.image,
+    specLabels: ex.specLabels || NVR_CATEGORY.specLabels,
+  };
+  const copy = [...cats];
+  copy[idx] = upgraded;
+  return copy;
 }
 
 // URL <-> Ansicht (echte Adressen für SEO & Deep-Links)
