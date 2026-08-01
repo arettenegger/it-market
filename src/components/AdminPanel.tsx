@@ -720,6 +720,24 @@ export default function AdminPanel({
     }
   };
 
+  // Ganze Kategorie entfernen: leert alle Optionen der Section. Eine leere Kategorie
+  // wird im Konfigurator nicht mehr angezeigt (weder Auswahl noch im Preis).
+  const handleClearSection = (section: keyof ConfiguratorData, label: string) => {
+    if (section === "baseBoardPrice") return;
+    const count = ((localConfig[section] as ConfiguratorOption[]) || []).length;
+    if (count > 0 && !window.confirm(`Kategorie "${label}" komplett entfernen?\n\nAlle ${count} Optionen darin werden gelöscht und die Kategorie verschwindet aus dem Konfigurator. Sie können sie später durch Hinzufügen neuer Optionen wieder aktivieren.`)) {
+      return;
+    }
+    const updatedConfig = {
+      ...localConfig,
+      [section]: []
+    };
+    setLocalConfig(updatedConfig);
+    if (onUpdateConfiguratorData) {
+      onUpdateConfiguratorData(updatedConfig);
+    }
+  };
+
   const handleUpdateBaseBoardPrice = (newPrice: number) => {
     const updatedConfig = {
       ...localConfig,
@@ -4604,21 +4622,40 @@ export default function AdminPanel({
                     {configSection === "serviceOptions" && "Verfügbare Service-Pakete"}
                   </span>
 
-                  <button
-                    onClick={() => {
-                      setIsAddingOption(true);
-                      setEditingOption(null);
-                      setOptName("");
-                      setOptPrice(0);
-                      setOptSpec("");
-                      setOptRecommended(false);
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Neue Option hinzufügen</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleClearSection(configSection, ({ cpuOptions: "Prozessor (CPU)", gpuOptions: "Grafikkarte (GPU)", ramOptions: "Arbeitsspeicher (RAM)", ssdOptions: "Speicher (SSD / NVMe)", networkOptions: "Netzwerkkarte", chassisOptions: "Gehäuse", serviceOptions: "Service & Montage" } as Record<string, string>)[configSection] || "Kategorie")}
+                      disabled={((localConfig[configSection] as ConfiguratorOption[]) || []).length === 0}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="Ganze Kategorie aus dem Konfigurator entfernen (alle Optionen löschen)"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Kategorie entfernen</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsAddingOption(true);
+                        setEditingOption(null);
+                        setOptName("");
+                        setOptPrice(0);
+                        setOptSpec("");
+                        setOptRecommended(false);
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Neue Option hinzufügen</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* Hinweis bei leerer (entfernter) Kategorie */}
+                {((localConfig[configSection] as ConfiguratorOption[]) || []).length === 0 && (
+                  <div className="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-4 text-xs text-rose-300 flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>Diese Kategorie ist aktuell <strong>ausgeblendet</strong> – sie enthält keine Optionen und erscheint dadurch nicht im PC-Konfigurator. Fügen Sie eine Option hinzu, um sie wieder zu aktivieren.</span>
+                  </div>
+                )}
 
                 {/* Adding / Editing Form */}
                 {(isAddingOption || editingOption) && (

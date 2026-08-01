@@ -39,27 +39,32 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
   const currentService = serviceOptions.find(o => o.id === selectedService) || serviceOptions[0] || { id: "none", name: "-", price: 0, spec: "" };
 
   const baseBoardPrice = data.baseBoardPrice ?? 349;
-  const totalPrice = baseBoardPrice + currentChassis.price + currentCpu.price + currentRam.price + currentGpu.price + currentSsd.price + currentNetwork.price + currentService.price;
+
+  // Nur Kategorien mit mindestens einer Option zählen — entfernte (leere) Kategorien
+  // fließen weder in Preis, Übersicht, Warenkorb noch ins Angebot ein.
+  const activeParts = [
+    { label: "Gehäuse", sumLabel: "Gehäuse", opt: currentChassis, active: chassisOptions.length > 0 },
+    { label: "CPU", sumLabel: "Prozessor", opt: currentCpu, active: cpuOptions.length > 0 },
+    { label: "RAM", sumLabel: "RAM", opt: currentRam, active: ramOptions.length > 0 },
+    { label: "GPU", sumLabel: "Grafikkarte", opt: currentGpu, active: gpuOptions.length > 0 },
+    { label: "SSD", sumLabel: "Speicher", opt: currentSsd, active: ssdOptions.length > 0 },
+    { label: "Netzwerk", sumLabel: "Netzwerk", opt: currentNetwork, active: networkOptions.length > 0 },
+    { label: "Service", sumLabel: "Service", opt: currentService, active: serviceOptions.length > 0 },
+  ].filter(p => p.active);
+
+  const totalPrice = baseBoardPrice + activeParts.reduce((sum, p) => sum + p.opt.price, 0);
 
   const handleAddConfigurationToCart = () => {
     const configProduct: Product = {
       id: `custom-pc-${Date.now()}`,
       name: `Custom PC-Workstation "${currentCpu.name.split(' ')[0]} / ${currentGpu.name.split(' ')[0]}"`,
       category: "PC-Hardware",
-      description: `Individualkonfiguration: ${currentCpu.name}, ${currentRam.name}, ${currentGpu.name}, ${currentSsd.name}, ${currentNetwork.name}, ${currentChassis.name}.`,
+      description: `Individualkonfiguration: ${activeParts.map(p => p.opt.name).join(", ")}.`,
       price: totalPrice,
       rating: 5.0,
       reviewsCount: 1,
       image: "netzwerk",
-      features: [
-        `Gehäuse: ${currentChassis.name}`,
-        `CPU: ${currentCpu.name}`,
-        `RAM: ${currentRam.name}`,
-        `GPU: ${currentGpu.name}`,
-        `SSD: ${currentSsd.name}`,
-        `Netzwerk: ${currentNetwork.name}`,
-        `Service: ${currentService.name}`
-      ],
+      features: activeParts.map(p => `${p.label}: ${p.opt.name}`),
       isBestseller: true,
       inStock: true,
       colors: ["Schneidend Schwarz"],
@@ -68,7 +73,10 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
         viewAngle: currentGpu.spec,
         nightVision: currentRam.spec,
         storage: currentSsd.spec,
-        power: `${currentNetwork.name} | ${currentService.name}`
+        power: [
+          networkOptions.length > 0 ? currentNetwork.name : null,
+          serviceOptions.length > 0 ? currentService.name : null,
+        ].filter(Boolean).join(" | ")
       }
     };
 
@@ -76,7 +84,8 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
   };
 
   const handleRequestQuote = () => {
-    const quoteMsg = `Guten Tag IT-MARKET Team, ich bitte um ein unverbindliches Angebot für folgende PC/Server Konfiguration (Gesamtwert ca. ${totalPrice}€):\n- Gehäuse: ${currentChassis.name}\n- CPU: ${currentCpu.name}\n- RAM: ${currentRam.name}\n- GPU: ${currentGpu.name}\n- Speicher: ${currentSsd.name}\n- Netzwerk: ${currentNetwork.name}\n- Service: ${currentService.name}`;
+    const lines = activeParts.map(p => `- ${p.label}: ${p.opt.name}`).join("\n");
+    const quoteMsg = `Guten Tag IT-MARKET Team, ich bitte um ein unverbindliches Angebot für folgende PC/Server Konfiguration (Gesamtwert ca. ${totalPrice}€):\n${lines}`;
     if (onOpenCallback) {
       onOpenCallback(quoteMsg);
     }
@@ -116,10 +125,11 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
           <div className="lg:col-span-8 space-y-6">
             
             {/* 1. Chassis */}
+            {chassisOptions.length > 0 && (
             <div className="bg-slate-800/50 p-5 rounded-2xl border border-slate-800">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-3">
                 <Server className="w-4 h-4 text-red-400" />
-                1. Gehäuse & System-Typ
+                Gehäuse & System-Typ
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {chassisOptions.map(opt => (
@@ -144,12 +154,14 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
                 ))}
               </div>
             </div>
+            )}
 
             {/* 2. CPU */}
+            {cpuOptions.length > 0 && (
             <div className="bg-slate-800/50 p-5 rounded-2xl border border-slate-800">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-3">
                 <Cpu className="w-4 h-4 text-red-400" />
-                2. Prozessor (CPU)
+                Prozessor (CPU)
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {cpuOptions.map(opt => (
@@ -174,12 +186,14 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
                 ))}
               </div>
             </div>
+            )}
 
             {/* 3. RAM */}
+            {ramOptions.length > 0 && (
             <div className="bg-slate-800/50 p-5 rounded-2xl border border-slate-800">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-3">
                 <Layers className="w-4 h-4 text-red-400" />
-                3. Arbeitsspeicher (RAM)
+                Arbeitsspeicher (RAM)
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {ramOptions.map(opt => (
@@ -204,12 +218,14 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
                 ))}
               </div>
             </div>
+            )}
 
             {/* 4. GPU */}
+            {gpuOptions.length > 0 && (
             <div className="bg-slate-800/50 p-5 rounded-2xl border border-slate-800">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-3">
                 <Zap className="w-4 h-4 text-red-400" />
-                4. Grafikkarte / Beschleuniger (GPU)
+                Grafikkarte / Beschleuniger (GPU)
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {gpuOptions.map(opt => (
@@ -234,12 +250,14 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
                 ))}
               </div>
             </div>
+            )}
 
             {/* 5. SSD & Storage */}
+            {ssdOptions.length > 0 && (
             <div className="bg-slate-800/50 p-5 rounded-2xl border border-slate-800">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-3">
                 <HardDrive className="w-4 h-4 text-red-400" />
-                5. System-Speicher (NVMe M.2 SSD)
+                System-Speicher (NVMe M.2 SSD)
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {ssdOptions.map(opt => (
@@ -264,13 +282,15 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
                 ))}
               </div>
             </div>
+            )}
 
             {/* 6. Network & Services */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {networkOptions.length > 0 && (
               <div className="bg-slate-800/50 p-5 rounded-2xl border border-slate-800">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-3">
                   <Activity className="w-4 h-4 text-red-400" />
-                  6. Netzwerk-Karte
+                  Netzwerk-Karte
                 </label>
                 <div className="space-y-2">
                   {networkOptions.map(opt => (
@@ -289,11 +309,13 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
                   ))}
                 </div>
               </div>
+              )}
 
+              {serviceOptions.length > 0 && (
               <div className="bg-slate-800/50 p-5 rounded-2xl border border-slate-800">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-3">
                   <Sliders className="w-4 h-4 text-red-400" />
-                  7. Montage & Service
+                  Montage & Service
                 </label>
                 <div className="space-y-2">
                   {serviceOptions.map(opt => (
@@ -312,6 +334,7 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
                   ))}
                 </div>
               </div>
+              )}
             </div>
 
           </div>
@@ -327,36 +350,14 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
                 </span>
               </div>
 
-              {/* Selected List */}
+              {/* Selected List — nur aktive (nicht entfernte) Kategorien */}
               <div className="space-y-2.5 text-xs text-slate-300">
-                <div className="flex justify-between items-center py-1 border-b border-slate-800">
-                  <span className="text-slate-400">Gehäuse:</span>
-                  <span className="font-semibold text-right max-w-[180px] truncate">{currentChassis.name}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-800">
-                  <span className="text-slate-400">Prozessor:</span>
-                  <span className="font-semibold text-right max-w-[180px] truncate">{currentCpu.name}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-800">
-                  <span className="text-slate-400">RAM:</span>
-                  <span className="font-semibold text-right max-w-[180px] truncate">{currentRam.name}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-800">
-                  <span className="text-slate-400">Grafikkarte:</span>
-                  <span className="font-semibold text-right max-w-[180px] truncate">{currentGpu.name}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-800">
-                  <span className="text-slate-400">Speicher:</span>
-                  <span className="font-semibold text-right max-w-[180px] truncate">{currentSsd.name}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-800">
-                  <span className="text-slate-400">Netzwerk:</span>
-                  <span className="font-semibold text-right max-w-[180px] truncate">{currentNetwork.name}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-800">
-                  <span className="text-slate-400">Service:</span>
-                  <span className="font-semibold text-right max-w-[180px] truncate">{currentService.name}</span>
-                </div>
+                {activeParts.map(p => (
+                  <div key={p.sumLabel} className="flex justify-between items-center py-1 border-b border-slate-800">
+                    <span className="text-slate-400">{p.sumLabel}:</span>
+                    <span className="font-semibold text-right max-w-[180px] truncate">{p.opt.name}</span>
+                  </div>
+                ))}
               </div>
 
               {/* Total Price */}
