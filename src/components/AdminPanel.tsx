@@ -3,7 +3,7 @@ import { VideoBackground } from "./VideoBackground";
 import { FirebaseStorageManager } from "./FirebaseStorageManager";
 import { uploadImageToStorage, uploadFileToStorage, uploadDataUrlToStorage, uploadImageUrlToStorage } from "../lib/storageService";
 import { fetchInquiries, fetchCallbacks, deleteInquiry, deleteCallback, updateCallbackStatus } from "../lib/leadsService";
-import { fetchPageStats, resetPageStats } from "../lib/pageStats";
+import { fetchPageStats, resetPageStats, aggregateDays, lastNDayKeys, PageStats } from "../lib/pageStats";
 import { 
   Database, 
   Plus, 
@@ -150,8 +150,9 @@ export default function AdminPanel({
   const [seoSavedMsg, setSeoSavedMsg] = useState<string | null>(null);
 
   // --- Eigener Seitenzähler ---
-  const [pageStats, setPageStats] = useState<{ counts: Record<string, number>; total: number; updatedAt?: string }>({ counts: {}, total: 0 });
+  const [pageStats, setPageStats] = useState<PageStats>({ counts: {}, total: 0, days: {} });
   const [pageStatsLoading, setPageStatsLoading] = useState(false);
+  const [statsRange, setStatsRange] = useState<"all" | "7" | "30">("all");
   const loadPageStats = async () => {
     setPageStatsLoading(true);
     try { setPageStats(await fetchPageStats()); } catch (e) {} finally { setPageStatsLoading(false); }
@@ -159,6 +160,11 @@ export default function AdminPanel({
   useEffect(() => {
     if (activeTab === "analytics") loadPageStats();
   }, [activeTab]);
+
+  // Gefilterte Aufrufe je nach Zeitraum (Gesamt / letzte 7 / letzte 30 Tage)
+  const displayedStats = statsRange === "all"
+    ? { counts: pageStats.counts, total: pageStats.total }
+    : aggregateDays(pageStats.days, lastNDayKeys(statsRange === "7" ? 7 : 30));
 
   useEffect(() => {
     if (activeTab === "seo") {
@@ -3550,18 +3556,45 @@ export default function AdminPanel({
                     <button onClick={loadPageStats} className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold cursor-pointer transition-all">Aktualisieren</button>
                   </div>
                 </div>
+
+                {/* Zeitraum-Filter */}
+                <div className="inline-flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 mb-3">
+                  {([
+                    { key: "all", label: "Gesamt" },
+                    { key: "7", label: "Letzte 7 Tage" },
+                    { key: "30", label: "Letzte 30 Tage" },
+                  ] as const).map((opt) => (
+                    <button
+                      key={opt.key}
+                      onClick={() => setStatsRange(opt.key)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        statsRange === opt.key
+                          ? "bg-[#FF5E2E] text-white shadow"
+                          : "text-slate-400 hover:text-white hover:bg-slate-800"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
                 <p className="text-[11px] text-slate-500 mb-4">
-                  Eigener, cookieloser Zähler (anonym, DSGVO-unkritisch). Gesamtaufrufe: <strong className="text-white">{pageStats.total}</strong>
+                  Eigener, cookieloser Zähler (anonym, DSGVO-unkritisch).{" "}
+                  {statsRange === "all" ? "Gesamtaufrufe" : statsRange === "7" ? "Aufrufe der letzten 7 Tage" : "Aufrufe der letzten 30 Tage"}: <strong className="text-white">{displayedStats.total}</strong>
                   {pageStats.updatedAt ? ` · zuletzt: ${new Date(pageStats.updatedAt).toLocaleString("de-DE")}` : ""}
                 </p>
                 {pageStatsLoading ? (
                   <p className="text-xs text-slate-500">Lädt…</p>
-                ) : Object.keys(pageStats.counts).length === 0 ? (
-                  <p className="text-xs text-slate-500">Noch keine Aufrufe erfasst. (Hinweis: Zum Anzeigen musst du per Firebase eingeloggt sein.)</p>
+                ) : Object.keys(displayedStats.counts).length === 0 ? (
+                  <p className="text-xs text-slate-500">
+                    {statsRange === "all"
+                      ? "Noch keine Aufrufe erfasst. (Hinweis: Zum Anzeigen musst du per Firebase eingeloggt sein.)"
+                      : "Keine Aufrufe im gewählten Zeitraum. (Tageswerte werden erst ab jetzt erfasst.)"}
+                  </p>
                 ) : (
                   <div className="space-y-2">
-                    {Object.entries(pageStats.counts).sort((a, b) => (b[1] as number) - (a[1] as number)).map(([route, count]) => {
-                      const max = Math.max(...Object.values(pageStats.counts).map((n) => Number(n) || 0), 1);
+                    {Object.entries(displayedStats.counts).sort((a, b) => (b[1] as number) - (a[1] as number)).map(([route, count]) => {
+                      const max = Math.max(...Object.values(displayedStats.counts).map((n) => Number(n) || 0), 1);
                       return (
                         <div key={route} className="flex items-center gap-3">
                           <span className="text-xs font-mono text-slate-300 w-32 sm:w-44 truncate" title={route}>{route}</span>
