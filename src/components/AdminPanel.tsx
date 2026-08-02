@@ -143,10 +143,11 @@ export default function AdminPanel({
     { key: "/impressum", label: "Impressum" },
     { key: "/datenschutz", label: "Datenschutz" },
   ];
-  const [seoSection, setSeoSection] = useState<"pages" | "blog" | "products">("pages");
+  const [seoSection, setSeoSection] = useState<"pages" | "blog" | "products" | "baseconfigs">("pages");
   const [seoPageDraft, setSeoPageDraft] = useState<Record<string, PageSeo>>({});
   const [seoBlogDraft, setSeoBlogDraft] = useState<BlogPost[]>([]);
   const [seoProductDraft, setSeoProductDraft] = useState<Product[]>([]);
+  const [seoBaseConfigDraft, setSeoBaseConfigDraft] = useState<BaseConfiguration[]>([]);
   const [seoSavedMsg, setSeoSavedMsg] = useState<string | null>(null);
 
   // --- Eigener Seitenzähler ---
@@ -171,6 +172,7 @@ export default function AdminPanel({
       setSeoPageDraft({ ...pageSeo });
       setSeoBlogDraft(blogPosts.map((p) => ({ ...p })));
       setSeoProductDraft(products.map((p) => ({ ...p })));
+      setSeoBaseConfigDraft(((configuratorData || DEFAULT_CONFIGURATOR_DATA).baseConfigurations || []).map((c) => ({ ...c })));
       setSeoSavedMsg(null);
     }
   }, [activeTab]);
@@ -3498,7 +3500,7 @@ export default function AdminPanel({
                   Titel und Beschreibung bestimmen, wie deine Seiten bei Google erscheinen. Keywords sind ergänzend (Google gewichtet vor allem Titel, Beschreibung &amp; Inhalt).
                 </p>
                 <div className="flex gap-2 flex-wrap">
-                  {([["pages", "Unterseiten"], ["blog", "Blog-Artikel"], ["products", "Produkte"]] as const).map(([id, label]) => (
+                  {([["pages", "Unterseiten"], ["blog", "Blog-Artikel"], ["products", "Produkte"], ["baseconfigs", "Basiskonfigurationen"]] as const).map(([id, label]) => (
                     <button key={id} type="button" onClick={() => setSeoSection(id)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${seoSection === id ? "bg-[#FF5E2E] text-white" : "bg-slate-900 text-slate-400 hover:text-white border border-slate-800"}`}>{label}</button>
                   ))}
                 </div>
@@ -3586,6 +3588,33 @@ export default function AdminPanel({
                     </div>
                   ))}
                   {seoProductDraft.length > 0 && <button onClick={() => { onUpdateProducts(seoProductDraft); setSeoSavedMsg("Produkt-SEO gespeichert."); }} className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold cursor-pointer transition-all">Produkt-SEO speichern</button>}
+                </div>
+              )}
+
+              {seoSection === "baseconfigs" && (
+                <div className="space-y-4">
+                  <p className="text-[11px] text-slate-500 leading-relaxed">Basiskonfigurationen (PC-Konfigurator) haben keine eigene Unterseite. Diese Angaben werden als strukturierte Produktdaten (Google: Name, Preis, Beschreibung) auf der PC-Hardware-Seite ausgegeben.</p>
+                  {seoBaseConfigDraft.length === 0 && <p className="text-xs text-slate-500">Keine Basiskonfigurationen vorhanden.</p>}
+                  {seoBaseConfigDraft.map((c, i) => (
+                    <div key={c.id} className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
+                      <span className="text-sm font-bold text-white block mb-3">{c.name}{c.articleNumber ? <span className="ml-2 text-[10px] font-mono text-amber-400/90">Art.-Nr.: {c.articleNumber}</span> : null}</span>
+                      <div className="grid gap-3">
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">SEO-Titel</label>
+                          <input value={c.seoTitle || ""} onChange={(e) => setSeoBaseConfigDraft((d) => d.map((x, xi) => (xi === i ? { ...x, seoTitle: e.target.value } : x)))} placeholder={c.name} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E] mt-1" />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Meta-Beschreibung</label>
+                          <textarea value={c.metaDescription || ""} onChange={(e) => setSeoBaseConfigDraft((d) => d.map((x, xi) => (xi === i ? { ...x, metaDescription: e.target.value } : x)))} rows={2} placeholder={c.description || ""} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E] mt-1 resize-none" />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Keywords (kommagetrennt)</label>
+                          <input value={c.keywords || ""} onChange={(e) => setSeoBaseConfigDraft((d) => d.map((x, xi) => (xi === i ? { ...x, keywords: e.target.value } : x)))} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E] mt-1" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {seoBaseConfigDraft.length > 0 && <button onClick={() => { const updated = { ...(configuratorData || DEFAULT_CONFIGURATOR_DATA), baseConfigurations: seoBaseConfigDraft }; setLocalConfig(updated); onUpdateConfiguratorData?.(updated); setSeoSavedMsg("Basiskonfig-SEO gespeichert."); }} className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold cursor-pointer transition-all">Basiskonfig-SEO speichern</button>}
                 </div>
               )}
 

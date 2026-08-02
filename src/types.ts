@@ -136,6 +136,10 @@ export interface BaseConfiguration {
   recommended?: boolean;
   // Interne Artikelnummer – nur im Admin sichtbar, NICHT auf der Website.
   articleNumber?: string;
+  // SEO / strukturierte Produktdaten (auf der PC-Hardware-Seite)
+  seoTitle?: string;
+  metaDescription?: string;
+  keywords?: string;
 }
 
 export interface ConfiguratorData {

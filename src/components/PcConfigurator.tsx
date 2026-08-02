@@ -103,8 +103,38 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
     if (onOpenCallback) onOpenCallback(quoteMsg);
   };
 
+  // Strukturierte Produktdaten (JSON-LD) für Google – aus den Basiskonfigurationen.
+  const structuredData = baseConfigs.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "PC- & Server-Basiskonfigurationen",
+    "itemListElement": baseConfigs.map((cfg, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "item": {
+        "@type": "Product",
+        "name": (cfg.seoTitle || "").trim() || cfg.name,
+        "description": (cfg.metaDescription || "").trim() || cfg.description || [cfg.cpu, cfg.mainboard, cfg.ram, cfg.ssd, cfg.chassis, cfg.gpu].filter(Boolean).join(", "),
+        ...((cfg.keywords || "").trim() ? { keywords: cfg.keywords!.trim() } : {}),
+        // Bewusst KEINE sku/articleNumber – die interne Artikelnummer bleibt nur im Admin.
+        "category": "PC-Hardware",
+        "brand": { "@type": "Brand", "name": "IT-MARKET" },
+        "offers": {
+          "@type": "Offer",
+          "price": cfg.price,
+          "priceCurrency": "EUR",
+          "availability": "https://schema.org/InStock",
+          "url": "https://it-market.at/kategorie/pc-hardware"
+        }
+      }
+    }))
+  } : null;
+
   return (
     <section id="pc-konfigurator" className="py-12 bg-slate-900 text-white rounded-3xl p-6 sm:p-8 lg:p-10 my-8 shadow-2xl border border-slate-800">
+      {structuredData && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+      )}
       <div className="max-w-7xl mx-auto">
 
         {/* Header Badge */}
