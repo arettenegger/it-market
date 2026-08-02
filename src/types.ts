@@ -28,6 +28,8 @@ export interface Product {
   seoTitle?: string;
   metaDescription?: string;
   keywords?: string;
+  // Interne Artikelnummer – nur im Admin sichtbar, NICHT auf der Website.
+  articleNumber?: string;
 }
 
 // SEO-Daten für Unterseiten (Startseite, Kategorien, Blog, Kontakt …)
@@ -132,6 +134,8 @@ export interface BaseConfiguration {
   gpu?: string;
   description?: string;
   recommended?: boolean;
+  // Interne Artikelnummer – nur im Admin sichtbar, NICHT auf der Website.
+  articleNumber?: string;
 }
 
 export interface ConfiguratorData {

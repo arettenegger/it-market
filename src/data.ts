@@ -548,6 +548,7 @@ export const DEFAULT_CONFIGURATOR_DATA: ConfiguratorData = {
     {
       id: "cfg-office",
       name: "Office Workstation Kompakt",
+      articleNumber: "PC-OFF-001",
       price: 1299,
       cpu: "Intel Core i9-14900K (24 Cores)",
       mainboard: "Intel Z790 ATX Mainboard",
@@ -560,6 +561,7 @@ export const DEFAULT_CONFIGURATOR_DATA: ConfiguratorData = {
     {
       id: "cfg-business-pro",
       name: "Business Pro Workstation",
+      articleNumber: "PC-BIZ-002",
       price: 2190,
       cpu: "AMD Ryzen 9 7950X (16 Cores)",
       mainboard: "AMD X670E ATX Mainboard",
@@ -573,6 +575,7 @@ export const DEFAULT_CONFIGURATOR_DATA: ConfiguratorData = {
     {
       id: "cfg-creator-ai",
       name: "Creator & KI Workstation",
+      articleNumber: "PC-CRE-003",
       price: 4990,
       cpu: "Intel Xeon W7-2475X (20 Cores, ECC)",
       mainboard: "Intel W790 Workstation Mainboard",
@@ -585,6 +588,7 @@ export const DEFAULT_CONFIGURATOR_DATA: ConfiguratorData = {
     {
       id: "cfg-server-rack",
       name: "Server Rack Enterprise (2U)",
+      articleNumber: "SRV-RCK-004",
       price: 5490,
       cpu: "AMD Threadripper 7960X (24 Cores, ECC)",
       mainboard: "AMD TRX50 Server Mainboard",
@@ -597,6 +601,7 @@ export const DEFAULT_CONFIGURATOR_DATA: ConfiguratorData = {
     {
       id: "cfg-nas-host",
       name: "Kompakt-Server / NAS-Host",
+      articleNumber: "SRV-NAS-005",
       price: 1690,
       cpu: "Intel Core i9-14900K (24 Cores)",
       mainboard: "Intel Z790 ATX Mainboard",

@@ -706,6 +706,7 @@ export default function AdminPanel({
   const [bcGpu, setBcGpu] = useState("");
   const [bcDescription, setBcDescription] = useState("");
   const [bcRecommended, setBcRecommended] = useState(false);
+  const [bcArticleNumber, setBcArticleNumber] = useState("");
 
   useEffect(() => {
     if (configuratorData) {
@@ -790,6 +791,7 @@ export default function AdminPanel({
     setIsAddingBaseConfig(false);
     setBcName(""); setBcPrice(0); setBcCpu(""); setBcMainboard(""); setBcRam("");
     setBcSsd(""); setBcChassis(""); setBcGpu(""); setBcDescription(""); setBcRecommended(false);
+    setBcArticleNumber("");
   };
 
   const startEditBaseConfig = (cfg: BaseConfiguration) => {
@@ -798,6 +800,7 @@ export default function AdminPanel({
     setBcName(cfg.name); setBcPrice(cfg.price); setBcCpu(cfg.cpu); setBcMainboard(cfg.mainboard);
     setBcRam(cfg.ram); setBcSsd(cfg.ssd); setBcChassis(cfg.chassis);
     setBcGpu(cfg.gpu || ""); setBcDescription(cfg.description || ""); setBcRecommended(!!cfg.recommended);
+    setBcArticleNumber(cfg.articleNumber || "");
   };
 
   const handleSaveBaseConfig = (e: React.FormEvent) => {
@@ -815,6 +818,7 @@ export default function AdminPanel({
       gpu: bcGpu.trim() || undefined,
       description: bcDescription.trim() || undefined,
       recommended: bcRecommended,
+      articleNumber: bcArticleNumber.trim() || undefined,
     };
     const list = localConfig.baseConfigurations || [];
     const updatedList = editingBaseConfig
@@ -962,6 +966,7 @@ export default function AdminPanel({
   const [newFeatureText, setNewFeatureText] = useState("");
   const [formImage, setFormImage] = useState("");
   const [formImageAlt, setFormImageAlt] = useState("");
+  const [formArticleNumber, setFormArticleNumber] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   // Specifications
@@ -1148,6 +1153,7 @@ export default function AdminPanel({
     setFormFeatures(product.features);
     setFormImage(product.image);
     setFormImageAlt(product.imageAlt || "");
+    setFormArticleNumber(product.articleNumber || "");
 
     setSpecResolution(product.specs.resolution);
     setSpecViewAngle(product.specs.viewAngle);
@@ -1177,6 +1183,7 @@ export default function AdminPanel({
     ]);
     setFormImage("");
     setFormImageAlt("");
+    setFormArticleNumber("");
 
     setSpecResolution("2560 x 1440 (4 Megapixel)");
     setSpecViewAngle("110° Horizontal");
@@ -1263,7 +1270,8 @@ export default function AdminPanel({
           nightVision: specNightVision || "25m Smart IR",
           storage: specStorage || "MicroSD & Cloud",
           power: specPower || "PoE / Netzteil"
-        }
+        },
+        articleNumber: formArticleNumber.trim() || undefined
       };
 
       const updated = [newProduct, ...products];
@@ -1295,7 +1303,8 @@ export default function AdminPanel({
               nightVision: specNightVision || p.specs?.nightVision || "25m Smart IR",
               storage: specStorage || p.specs?.storage || "MicroSD & Cloud",
               power: specPower || p.specs?.power || "PoE / Netzteil"
-            }
+            },
+            articleNumber: formArticleNumber.trim() || undefined
           };
         }
         return p;
@@ -1365,7 +1374,8 @@ export default function AdminPanel({
         "viewAngle",
         "nightVision",
         "storage",
-        "power"
+        "power",
+        "articleNumber"
       ];
 
       const escapeCSV = (val: any) => {
@@ -1395,7 +1405,8 @@ export default function AdminPanel({
           escapeCSV(p.specs?.viewAngle || ""),
           escapeCSV(p.specs?.nightVision || ""),
           escapeCSV(p.specs?.storage || ""),
-          escapeCSV(p.specs?.power || "")
+          escapeCSV(p.specs?.power || ""),
+          escapeCSV(p.articleNumber || "")
         ].join(";"); // German Semicolon CSV format for Excel
       });
 
@@ -1472,6 +1483,7 @@ export default function AdminPanel({
     const specNightIdx = getIndex("nightvision");
     const specStorageIdx = getIndex("storage");
     const specPowerIdx = getIndex("power");
+    const articleNumberIdx = getIndex("articlenumber") !== -1 ? getIndex("articlenumber") : getIndex("artikelnummer");
 
     const parsedProducts: Product[] = [];
 
@@ -1515,7 +1527,8 @@ export default function AdminPanel({
           nightVision: specNightIdx !== -1 && row[specNightIdx] ? row[specNightIdx] : "25m Smart IR",
           storage: specStorageIdx !== -1 && row[specStorageIdx] ? row[specStorageIdx] : "MicroSD & Cloud",
           power: specPowerIdx !== -1 && row[specPowerIdx] ? row[specPowerIdx] : "PoE / Netzteil"
-        }
+        },
+        articleNumber: articleNumberIdx !== -1 && row[articleNumberIdx] ? row[articleNumberIdx] : undefined
       });
     }
 
@@ -2713,6 +2726,12 @@ export default function AdminPanel({
                                 <span className={`font-medium ${prod.inStock ? "text-emerald-400" : "text-rose-400"}`}>
                                   {prod.inStock ? "Auf Lager" : "Ausverkauft"}
                                 </span>
+                                {prod.articleNumber && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="font-mono text-amber-400/90">Art.-Nr.: {prod.articleNumber}</span>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -2776,6 +2795,20 @@ export default function AdminPanel({
                           value={formName}
                           onChange={(e) => setFormName(e.target.value)}
                           placeholder="z.B. Pro Dome 4K"
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 outline-none focus:border-[#FF5E2E] transition-all"
+                        />
+                      </div>
+
+                      {/* Artikelnummer (nur intern) */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                          Artikelnummer <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">nur intern</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={formArticleNumber}
+                          onChange={(e) => setFormArticleNumber(e.target.value)}
+                          placeholder="z.B. CAM-4K-001 (nicht auf der Website sichtbar)"
                           className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 outline-none focus:border-[#FF5E2E] transition-all"
                         />
                       </div>
@@ -4749,6 +4782,13 @@ export default function AdminPanel({
                       <input type="text" value={bcDescription} onChange={(e) => setBcDescription(e.target.value)} placeholder="z.B. Leistungsstarke Workstation für CAD & Videobearbeitung" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
                     </div>
 
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1 flex items-center gap-1.5">
+                        Artikelnummer <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">nur intern</span>
+                      </label>
+                      <input type="text" value={bcArticleNumber} onChange={(e) => setBcArticleNumber(e.target.value)} placeholder="z.B. PC-WS-2024-001 (nicht auf der Website sichtbar)" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" />
+                    </div>
+
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
                       <label className="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer">
                         <input type="checkbox" checked={bcRecommended} onChange={(e) => setBcRecommended(e.target.checked)} className="w-4 h-4 rounded text-cyan-500 focus:ring-0 bg-slate-950 border-slate-800" />
@@ -4788,6 +4828,7 @@ export default function AdminPanel({
                                 <span>{cfg.name}</span>
                                 {cfg.recommended && (<span className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[9px] px-1.5 py-0.2 rounded font-extrabold uppercase">Empfohlen</span>)}
                               </div>
+                              {cfg.articleNumber && <div className="text-[10px] font-mono text-amber-400/90 font-normal mt-0.5">Art.-Nr.: {cfg.articleNumber}</div>}
                               {cfg.description && <div className="text-[10px] text-slate-500 font-normal mt-0.5 max-w-[220px]">{cfg.description}</div>}
                             </td>
                             <td className="py-3 px-4 text-slate-400">{cfg.cpu}<br /><span className="text-slate-500">{cfg.mainboard}</span></td>
