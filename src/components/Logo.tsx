@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface LogoProps {
   className?: string;
@@ -18,6 +18,8 @@ export default function Logo({
   showText = true
 }: LogoProps) {
   const isLightText = variant === "light";
+  // Fällt automatisch auf das SVG-Emblem zurück, falls das hinterlegte Logo-Bild nicht lädt.
+  const [imgError, setImgError] = useState(false);
 
   const sizeHeights = {
     sm: "h-7 sm:h-8",
@@ -39,12 +41,13 @@ export default function Logo({
 
   return (
     <div className={`flex items-center gap-2 sm:gap-2.5 select-none ${className}`}>
-      {logoImage ? (
-        <img 
-          src={logoImage} 
-          alt="Logo" 
-          className={`${sizeHeights[size]} w-auto object-contain shrink-0 rounded-lg`} 
+      {logoImage && !imgError ? (
+        <img
+          src={logoImage}
+          alt="Logo"
+          className={`${sizeHeights[size]} w-auto object-contain shrink-0 rounded-lg`}
           referrerPolicy="no-referrer"
+          onError={() => setImgError(true)}
         />
       ) : (
         /* IT-MARKET Red Crescent Emblem */

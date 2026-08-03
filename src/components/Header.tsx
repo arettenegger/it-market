@@ -145,10 +145,9 @@ export default function Header({
   const menuBarItems = [
     { name: "PC-Hardware", type: "category", categoryName: "PC-Hardware" },
     { name: "Netzwerke", type: "category", categoryName: "Netzwerke" },
-    { name: "Hotspot & Wireless", type: "category", categoryName: "Hotspot & Wireless-Lösungen" },
+    { name: "Hotspot", type: "category", categoryName: "Hotspot & Wireless-Lösungen" },
     { name: "NAS-Systeme", type: "category", categoryName: "NAS-Systeme" },
     { name: "IP-Kameras", type: "category", categoryName: "IP-Kameras" },
-    { name: "Netzwerkrekorder NVR", type: "category", categoryName: "Netzwerkrekorder NVR" },
     { name: "Smart-Home", type: "category", categoryName: "Smart-Home" },
     { name: "Blog", type: "blog", categoryName: "" },
     { name: "Warenkorb", type: "cart", categoryName: "" },
@@ -232,13 +231,13 @@ export default function Header({
             {/* Logo */}
             <div
               onClick={() => handleNavClick("hero")}
-              className="flex items-center cursor-pointer group py-1"
+              className="flex items-center cursor-pointer group py-1 shrink-0"
             >
               <Logo variant="dark" size="lg" showSubtitle={false} showText={false} logoImage={logoImage} />
             </div>
 
             {/* Desktop Navigation with requested 8 menu items */}
-            <nav className="hidden lg:flex items-center gap-1.5 xl:gap-2.5">
+            <nav className="hidden xl:flex items-center gap-1.5 xl:gap-2.5">
               {menuBarItems.map((item, idx) => {
                 const isBlogActive = currentPage === "blog" && item.type === "blog";
                 const isCategoryActive = currentPage === "category" && item.type === "category" && !!selectedCategory && (
@@ -394,7 +393,7 @@ export default function Header({
               {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-full transition-all cursor-pointer"
+                className="xl:hidden p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-full transition-all cursor-pointer"
                 aria-label="Menü umschalten"
               >
                 {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -405,7 +404,7 @@ export default function Header({
 
         {/* Mobile Navigation Drawer */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden fixed inset-x-0 top-16 bg-white border-b border-gray-100 shadow-2xl z-40 max-h-[calc(100vh-4rem)] overflow-y-auto animate-fadeIn">
+          <div className="xl:hidden fixed inset-x-0 top-16 bg-white border-b border-gray-100 shadow-2xl z-40 max-h-[calc(100vh-4rem)] overflow-y-auto animate-fadeIn">
             <div className="px-4 pt-3 pb-8 space-y-2">
               {menuBarItems.map((item, idx) => {
                 if (item.type === "cart") {
