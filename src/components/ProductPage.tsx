@@ -28,6 +28,17 @@ function svgType(imageName: string): "bullet" | "dome" | "ptz" | "set" | "smarth
   return "bullet";
 }
 
+// Statische Merchant-Listing-Angaben für Google (Rückgabe & Versand) – hoisted, da unveränderlich.
+const MERCHANT_RETURN_LD = {
+  "@type": "MerchantReturnPolicy",
+  applicableCountry: "AT",
+  returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+  merchantReturnDays: 14,
+  returnMethod: "https://schema.org/ReturnByMail",
+  returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
+};
+const DEFAULT_PRODUCT_IMAGE = "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=800&auto=format&fit=crop";
+
 export default function ProductPage({
   product,
   allProducts,
@@ -88,9 +99,11 @@ export default function ProductPage({
       itemCondition: "https://schema.org/NewCondition",
       availability: product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       seller: { "@type": "Organization", name: "IT-MARKET" },
+      hasMerchantReturnPolicy: MERCHANT_RETURN_LD,
     },
   };
-  if (hasRealImage) productLd.image = [product.image];
+  // image ist für Merchant-Listings Pflicht – bei Produkten ohne eigenes Bild das Kategoriebild verwenden.
+  productLd.image = [hasRealImage ? product.image : (catEntry?.image || DEFAULT_PRODUCT_IMAGE)];
 
   const breadcrumbLd = {
     "@context": "https://schema.org/",

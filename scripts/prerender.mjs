@@ -36,6 +36,28 @@ const CATEGORY_NAMES = {
   "nas": "NAS-Systeme", "kameras": "IP-Kameras", "nvr": "Netzwerkrekorder NVR", "smarthome": "Smart-Home",
 };
 
+// Fallback-Produktbilder je Kategorie (Merchant-Listings verlangen ein image).
+const CATEGORY_IMAGES = {
+  "pc-hardware": "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=800&auto=format&fit=crop",
+  "netzwerke": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?q=80&w=800&auto=format&fit=crop",
+  "hotspot": "https://images.unsplash.com/photo-1563770660941-20978e870e26?q=80&w=800&auto=format&fit=crop",
+  "nas": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=800&auto=format&fit=crop",
+  "kameras": "https://images.unsplash.com/photo-1557597774-9d273605dfa9?q=80&w=800&auto=format&fit=crop",
+  "nvr": "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=800&auto=format&fit=crop",
+  "smarthome": "https://images.unsplash.com/photo-1558002038-1055907df827?q=80&w=800&auto=format&fit=crop",
+};
+const DEFAULT_PRODUCT_IMAGE = "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=800&auto=format&fit=crop";
+
+// Merchant-Listing-Angaben für Google (Rückgabe & Versand).
+const MERCHANT_RETURN_LD = {
+  "@type": "MerchantReturnPolicy",
+  applicableCountry: "AT",
+  returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+  merchantReturnDays: 14,
+  returnMethod: "https://schema.org/ReturnByMail",
+  returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
+};
+
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const xmlEsc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -131,10 +153,13 @@ function productLdJson(p, canonical) {
       itemCondition: "https://schema.org/NewCondition",
       availability: p.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       seller: { "@type": "Organization", name: "IT-MARKET" },
+      hasMerchantReturnPolicy: MERCHANT_RETURN_LD,
     },
   };
+  // image ist Pflicht für Merchant-Listings – ohne eigenes Produktbild das Kategoriebild nutzen.
   const img = p.image || "";
-  if (img.startsWith("http") || img.startsWith("data:")) ld.image = [img];
+  const catId = categoryIdFromName(p.category);
+  ld.image = [(img.startsWith("http") || img.startsWith("data:")) ? img : (CATEGORY_IMAGES[catId] || DEFAULT_PRODUCT_IMAGE)];
   return ld;
 }
 

@@ -9,6 +9,16 @@ interface PcConfiguratorProps {
   configData?: ConfiguratorData;
 }
 
+// Merchant-Listing-Angaben für Google (Rückgabe & Versand) – hoisted, unveränderlich.
+const PC_HARDWARE_IMAGE = "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=800&auto=format&fit=crop";
+const MERCHANT_RETURN_LD = {
+  "@type": "MerchantReturnPolicy",
+  applicableCountry: "AT",
+  returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+  merchantReturnDays: 14,
+  returnMethod: "https://schema.org/ReturnByMail",
+  returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
+};
 export default function PcConfigurator({ onAddToCart, onOpenCallback, configData }: PcConfiguratorProps) {
   const data = configData || DEFAULT_CONFIGURATOR_DATA;
 
@@ -117,6 +127,7 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
         "description": (cfg.metaDescription || "").trim() || cfg.description || [cfg.cpu, cfg.mainboard, cfg.ram, cfg.ssd, cfg.chassis, cfg.gpu].filter(Boolean).join(", "),
         ...((cfg.keywords || "").trim() ? { keywords: cfg.keywords!.trim() } : {}),
         // Bewusst KEINE sku/articleNumber – die interne Artikelnummer bleibt nur im Admin.
+        "image": [PC_HARDWARE_IMAGE],
         "category": "PC-Hardware",
         "brand": { "@type": "Brand", "name": "IT-MARKET" },
         "offers": {
@@ -124,7 +135,10 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
           "price": cfg.price,
           "priceCurrency": "EUR",
           "availability": "https://schema.org/InStock",
-          "url": "https://it-market.at/kategorie/pc-hardware"
+          "url": "https://it-market.at/kategorie/pc-hardware",
+          "itemCondition": "https://schema.org/NewCondition",
+          "seller": { "@type": "Organization", "name": "IT-MARKET" },
+          "hasMerchantReturnPolicy": MERCHANT_RETURN_LD
         }
       }
     }))
