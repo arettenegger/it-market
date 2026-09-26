@@ -3,7 +3,7 @@ import { Product, getSpecLabels, formatPrice } from "../types";
 import { CATEGORIES } from "../data";
 import { productSlug, categoryIdFromName } from "../lib/slug";
 import CameraSvg from "./CameraSvg";
-import { ArrowLeft, ChevronRight, ShoppingBag, PhoneCall, Star, Check, Truck, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ChevronRight, ShoppingBag, PhoneCall, Check, Truck, ShieldCheck } from "lucide-react";
 
 interface ProductPageProps {
   product: Product | null;
@@ -164,16 +164,7 @@ export default function ProductPage({
             {product.name}
           </h1>
 
-          {/* Rating */}
-          <div className="flex items-center gap-1.5 mb-4">
-            <div className="flex items-center text-amber-400">
-              <Star className="w-4 h-4 fill-amber-400" />
-              <span className="font-bold text-slate-900 ml-1 text-sm">{product.rating}</span>
-            </div>
-            <span className="text-xs text-slate-400">({product.reviewsCount} Bewertungen)</span>
-          </div>
-
-          <p className="text-sm text-slate-600 leading-relaxed mb-5">{product.description}</p>
+          <p className="text-sm text-slate-600 leading-relaxed mb-5 mt-4">{product.description}</p>
 
           {/* Preis */}
           <div className="flex items-baseline gap-2 mb-5">

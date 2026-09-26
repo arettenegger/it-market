@@ -5,7 +5,7 @@ import { CATEGORIES } from "../data";
 import { productSlug } from "../lib/slug";
 import { 
   ArrowLeft, Cpu, Shield, Server, RotateCw, Eye, CheckCircle2, 
-  Sparkles, Wrench, Headphones, Award, ShoppingBag, Heart, Star, 
+  Sparkles, Wrench, Headphones, Award, ShoppingBag, Heart,
   Info, Check, ArrowRight, PhoneCall, Layers, Zap, Wifi, ChevronRight, X
 } from "lucide-react";
 import PcConfigurator from "./PcConfigurator";
@@ -411,8 +411,8 @@ export default function CategoryPage({
                   className="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10 hover:border-red-200 transition-all duration-300 flex flex-col justify-between overflow-hidden group p-4 sm:p-4.5 relative"
                 >
                   <div>
-                    {/* Discount Badge */}
-                    {product.discount && (
+                    {/* Discount Badge — nur bei echtem Rabatt (nicht "0 %"/leer) */}
+                    {!!product.discount && !/^-?0\s*%?$/.test(product.discount.trim()) && (
                       <div className="absolute top-3.5 left-3.5 z-20 bg-red-700 text-white text-[10px] font-extrabold px-2 py-0.5 rounded shadow-md uppercase tracking-wider">
                         {product.discount}
                       </div>
@@ -459,15 +459,6 @@ export default function CategoryPage({
                         )}
                       </div>
                     </a>
-
-                    {/* Rating */}
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <div className="flex items-center text-amber-400">
-                        <Star className="w-3 h-3 fill-amber-400" />
-                        <span className="font-bold text-slate-900 ml-1 text-[11px]">{product.rating}</span>
-                      </div>
-                      <span className="text-[11px] text-slate-400">({product.reviewsCount} Bewertungen)</span>
-                    </div>
 
                     {/* Title */}
                     <a href={`/produkt/${productSlug(product)}`} onClick={(e) => { e.preventDefault(); onOpenProduct(product); }}>

@@ -23,6 +23,7 @@ import {
 import { CATEGORIES } from "../data";
 
 interface HeroProps {
+  isAdmin?: boolean;
   cloudLoaded?: boolean;
   heroImages?: Record<string, string>;
   heroVideos?: Record<string, string>;
@@ -155,6 +156,7 @@ const VIDEO_PRESETS: Record<string, { name: string; url: string }[]> = {
 };
 
 export default function Hero({
+  isAdmin = false,
   cloudLoaded = true,
   heroImages,
   heroVideos,
@@ -451,21 +453,23 @@ export default function Hero({
         })}
       </div>
 
-      {/* Premium Admin Floating Button to change background images or videos on the fly */}
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-8 z-30 flex gap-2">
-        <button 
-          onClick={() => {
-            setIsAutoPlaying(false);
-            setIsEditModalOpen(true);
-          }}
-          className="flex items-center gap-1.5 sm:gap-2 bg-slate-950/85 hover:bg-[#FF5E2E] border border-white/20 hover:border-[#FF5E2E] text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs font-bold shadow-lg backdrop-blur-md transition-all active:scale-95 cursor-pointer group"
-          title="Hintergrundbild oder Video für dieses Highlight anpassen"
-        >
-          <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FF5E2E] group-hover:text-white shrink-0" />
-          <span className="hidden sm:inline">Bild / Video für '{activeSlide.category}' anpassen</span>
-          <span className="sm:hidden text-[11px]">Medien anpassen</span>
-        </button>
-      </div>
+      {/* Premium Admin Floating Button to change background images or videos on the fly (nur für eingeloggte Admins) */}
+      {isAdmin && (
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-8 z-30 flex gap-2">
+          <button
+            onClick={() => {
+              setIsAutoPlaying(false);
+              setIsEditModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 sm:gap-2 bg-slate-950/85 hover:bg-[#FF5E2E] border border-white/20 hover:border-[#FF5E2E] text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs font-bold shadow-lg backdrop-blur-md transition-all active:scale-95 cursor-pointer group"
+            title="Hintergrundbild oder Video für dieses Highlight anpassen"
+          >
+            <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FF5E2E] group-hover:text-white shrink-0" />
+            <span className="hidden sm:inline">Bild / Video für '{activeSlide.category}' anpassen</span>
+            <span className="sm:hidden text-[11px]">Medien anpassen</span>
+          </button>
+        </div>
+      )}
 
       {/* Main Slide Content Overlays */}
       <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left">

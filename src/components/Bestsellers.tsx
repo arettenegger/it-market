@@ -100,10 +100,15 @@ export default function Bestsellers({
                   
                   {/* Top Badges */}
                   <div className="flex justify-between items-center mb-2.5">
-                    <span className="bg-rose-500 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full tracking-wide">
-                      {product.discount}
-                    </span>
-                    
+                    {/* Rabatt-Badge nur bei echtem Rabatt (nicht "0 %"/leer) */}
+                    {!!product.discount && !/^-?0\s*%?$/.test(product.discount.trim()) ? (
+                      <span className="bg-rose-500 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full tracking-wide">
+                        {product.discount}
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+
                     {/* Favorite Button */}
                     <button
                       onClick={() => onToggleWishlist(product.id)}
@@ -170,11 +175,6 @@ export default function Bestsellers({
                       <span className="text-[9px] font-bold text-red-600 uppercase tracking-widest bg-red-50 px-2 py-0.5 rounded">
                         {product.category}
                       </span>
-                      <div className="flex items-center gap-0.5 text-amber-500 text-xs font-semibold">
-                        <span>★</span>
-                        <span>{product.rating}</span>
-                        <span className="text-[10px] text-slate-400 font-normal">({product.reviewsCount})</span>
-                      </div>
                     </div>
 
                     <a href={`/produkt/${productSlug(product)}`} onClick={(e) => { e.preventDefault(); onOpenProduct(product); }}>

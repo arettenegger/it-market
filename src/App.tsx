@@ -32,6 +32,8 @@ import { PRODUCTS, INITIAL_BLOG_POSTS, DEFAULT_CONFIGURATOR_DATA, REVIEWS, CATEG
 import { initAnalytics, trackPageView } from "./lib/analytics";
 import { recordPageView } from "./lib/pageStats";
 import { ShoppingBag, ChevronRight, Shield, Check, Settings, CheckCircle2, ShieldCheck, Mail } from "lucide-react";
+import { auth } from "./lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 enum OperationType {
   CREATE = 'create',
@@ -150,6 +152,14 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCallbackOpen, setIsCallbackOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  // Admin-Status: Firebase-Login ODER PIN-Freischaltung im Admin-Panel.
+  // Steuert u. a. die Sichtbarkeit von Inline-Bearbeiten-Buttons (z. B. im Hero).
+  const [firebaseAdmin, setFirebaseAdmin] = useState<boolean>(() => !!auth.currentUser);
+  const [panelUnlocked, setPanelUnlocked] = useState<boolean>(() => {
+    try { return sessionStorage.getItem("bewacht_vernetzt_admin_auth") === "true"; } catch { return false; }
+  });
+  const isAdmin = firebaseAdmin || panelUnlocked;
+  useEffect(() => onAuthStateChanged(auth, (user) => setFirebaseAdmin(!!user)), []);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
@@ -761,6 +771,7 @@ export default function App() {
           <>
             {/* Hero Banner with live stateful simulator */}
             <Hero
+              isAdmin={isAdmin}
               cloudLoaded={cloudLoaded}
               heroImages={heroImages}
               heroVideos={heroVideos}
@@ -900,6 +911,7 @@ export default function App() {
             onUpdatePageSeo={handleUpdatePageSeo}
             lastSyncedAt={lastSyncedAt}
             onRefreshFromCloud={handleRefreshFromCloud}
+            onAuthChange={setPanelUnlocked}
           />
         </Suspense>
       )}

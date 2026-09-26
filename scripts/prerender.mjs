@@ -228,10 +228,13 @@ try {
     const slug = productSlug(p);
     const path = `/produkt/${slug}`;
     const canonical = SITE + path;
-    const title = p.seoTitle || `${p.name} kaufen & Angebot anfordern | IT-MARKET`;
-    const description = p.metaDescription || `${p.name} bei IT-MARKET Österreich – ${(p.description || "").slice(0, 130)}`;
+    // SEO-Manager-Überschreibung (analog zum Client in App.tsx) berücksichtigen.
+    const override = pageSeo[path] || {};
+    const title = override.title || p.seoTitle || `${p.name} kaufen & Angebot anfordern | IT-MARKET`;
+    const description = override.description || p.metaDescription || `${p.name} bei IT-MARKET Österreich – ${(p.description || "").slice(0, 130)}`;
     const html = renderHtml(base, {
       title, description, canonical,
+      keywords: override.keywords || "",
       jsonLd: [productLdJson(p, canonical), breadcrumbLdJson(p)],
     });
     const outDir = join(DIST, path);

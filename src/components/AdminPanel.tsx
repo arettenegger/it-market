@@ -103,6 +103,8 @@ interface AdminPanelProps {
   onUpdatePageSeo?: (updated: Record<string, PageSeo>) => void;
   lastSyncedAt?: Date | null;
   onRefreshFromCloud?: () => Promise<void>;
+  /** Meldet dem Eltern-Component, ob der Admin freigeschaltet ist (Firebase-Login ODER PIN). */
+  onAuthChange?: (isAdmin: boolean) => void;
 }
 
 export default function AdminPanel({
@@ -123,7 +125,8 @@ export default function AdminPanel({
   pageSeo = {},
   onUpdatePageSeo,
   lastSyncedAt,
-  onRefreshFromCloud
+  onRefreshFromCloud,
+  onAuthChange
 }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<"products" | "configurator" | "inquiries" | "callbacks" | "newsletter" | "analytics" | "blog" | "reviews" | "categories" | "logo" | "storage" | "seo">("products");
   const [searchQuery, setSearchQuery] = useState("");
@@ -217,6 +220,11 @@ export default function AdminPanel({
   });
   const [pinError, setPinError] = useState(false);
   const [newPinInput, setNewPinInput] = useState("");
+
+  // Eltern-Component über Admin-Freischaltung informieren (Firebase-Login ODER PIN).
+  useEffect(() => {
+    onAuthChange?.(firebaseUser !== null || isAuthenticated);
+  }, [firebaseUser, isAuthenticated, onAuthChange]);
 
   const [customFirebaseJson, setCustomFirebaseJson] = useState(() => {
     return localStorage.getItem("custom_firebase_config") || "";
