@@ -110,6 +110,9 @@ export interface BlogPost {
   // SEO (optional; tags dienen zugleich als Keywords)
   seoTitle?: string;
   metaDescription?: string;
+  // Optionales ISO-Datum (z. B. "2026-07-18") für strukturierte Daten (BlogPosting.datePublished).
+  // Wenn leer, wird versucht, es aus `date` abzuleiten; sonst weggelassen.
+  datePublished?: string;
 }
 
 export interface ConfiguratorOption {

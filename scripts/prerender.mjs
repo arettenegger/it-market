@@ -74,6 +74,26 @@ function productSlug(p) {
   if (p.slug && String(p.slug).trim()) return slugify(p.slug);
   return slugify(p.name || "");
 }
+function blogSlug(p) {
+  if (p.slug && String(p.slug).trim()) return slugify(p.slug);
+  return slugify(p.title || "");
+}
+
+// Deutsches Anzeigedatum ("18. Juli 2026") oder ISO -> ISO-Datum "2026-07-18" (sonst "").
+const MONTHS_DE = { januar: 1, februar: 2, "märz": 3, maerz: 3, april: 4, mai: 5, juni: 6, juli: 7, august: 8, september: 9, oktober: 10, november: 11, dezember: 12 };
+function toIsoDate(post) {
+  const dp = String(post.datePublished || "").trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(dp)) return dp.slice(0, 10);
+  const d = String(post.date || "").trim();
+  const iso = d.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const m = d.match(/(\d{1,2})\.?\s+([A-Za-zäöüÄÖÜ]+)\s+(\d{4})/);
+  if (m) {
+    const mo = MONTHS_DE[m[2].toLowerCase()];
+    if (mo) return `${m[3]}-${String(mo).padStart(2, "0")}-${String(m[1]).padStart(2, "0")}`;
+  }
+  return "";
+}
 function categoryIdFromName(category) {
   const n = (category || "").toLowerCase().replace(/[\s_-]+/g, "");
   if (n.includes("hardware") || n.includes("pc")) return "pc-hardware";
@@ -102,7 +122,7 @@ async function fetchMainConfig() {
     const t = setTimeout(() => ctrl.abort(), 8000);
     const res = await fetch(url, { signal: ctrl.signal });
     clearTimeout(t);
-    if (!res.ok) return { pageSeo: {}, products: [] };
+    if (!res.ok) return { pageSeo: {}, products: [], blogPosts: [] };
     const doc = await res.json();
 
     // pageSeo
@@ -131,10 +151,32 @@ async function fetchMainConfig() {
       };
     }).filter((p) => p.name);
 
-    return { pageSeo, products };
+    // blogPosts
+    const blogArr = doc?.fields?.blogPosts?.arrayValue?.values || [];
+    const blogPosts = blogArr.map((v) => {
+      const f = v?.mapValue?.fields || {};
+      const tags = (f.tags?.arrayValue?.values || []).map((x) => x.stringValue).filter(Boolean);
+      return {
+        id: fval(f.id),
+        title: fval(f.title) || "",
+        slug: fval(f.slug),
+        excerpt: fval(f.excerpt) || "",
+        category: fval(f.category) || "",
+        author: fval(f.author) || "",
+        date: fval(f.date) || "",
+        datePublished: fval(f.datePublished) || "",
+        image: fval(f.image) || "",
+        seoTitle: fval(f.seoTitle) || "",
+        metaDescription: fval(f.metaDescription) || "",
+        isPublished: fval(f.isPublished) === true,
+        tags,
+      };
+    }).filter((p) => p.title);
+
+    return { pageSeo, products, blogPosts };
   } catch (e) {
     console.warn("Prerender: main_config aus Firestore nicht ladbar (nutze Standardwerte):", (e && e.message) || e);
-    return { pageSeo: {}, products: [] };
+    return { pageSeo: {}, products: [], blogPosts: [] };
   }
 }
 
@@ -176,6 +218,34 @@ function breadcrumbLdJson(p) {
   };
 }
 
+function blogPostLdJson(post, canonical) {
+  const ld = {
+    "@context": "https://schema.org/", "@type": "BlogPosting",
+    headline: post.title,
+    description: post.metaDescription || post.excerpt || "",
+    author: { "@type": "Person", name: post.author || "IT-MARKET Redaktion" },
+    publisher: { "@type": "Organization", name: "IT-MARKET", logo: { "@type": "ImageObject", url: `${SITE}/favicon.svg` } },
+    mainEntityOfPage: canonical,
+    url: canonical,
+  };
+  const img = post.image || "";
+  if (img.startsWith("http") || img.startsWith("data:")) ld.image = [img];
+  const iso = toIsoDate(post);
+  if (iso) { ld.datePublished = iso; ld.dateModified = iso; }
+  return ld;
+}
+
+function blogBreadcrumbLdJson(post) {
+  return {
+    "@context": "https://schema.org/", "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Startseite", item: `${SITE}/` },
+      { "@type": "ListItem", position: 2, name: "Ratgeber & Magazin", item: `${SITE}/blog` },
+      { "@type": "ListItem", position: 3, name: post.title },
+    ],
+  };
+}
+
 function renderHtml(base, { title, description, canonical, keywords, jsonLd }) {
   const t = esc(title), d = esc(description);
   let html = base;
@@ -200,7 +270,7 @@ function renderHtml(base, { title, description, canonical, keywords, jsonLd }) {
 
 try {
   const base = readFileSync(join(DIST, "index.html"), "utf8");
-  const { pageSeo, products } = await fetchMainConfig();
+  const { pageSeo, products, blogPosts } = await fetchMainConfig();
   let count = 0;
 
   // 1) Statische + Kategorie-Seiten
@@ -244,17 +314,44 @@ try {
     count++;
   }
 
-  // 3) Sitemap (statische + Kategorie- + Produkt-URLs, mit lastmod)
-  const sitemapUrls = [
-    ...routes.map((r) => ({ loc: SITE + r.path, priority: r.priority || "0.7", changefreq: r.path === "/" ? "weekly" : "weekly" })),
-    ...productUrls.map((u) => ({ loc: u.loc, priority: u.priority, changefreq: "weekly" })),
+  // 2b) Blog-Artikel-Detailseiten (nur veröffentlichte)
+  const blogUrls = [];
+  for (const post of blogPosts) {
+    if (!post.isPublished) continue;
+    const slug = blogSlug(post);
+    const path = `/blog/${slug}`;
+    const canonical = SITE + path;
+    const override = pageSeo[path] || {};
+    const title = override.title || post.seoTitle || `${post.title} | IT-MARKET Ratgeber`;
+    const description = override.description || post.metaDescription || post.excerpt || "";
+    const keywords = override.keywords || (post.tags || []).join(", ");
+    const html = renderHtml(base, {
+      title, description, canonical, keywords,
+      jsonLd: [blogPostLdJson(post, canonical), blogBreadcrumbLdJson(post)],
+    });
+    const outDir = join(DIST, path);
+    mkdirSync(outDir, { recursive: true });
+    writeFileSync(join(outDir, "index.html"), html, "utf8");
+    blogUrls.push({ loc: canonical, priority: "0.7", lastmod: toIsoDate(post) || TODAY });
+    count++;
+  }
+
+  // 3) Sitemap (statische + Kategorie- + Produkt- + Blog-URLs, mit lastmod)
+  const sitemapAll = [
+    ...routes.map((r) => ({ loc: SITE + r.path, priority: r.priority || "0.7", changefreq: r.path === "/" ? "weekly" : "weekly", lastmod: TODAY })),
+    ...productUrls.map((u) => ({ loc: u.loc, priority: u.priority, changefreq: "weekly", lastmod: TODAY })),
+    ...blogUrls.map((u) => ({ loc: u.loc, priority: u.priority, changefreq: "monthly", lastmod: u.lastmod })),
   ];
+  // Doppelte URLs entfernen (z. B. zwei Artikel mit identischem Slug), erste gewinnt.
+  const seenLoc = new Set();
+  const sitemapUrls = sitemapAll.filter((u) => (seenLoc.has(u.loc) ? false : (seenLoc.add(u.loc), true)));
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-    sitemapUrls.map((u) => `  <url><loc>${xmlEsc(u.loc)}</loc><lastmod>${TODAY}</lastmod><changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority></url>`).join("\n") +
+    sitemapUrls.map((u) => `  <url><loc>${xmlEsc(u.loc)}</loc><lastmod>${u.lastmod || TODAY}</lastmod><changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority></url>`).join("\n") +
     `\n</urlset>\n`;
   writeFileSync(join(DIST, "sitemap.xml"), sitemap, "utf8");
 
-  console.log(`Prerender: ${count} Seiten erzeugt (${products.length} Produkte), sitemap.xml mit ${sitemapUrls.length} URLs.`);
+  const blogCount = blogUrls.length;
+  console.log(`Prerender: ${count} Seiten erzeugt (${products.length} Produkte, ${blogCount} Blog-Artikel), sitemap.xml mit ${sitemapUrls.length} URLs.`);
 } catch (e) {
   console.error("Prerender übersprungen (Build läuft trotzdem):", (e && e.message) || e);
 }

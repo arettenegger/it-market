@@ -26,9 +26,16 @@ import {
   Download
 } from "lucide-react";
 import { BlogPost } from "../types";
+import { blogSlug, resolveBlogPost } from "../lib/slug";
 
 interface BlogSectionProps {
   blogPosts: BlogPost[];
+  /** Aktuell per URL geöffneter Artikel-Slug (/blog/<slug>). Leer = Übersicht. */
+  activeSlug?: string;
+  /** Öffnet einen Artikel (aktualisiert die URL im Eltern-Component). */
+  onOpenArticle?: (post: BlogPost) => void;
+  /** Zurück zur Blog-Übersicht (aktualisiert die URL). */
+  onCloseArticle?: () => void;
   onOpenCallback?: () => void;
   onBackToHome?: () => void;
 }
@@ -275,6 +282,50 @@ const renderFormattedContent = (rawContent: string) => {
       );
     }
 
+    // 4b. Markdown-Tabelle ( | Spalte | Spalte | mit Trennzeile ---|--- )
+    const tblLines = trimmed.split("\n").map((l) => l.trim()).filter(Boolean);
+    const isTable =
+      tblLines.length >= 2 &&
+      tblLines[0].includes("|") &&
+      /^\|?[\s:|-]*-[\s:|-]*\|?$/.test(tblLines[1]) &&
+      tblLines[1].includes("-");
+    if (isTable) {
+      const parseRow = (line: string) => {
+        const cells = line.split("|").map((c) => c.trim());
+        if (cells.length && cells[0] === "") cells.shift();
+        if (cells.length && cells[cells.length - 1] === "") cells.pop();
+        return cells;
+      };
+      const header = parseRow(tblLines[0]);
+      const rows = tblLines.slice(2).map(parseRow);
+      return (
+        <div key={blockIdx} className="my-6 overflow-x-auto rounded-2xl border border-slate-200/80 shadow-sm">
+          <table className="w-full text-xs sm:text-sm border-collapse">
+            <thead>
+              <tr>
+                {header.map((h, i) => (
+                  <th key={i} className="bg-slate-900 text-white px-3 py-2.5 text-left font-bold whitespace-nowrap">
+                    {parseInlineFormatting(h)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, ri) => (
+                <tr key={ri} className={ri % 2 ? "bg-slate-50" : "bg-white"}>
+                  {r.map((c, ci) => (
+                    <td key={ci} className="border-t border-slate-100 px-3 py-2 text-slate-700 align-top">
+                      {parseInlineFormatting(c)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
     // 5. Lists (- item or * item)
     const lines = trimmed.split("\n");
     if (lines.length > 1 && lines.every(line => line.trim().startsWith("- ") || line.trim().startsWith("* ") || line.trim().length === 0)) {
@@ -338,10 +389,30 @@ const renderFormattedContent = (rawContent: string) => {
   });
 };
 
-export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }: BlogSectionProps) {
+export default function BlogSection({ blogPosts, activeSlug, onOpenArticle, onCloseArticle, onOpenCallback, onBackToHome }: BlogSectionProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("Alle");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [activeArticle, setActiveArticle] = useState<BlogPost | null>(null);
+  const [activeArticle, setActiveArticle] = useState<BlogPost | null>(
+    activeSlug ? resolveBlogPost(blogPosts, activeSlug) || null : null
+  );
+
+  // URL -> Ansicht: geöffneten Artikel aus dem Slug ableiten (Deep-Link, Browser zurück/vor).
+  useEffect(() => {
+    setActiveArticle(activeSlug ? resolveBlogPost(blogPosts, activeSlug) || null : null);
+  }, [activeSlug, blogPosts]);
+
+  // Artikel öffnen: lokal setzen + URL im Eltern-Component aktualisieren.
+  const openArticle = (post: BlogPost) => {
+    setActiveArticle(post);
+    if (onOpenArticle) onOpenArticle(post);
+    else document.getElementById("ratgeber")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // Zurück zur Übersicht: lokal leeren + URL aktualisieren.
+  const closeArticle = () => {
+    setActiveArticle(null);
+    if (onCloseArticle) onCloseArticle();
+  };
 
   // Beim Öffnen eines Artikels sanft an den Anfang des Blog-Bereichs scrollen
   useEffect(() => {
@@ -417,7 +488,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && inArticleView) {
-                setActiveArticle(null);
+                closeArticle();
               }
             }}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3.5 pr-9 py-2.5 text-xs font-medium text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all"
@@ -457,7 +528,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
                 key={cat}
                 onClick={() => {
                   setSelectedCategory(cat);
-                  if (inArticleView) setActiveArticle(null);
+                  if (inArticleView) closeArticle();
                 }}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   isActive 
@@ -496,7 +567,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
         <button
           onClick={() => {
             setSelectedCategory("Quick-Start PDFs");
-            if (inArticleView) setActiveArticle(null);
+            if (inArticleView) closeArticle();
           }}
           className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-blue-600/20"
         >
@@ -518,7 +589,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
             return (
               <div 
                 key={post.id}
-                onClick={() => setActiveArticle(post)}
+                onClick={() => openArticle(post)}
                 className={`flex items-center gap-3 group cursor-pointer p-1.5 rounded-xl transition-colors ${
                   isCurrent ? "bg-blue-50/80 border border-blue-200" : "hover:bg-slate-50"
                 }`}
@@ -562,7 +633,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
                 key={tag}
                 onClick={() => {
                   setSearchQuery(tag);
-                  if (inArticleView) setActiveArticle(null);
+                  if (inArticleView) closeArticle();
                 }}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
                   searchQuery.toLowerCase() === tag.toLowerCase()
@@ -596,7 +667,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
 
         <button
           onClick={() => {
-            if (inArticleView) setActiveArticle(null);
+            if (inArticleView) closeArticle();
             if (onOpenCallback) onOpenCallback();
           }}
           className="w-full py-2.5 bg-[#FF5E2E] hover:bg-[#e04e22] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#FF5E2E]/20 flex items-center justify-center gap-2 cursor-pointer mt-2"
@@ -865,7 +936,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
                 {/* Featured Post Hero Banner (Only shown if no specific search query & "Alle" category) */}
                 {featuredPost && selectedCategory === "Alle" && !searchQuery && (
               <div 
-                onClick={() => setActiveArticle(featuredPost)}
+                onClick={() => openArticle(featuredPost)}
                 className="bg-slate-900 rounded-3xl overflow-hidden shadow-xl border border-slate-800 grid grid-cols-1 md:grid-cols-12 group cursor-pointer hover:border-slate-700 transition-all duration-300"
               >
                 <div className="md:col-span-6 lg:col-span-6 relative h-60 md:h-auto overflow-hidden">
@@ -927,10 +998,11 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
             {filteredPosts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {filteredPosts.map((post) => (
-                  <article 
+                  <a
                     key={post.id}
-                    onClick={() => setActiveArticle(post)}
-                    className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:border-blue-200 transition-all duration-300 flex flex-col group cursor-pointer"
+                    href={`/blog/${blogSlug(post)}`}
+                    onClick={(e) => { e.preventDefault(); openArticle(post); }}
+                    className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:border-blue-200 transition-all duration-300 flex flex-col group cursor-pointer no-underline"
                   >
                     {/* Thumbnail */}
                     <div className="relative h-48 bg-slate-100 overflow-hidden">
@@ -984,7 +1056,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
                         </span>
                       </div>
                     </div>
-                  </article>
+                  </a>
                 ))}
               </div>
             ) : (
@@ -1025,7 +1097,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
             {/* Top Bar */}
             <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
               <button
-                onClick={() => setActiveArticle(null)}
+                onClick={() => closeArticle()}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -1114,7 +1186,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
                       key={tag}
                       onClick={() => {
                         setSearchQuery(tag);
-                        setActiveArticle(null);
+                        closeArticle();
                       }}
                       className="text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-600 px-3 py-1 rounded-lg cursor-pointer transition-colors"
                     >
@@ -1137,7 +1209,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
                         .map(relPost => (
                           <div 
                             key={relPost.id}
-                            onClick={() => setActiveArticle(relPost)}
+                            onClick={() => openArticle(relPost)}
                             className="p-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 hover:bg-white hover:border-blue-300 hover:shadow-md transition-all cursor-pointer flex gap-3 items-center group"
                           >
                             <img 
@@ -1169,7 +1241,7 @@ export default function BlogSection({ blogPosts, onOpenCallback, onBackToHome }:
                   </div>
                   <button
                     onClick={() => {
-                      setActiveArticle(null);
+                      closeArticle();
                       if (onOpenCallback) onOpenCallback();
                     }}
                     className="px-5 py-2.5 bg-[#FF5E2E] hover:bg-[#e04e22] text-white rounded-xl text-xs font-extrabold transition-all shadow-lg shadow-[#FF5E2E]/20 whitespace-nowrap cursor-pointer"

@@ -1,13 +1,16 @@
 import React from "react";
 import { BookOpen, Clock, User, Calendar, ArrowRight, ChevronRight, Newspaper } from "lucide-react";
 import { BlogPost } from "../types";
+import { blogSlug } from "../lib/slug";
 
 interface BlogTeaserProps {
   blogPosts: BlogPost[];
   onOpenBlogPage: () => void;
+  /** Öffnet einen einzelnen Artikel direkt (/blog/<slug>). */
+  onOpenArticle?: (post: BlogPost) => void;
 }
 
-export default function BlogTeaser({ blogPosts, onOpenBlogPage }: BlogTeaserProps) {
+export default function BlogTeaser({ blogPosts, onOpenBlogPage, onOpenArticle }: BlogTeaserProps) {
   // Get latest 3 published posts
   const publishedPosts = blogPosts.filter(p => p.isPublished !== false);
   const featuredPosts = publishedPosts.slice(0, 3);
@@ -49,10 +52,11 @@ export default function BlogTeaser({ blogPosts, onOpenBlogPage }: BlogTeaserProp
         {/* 3-Column Card Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {featuredPosts.map((post) => (
-            <article
+            <a
               key={post.id}
-              onClick={onOpenBlogPage}
-              className="bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col overflow-hidden group cursor-pointer"
+              href={`/blog/${blogSlug(post)}`}
+              onClick={(e) => { e.preventDefault(); if (onOpenArticle) onOpenArticle(post); else onOpenBlogPage(); }}
+              className="bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col overflow-hidden group cursor-pointer no-underline"
             >
               {/* Image Container */}
               <div className="relative h-52 overflow-hidden bg-slate-900">
@@ -105,7 +109,7 @@ export default function BlogTeaser({ blogPosts, onOpenBlogPage }: BlogTeaserProp
                   </span>
                 </div>
               </div>
-            </article>
+            </a>
           ))}
         </div>
 

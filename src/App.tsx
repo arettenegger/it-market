@@ -27,7 +27,7 @@ const AboutUsModal = lazy(() => import("./components/AboutUsModal"));
 const ContactPage = lazy(() => import("./components/ContactPage"));
 const ProductPage = lazy(() => import("./components/ProductPage"));
 import { Product, CartItem, BlogPost, ConfiguratorData, Review, Category, PageSeo, formatPrice, registerCategorySpecLabels } from "./types";
-import { productSlug, resolveProduct, categoryIdFromName } from "./lib/slug";
+import { productSlug, resolveProduct, categoryIdFromName, blogSlug, resolveBlogPost } from "./lib/slug";
 import { PRODUCTS, INITIAL_BLOG_POSTS, DEFAULT_CONFIGURATOR_DATA, REVIEWS, CATEGORIES } from "./data";
 import { initAnalytics, trackPageView } from "./lib/analytics";
 import { recordPageView } from "./lib/pageStats";
@@ -79,7 +79,7 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   throw new Error(JSON.stringify(errInfo));
 }
 
-type PageKey = "home" | "blog" | "category" | "product" | "impressum" | "datenschutz" | "about" | "kontakt";
+type PageKey = "home" | "blog" | "blogPost" | "category" | "product" | "impressum" | "datenschutz" | "about" | "kontakt";
 const CATEGORY_IDS = ["pc-hardware", "netzwerke", "hotspot", "nas", "kameras", "nvr", "smarthome"];
 
 // Stellt die NVR-Kategorie sicher und belegt eine nur generisch angelegte NVR-Gruppe
@@ -114,6 +114,7 @@ function withNvrCategory(cats: Category[]): Category[] {
 function buildPath(page: PageKey, categoryId?: string, slug?: string): string {
   switch (page) {
     case "blog": return "/blog";
+    case "blogPost": return "/blog/" + (slug || "");
     case "category": return "/kategorie/" + (categoryId || "pc-hardware");
     case "product": return "/produkt/" + (slug || "");
     case "kontakt": return "/kontakt";
@@ -123,9 +124,12 @@ function buildPath(page: PageKey, categoryId?: string, slug?: string): string {
     default: return "/";
   }
 }
-function parsePath(pathname: string): { page: PageKey; categoryId?: string; productSlug?: string } {
+function parsePath(pathname: string): { page: PageKey; categoryId?: string; productSlug?: string; blogSlug?: string } {
   const p = (pathname || "/").replace(/\/+$/, "") || "/";
   if (p === "/blog") return { page: "blog" };
+  if (p.startsWith("/blog/")) {
+    return { page: "blogPost", blogSlug: decodeURIComponent(p.slice("/blog/".length)) };
+  }
   if (p === "/kontakt") return { page: "kontakt" };
   if (p === "/ueber-uns") return { page: "about" };
   if (p === "/impressum") return { page: "impressum" };
@@ -145,6 +149,7 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<PageKey>(initialRoute.page);
   const [activeCategoryId, setActiveCategoryId] = useState<string>(initialRoute.categoryId || "pc-hardware");
   const [activeProductSlug, setActiveProductSlug] = useState<string>(initialRoute.productSlug || "");
+  const [activeBlogSlug, setActiveBlogSlug] = useState<string>(initialRoute.blogSlug || "");
   const [callbackTopic, setCallbackTopic] = useState<string>("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
@@ -342,7 +347,8 @@ export default function App() {
   // Eigener Seitentitel je Ansicht (SEO)
   useEffect(() => {
     const base = "IT-MARKET — Sicherheit, Netzwerk & IT-Hardware";
-    const routeKey = buildPath(currentPage, activeCategoryId, activeProductSlug);
+    const routeSlug = currentPage === "blogPost" ? activeBlogSlug : activeProductSlug;
+    const routeKey = buildPath(currentPage, activeCategoryId, routeSlug);
     const seo = pageSeo[routeKey];
     let title = base;
     let description = "";
@@ -361,6 +367,14 @@ export default function App() {
       }
     } else if (currentPage === "blog") {
       title = "Ratgeber & Technik-Magazin | IT-MARKET";
+    } else if (currentPage === "blogPost") {
+      const post = resolveBlogPost(blogPosts, activeBlogSlug);
+      if (post) {
+        title = post.seoTitle || `${post.title} | IT-MARKET Ratgeber`;
+        description = post.metaDescription || post.excerpt || "";
+      } else {
+        title = "Ratgeber & Technik-Magazin | IT-MARKET";
+      }
     } else if (currentPage === "kontakt") {
       title = "Kontakt & Beratung | IT-MARKET";
     } else if (currentPage === "about") {
@@ -411,7 +425,7 @@ export default function App() {
     trackPageView(routeKey, title);
     // Eigener anonymer Zähler (cookielos, unabhängig vom Consent)
     recordPageView(routeKey);
-  }, [currentPage, activeCategoryId, activeProductSlug, products, categories, pageSeo]);
+  }, [currentPage, activeCategoryId, activeProductSlug, activeBlogSlug, products, blogPosts, categories, pageSeo]);
 
   // Browser Zurück/Vorwärts-Buttons unterstützen (URL -> Ansicht) + Analytics init
   useEffect(() => {
@@ -421,6 +435,7 @@ export default function App() {
       setCurrentPage(r.page);
       if (r.categoryId) setActiveCategoryId(r.categoryId);
       setActiveProductSlug(r.productSlug || "");
+      setActiveBlogSlug(r.blogSlug || "");
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -669,6 +684,24 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Blog-Artikel öffnen -> eigene URL /blog/<slug> (Deep-Link/teilbar).
+  const handleNavigateBlogPost = (post: BlogPost) => {
+    if (!post) return;
+    const slug = blogSlug(post);
+    setActiveBlogSlug(slug);
+    setCurrentPage("blogPost");
+    window.history.pushState(null, "", buildPath("blogPost", undefined, slug));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Zurück zur Blog-Übersicht (/blog).
+  const handleBackToBlog = () => {
+    setActiveBlogSlug("");
+    setCurrentPage("blog");
+    window.history.pushState(null, "", buildPath("blog"));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleOpenCallbackWithTopic = (topicMsg?: string) => {
     if (topicMsg) {
       setCallbackTopic(topicMsg);
@@ -820,9 +853,10 @@ export default function App() {
             <Reviews reviews={reviews} />
 
             {/* Blog Teaser Section on Homepage linking to full page */}
-            <BlogTeaser 
+            <BlogTeaser
               blogPosts={blogPosts}
               onOpenBlogPage={() => handleNavigatePage("blog")}
+              onOpenArticle={handleNavigateBlogPost}
             />
 
             {/* FAQ Accordion list */}
@@ -834,8 +868,11 @@ export default function App() {
         ) : (
           <>
             {/* Dedicated Standalone Blog Page */}
-            <BlogSection 
-              blogPosts={blogPosts} 
+            <BlogSection
+              blogPosts={blogPosts}
+              activeSlug={activeBlogSlug}
+              onOpenArticle={handleNavigateBlogPost}
+              onCloseArticle={handleBackToBlog}
               onOpenCallback={() => handleOpenCallbackWithTopic()}
               onBackToHome={() => handleNavigatePage("home")}
             />

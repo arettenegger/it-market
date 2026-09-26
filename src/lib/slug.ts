@@ -1,7 +1,7 @@
 // URL-Slugs für Produkt-Detailseiten (/produkt/<slug>).
 // Deterministisch aus dem Produktnamen abgeleitet, damit bestehende Produkte
 // ohne gespeicherten Slug automatisch eine stabile URL bekommen.
-import { Product } from "../types";
+import { Product, BlogPost } from "../types";
 
 const COMBINING = new RegExp("[\\u0300-\\u036f]", "g");
 
@@ -28,6 +28,23 @@ export function resolveProduct(products: Product[], slug: string): Product | und
   return (
     products.find((p) => productSlug(p).toLowerCase() === s) ||
     products.find((p) => (p.id || "").toLowerCase() === s)
+  );
+}
+
+// URL-Slug für Blog-Artikel (/blog/<slug>). Nutzt den gespeicherten Slug,
+// sonst deterministisch aus dem Titel abgeleitet.
+export function blogSlug(post: BlogPost): string {
+  if (post?.slug && post.slug.trim()) return slugify(post.slug);
+  return slugify(post?.title || "");
+}
+
+// Findet einen Blog-Artikel anhand seines URL-Slugs (Fallback: über die ID).
+export function resolveBlogPost(posts: BlogPost[], slug: string): BlogPost | undefined {
+  if (!slug || !Array.isArray(posts)) return undefined;
+  const s = slug.toLowerCase().replace(/\/+$/, "");
+  return (
+    posts.find((p) => blogSlug(p).toLowerCase() === s) ||
+    posts.find((p) => (p.id || "").toLowerCase() === s)
   );
 }
 
