@@ -113,6 +113,19 @@ export interface BlogPost {
   // Optionales ISO-Datum (z. B. "2026-07-18") für strukturierte Daten (BlogPosting.datePublished).
   // Wenn leer, wird versucht, es aus `date` abzuleiten; sonst weggelassen.
   datePublished?: string;
+  // Geplante Veröffentlichung: ISO-Zeitpunkt (z. B. "2026-10-01T09:00"). Liegt er in der
+  // Zukunft, ist der Artikel noch nicht öffentlich sichtbar. Leer = sofort (sobald isPublished).
+  publishAt?: string;
+}
+
+// Öffentlich sichtbar, wenn veröffentlicht UND (kein Plan-Zeitpunkt oder bereits erreicht).
+export function isBlogPostLive(post: BlogPost, now: Date = new Date()): boolean {
+  if (post.isPublished === false) return false;
+  if (post.publishAt && post.publishAt.trim()) {
+    const t = new Date(post.publishAt);
+    if (!isNaN(t.getTime()) && t.getTime() > now.getTime()) return false;
+  }
+  return true;
 }
 
 export interface ConfiguratorOption {

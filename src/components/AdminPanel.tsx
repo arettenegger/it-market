@@ -4,6 +4,7 @@ import { FirebaseStorageManager } from "./FirebaseStorageManager";
 import { uploadImageToStorage, uploadFileToStorage, uploadDataUrlToStorage, uploadImageUrlToStorage } from "../lib/storageService";
 import { fetchInquiries, fetchCallbacks, deleteInquiry, deleteCallback, updateCallbackStatus } from "../lib/leadsService";
 import { fetchPageStats, resetPageStats, aggregateDays, lastNDayKeys, PageStats } from "../lib/pageStats";
+import { slugify } from "../lib/slug";
 import { 
   Database, 
   Plus, 
@@ -960,6 +961,8 @@ export default function AdminPanel({
   };
 
   const [blogTitle, setBlogTitle] = useState("");
+  // URL-Kennung (Slug). Leer = automatisch aus dem Titel erzeugt.
+  const [blogSlugInput, setBlogSlugInput] = useState("");
   const [blogCategory, setBlogCategory] = useState("Technik-Guides");
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [blogExcerpt, setBlogExcerpt] = useState("");
@@ -982,6 +985,8 @@ export default function AdminPanel({
   const [blogImage, setBlogImage] = useState("");
   const [blogIsPublished, setBlogIsPublished] = useState(true);
   const [blogIsFeatured, setBlogIsFeatured] = useState(false);
+  // Geplante Veröffentlichung (datetime-local, z. B. "2026-10-01T09:00"); leer = sofort.
+  const [blogPublishAt, setBlogPublishAt] = useState("");
   const [isUploadingBlogImage, setIsUploadingBlogImage] = useState(false);
   const [isSavingBlog, setIsSavingBlog] = useState(false);
 
@@ -1709,6 +1714,7 @@ export default function AdminPanel({
     setEditingBlogPost(post);
     setIsAddingNewBlog(false);
     setBlogTitle(post.title);
+    setBlogSlugInput(post.slug || "");
     setBlogCategory(post.category);
     if (!["Technik-Guides", "Sicherheitstipps", "Rechtliches", "Smart Home"].includes(post.category)) {
       setIsCustomCategory(true);
@@ -1724,6 +1730,7 @@ export default function AdminPanel({
     setBlogImage(post.image);
     setBlogIsPublished(post.isPublished);
     setBlogIsFeatured(post.featured || false);
+    setBlogPublishAt(post.publishAt ? post.publishAt.slice(0, 16) : "");
   };
 
   // Start creating new blog post
@@ -1731,6 +1738,7 @@ export default function AdminPanel({
     setEditingBlogPost(null);
     setIsAddingNewBlog(true);
     setBlogTitle("");
+    setBlogSlugInput("");
     setBlogCategory("Technik-Guides");
     setIsCustomCategory(false);
     setBlogExcerpt("");
@@ -1742,6 +1750,7 @@ export default function AdminPanel({
     setBlogImage("https://images.unsplash.com/photo-1557597774-9d273605dfa9?q=80&w=800&auto=format&fit=crop");
     setBlogIsPublished(true);
     setBlogIsFeatured(false);
+    setBlogPublishAt("");
   };
 
   // Upload blog cover image
@@ -1798,7 +1807,7 @@ export default function AdminPanel({
       const newPost: BlogPost = {
         id: "blog-" + Date.now(),
         title: blogTitle,
-        slug: blogTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
+        slug: slugify(blogSlugInput.trim() || blogTitle),
         excerpt: blogExcerpt,
         content: blogContent,
         category: blogCategory,
@@ -1808,7 +1817,8 @@ export default function AdminPanel({
         image: finalImage || "https://images.unsplash.com/photo-1557597774-9d273605dfa9?q=80&w=800&auto=format&fit=crop",
         tags: tagsArray,
         isPublished: blogIsPublished,
-        featured: blogIsFeatured
+        featured: blogIsFeatured,
+        publishAt: blogPublishAt || ""
       };
       onUpdateBlogPosts([newPost, ...blogPosts]);
     } else if (editingBlogPost) {
@@ -1817,6 +1827,7 @@ export default function AdminPanel({
           return {
             ...post,
             title: blogTitle,
+            slug: slugify(blogSlugInput.trim() || blogTitle),
             category: blogCategory,
             excerpt: blogExcerpt,
             content: blogContent,
@@ -1826,7 +1837,8 @@ export default function AdminPanel({
             tags: tagsArray,
             image: finalImage || post.image,
             isPublished: blogIsPublished,
-            featured: blogIsFeatured
+            featured: blogIsFeatured,
+            publishAt: blogPublishAt || ""
           };
         }
         return post;
@@ -3913,6 +3925,12 @@ export default function AdminPanel({
                           }`}>
                             {post.isPublished ? "Veröffentlicht" : "Entwurf"}
                           </span>
+                          {post.isPublished && post.publishAt && new Date(post.publishAt).getTime() > Date.now() && (
+                            <span className="bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1" title={`Geplant für ${new Date(post.publishAt).toLocaleString("de-AT")}`}>
+                              <Clock className="w-3 h-3" />
+                              Geplant {new Date(post.publishAt).toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                            </span>
+                          )}
                           {post.featured && (
                             <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                               <Sparkles className="w-3 h-3" />
@@ -4186,6 +4204,35 @@ export default function AdminPanel({
                     </div>
                   </div>
 
+                  {/* URL-Kennung (Slug) */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-bold text-slate-300 block">URL-Kennung (Slug)</label>
+                      {blogTitle.trim() && (
+                        <button
+                          type="button"
+                          onClick={() => setBlogSlugInput(slugify(blogTitle))}
+                          className="text-[10px] text-[#FF5E2E] hover:text-[#ff7a52] font-semibold underline cursor-pointer"
+                        >
+                          Aus Titel erzeugen
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-slate-500 font-mono shrink-0">/blog/</span>
+                      <input
+                        type="text"
+                        value={blogSlugInput}
+                        onChange={(e) => setBlogSlugInput(e.target.value)}
+                        placeholder={blogTitle.trim() ? slugify(blogTitle) : "z.B. unifi-oder-tp-link"}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white outline-none focus:border-[#FF5E2E] font-mono"
+                      />
+                    </div>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">
+                      Bestimmt die Adresse des Artikels. Leer lassen = automatisch aus dem Titel. Umlaute werden zu ae/oe/ue/ss. ⚠️ Bei bestehenden Artikeln ändert ein neuer Slug die URL (alte Links funktionieren dann nicht mehr).
+                    </span>
+                  </div>
+
                   {/* Excerpt */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-300 block">Kurzbeschreibung / Excerpt *</label>
@@ -4260,6 +4307,30 @@ export default function AdminPanel({
                       />
                       <span className="text-[10px] text-slate-400 block mt-0.5">SEO-Keywords & Schlüsselwörter für Suche & Google</span>
                     </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-300 block">Veröffentlichen ab (geplant, optional)</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="datetime-local"
+                          value={blogPublishAt}
+                          onChange={(e) => setBlogPublishAt(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white outline-none focus:border-[#FF5E2E]"
+                        />
+                        {blogPublishAt && (
+                          <button
+                            type="button"
+                            onClick={() => setBlogPublishAt("")}
+                            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-[11px] font-bold cursor-pointer shrink-0"
+                          >
+                            Leeren
+                          </button>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">
+                        Leer = sofort sichtbar (sobald „veröffentlicht"). Zukunfts-Termin = Artikel erscheint erst dann. Hinweis: Für Google/Sitemap nach dem Termin einmal neu bereitstellen (Hostinger → Deploy).
+                      </span>
+                    </div>
                   </div>
 
                   {/* Cover Image Upload */}
@@ -4305,7 +4376,7 @@ export default function AdminPanel({
                           onChange={(e) => setBlogIsPublished(e.target.checked)}
                           className="w-4 h-4 rounded text-[#FF5E2E] focus:ring-0 bg-slate-950 border-slate-800"
                         />
-                        <span>Sofort veröffentlichen</span>
+                        <span>Veröffentlicht (freigegeben)</span>
                       </label>
 
                       <label className="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer">

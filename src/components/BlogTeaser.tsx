@@ -1,6 +1,6 @@
 import React from "react";
 import { BookOpen, Clock, User, Calendar, ArrowRight, ChevronRight, Newspaper } from "lucide-react";
-import { BlogPost } from "../types";
+import { BlogPost, isBlogPostLive } from "../types";
 import { blogSlug } from "../lib/slug";
 
 interface BlogTeaserProps {
@@ -11,8 +11,8 @@ interface BlogTeaserProps {
 }
 
 export default function BlogTeaser({ blogPosts, onOpenBlogPage, onOpenArticle }: BlogTeaserProps) {
-  // Get latest 3 published posts
-  const publishedPosts = blogPosts.filter(p => p.isPublished !== false);
+  // Get latest 3 publicly live posts (veröffentlicht + geplanter Zeitpunkt erreicht)
+  const publishedPosts = blogPosts.filter(p => isBlogPostLive(p));
   const featuredPosts = publishedPosts.slice(0, 3);
 
   if (publishedPosts.length === 0) return null;

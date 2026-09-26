@@ -25,7 +25,7 @@ import {
   FileText,
   Download
 } from "lucide-react";
-import { BlogPost } from "../types";
+import { BlogPost, isBlogPostLive } from "../types";
 import { blogSlug, resolveBlogPost } from "../lib/slug";
 
 interface BlogSectionProps {
@@ -430,8 +430,8 @@ export default function BlogSection({ blogPosts, activeSlug, onOpenArticle, onCl
     setTimeout(() => setDownloadNotice(null), 4500);
   };
 
-  // Filter only published articles for public view
-  const publishedPosts = blogPosts.filter(post => post.isPublished);
+  // Filter only publicly live articles (veröffentlicht + geplanter Zeitpunkt erreicht)
+  const publishedPosts = blogPosts.filter(post => isBlogPostLive(post));
 
   // Dynamic Categories list based on published posts and standard categories
   const existingCategories = Array.from(new Set(publishedPosts.map(post => post.category).filter(Boolean)));

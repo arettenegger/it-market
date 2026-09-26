@@ -78,6 +78,15 @@ function blogSlug(p) {
   if (p.slug && String(p.slug).trim()) return slugify(p.slug);
   return slugify(p.title || "");
 }
+// Öffentlich sichtbar: veröffentlicht UND geplanter Zeitpunkt (publishAt) erreicht.
+function isBlogLive(post, now = Date.now()) {
+  if (!post.isPublished) return false;
+  if (post.publishAt && String(post.publishAt).trim()) {
+    const t = new Date(post.publishAt).getTime();
+    if (!isNaN(t) && t > now) return false;
+  }
+  return true;
+}
 
 // Deutsches Anzeigedatum ("18. Juli 2026") oder ISO -> ISO-Datum "2026-07-18" (sonst "").
 const MONTHS_DE = { januar: 1, februar: 2, "märz": 3, maerz: 3, april: 4, mai: 5, juni: 6, juli: 7, august: 8, september: 9, oktober: 10, november: 11, dezember: 12 };
@@ -170,6 +179,7 @@ async function fetchMainConfig() {
         seoTitle: fval(f.seoTitle) || "",
         metaDescription: fval(f.metaDescription) || "",
         isPublished: fval(f.isPublished) === true,
+        publishAt: fval(f.publishAt) || "",
         tags,
       };
     }).filter((p) => p.title);
@@ -325,7 +335,7 @@ function productsInCategory(products, catId) {
 function homeBody(products, blogPosts) {
   const cats = Object.keys(CATEGORY_NAMES).map((id) => `<li><a href="/kategorie/${id}/">${esc(CATEGORY_NAMES[id])}</a></li>`).join("");
   const prods = products.slice(0, 8).map((p) => `<li><a href="/produkt/${productSlug(p)}/">${esc(p.name)}</a></li>`).join("");
-  const posts = (blogPosts || []).filter((b) => b.isPublished).slice(0, 5).map((b) => `<li><a href="/blog/${blogSlug(b)}/">${esc(b.title)}</a></li>`).join("");
+  const posts = (blogPosts || []).filter((b) => isBlogLive(b)).slice(0, 5).map((b) => `<li><a href="/blog/${blogSlug(b)}/">${esc(b.title)}</a></li>`).join("");
   return `${WRAP_OPEN}
     <h1>IT-MARKET — Sicherheit, Netzwerk &amp; IT-Hardware in Österreich</h1>
     <p>Premium IP-Kameras, Netzwerktechnik, NAS-Systeme, Hotspot- &amp; Wireless-Lösungen, PC-Hardware und Smart-Home. Stellen Sie Ihre Wunschprodukte zusammen und fordern Sie ein unverbindliches Angebot per E-Mail an.</p>
@@ -361,7 +371,7 @@ function productBody(p) {
 }
 
 function blogIndexBody(blogPosts) {
-  const list = (blogPosts || []).filter((b) => b.isPublished).map((b) => `<li><a href="/blog/${blogSlug(b)}/">${esc(b.title)}</a></li>`).join("");
+  const list = (blogPosts || []).filter((b) => isBlogLive(b)).map((b) => `<li><a href="/blog/${blogSlug(b)}/">${esc(b.title)}</a></li>`).join("");
   return `${WRAP_OPEN}
     <h1>Ratgeber &amp; Technik-Magazin</h1>
     <p>Praxisnahe Ratgeber zu IP-Kameras, Netzwerk, NAS, Smart-Home &amp; IT-Sicherheit.</p>
@@ -434,10 +444,10 @@ try {
     count++;
   }
 
-  // 2b) Blog-Artikel-Detailseiten (nur veröffentlichte)
+  // 2b) Blog-Artikel-Detailseiten (nur veröffentlichte + geplanter Zeitpunkt erreicht)
   const blogUrls = [];
   for (const post of blogPosts) {
-    if (!post.isPublished) continue;
+    if (!isBlogLive(post)) continue;
     const slug = blogSlug(post);
     const path = `/blog/${slug}`;
     const canonical = SITE + path + "/";
