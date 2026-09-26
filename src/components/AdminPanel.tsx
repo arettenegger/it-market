@@ -48,7 +48,6 @@ import {
   Grid,
   Shield,
   Lock,
-  Key,
   LogOut,
   LogIn,
   UserCheck,
@@ -103,7 +102,7 @@ interface AdminPanelProps {
   onUpdatePageSeo?: (updated: Record<string, PageSeo>) => void;
   lastSyncedAt?: Date | null;
   onRefreshFromCloud?: () => Promise<void>;
-  /** Meldet dem Eltern-Component, ob der Admin freigeschaltet ist (Firebase-Login ODER PIN). */
+  /** Meldet dem Eltern-Component, ob der Admin per Firebase eingeloggt ist. */
   onAuthChange?: (isAdmin: boolean) => void;
 }
 
@@ -191,9 +190,8 @@ export default function AdminPanel({
   const [importSuccessMsg, setImportSuccessMsg] = useState<string | null>(null);
   const productFileInputRef = React.useRef<HTMLInputElement | null>(null);
 
-  // Firebase Auth & PIN Security State
+  // Firebase Auth State
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(() => auth.currentUser);
-  const [authMethod, setAuthMethod] = useState<"firebase" | "pin">("firebase");
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
@@ -211,20 +209,10 @@ export default function AdminPanel({
   const [mfaMsg, setMfaMsg] = useState<string | null>(null);
   const [mfaEnrolled, setMfaEnrolled] = useState(false);
 
-  const [adminPin, setAdminPin] = useState<string>(() => {
-    return localStorage.getItem("bewacht_vernetzt_admin_pin") || "1234";
-  });
-  const [enteredPin, setEnteredPin] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return sessionStorage.getItem("bewacht_vernetzt_admin_auth") === "true";
-  });
-  const [pinError, setPinError] = useState(false);
-  const [newPinInput, setNewPinInput] = useState("");
-
-  // Eltern-Component über Admin-Freischaltung informieren (Firebase-Login ODER PIN).
+  // Eltern-Component über Admin-Freischaltung informieren (nur noch Firebase-Login).
   useEffect(() => {
-    onAuthChange?.(firebaseUser !== null || isAuthenticated);
-  }, [firebaseUser, isAuthenticated, onAuthChange]);
+    onAuthChange?.(firebaseUser !== null);
+  }, [firebaseUser, onAuthChange]);
 
   const [customFirebaseJson, setCustomFirebaseJson] = useState(() => {
     return localStorage.getItem("custom_firebase_config") || "";
@@ -427,43 +415,15 @@ export default function AdminPanel({
   const handleFirebaseSignOut = async () => {
     try {
       await signOut(auth);
-      setIsAuthenticated(false);
+      // Alt-Schlüssel des früheren PIN-Logins aufräumen (falls noch vorhanden).
       sessionStorage.removeItem("bewacht_vernetzt_admin_auth");
     } catch (err) {
       console.error("SignOut Error:", err);
     }
   };
 
-  const handleLoginWithPin = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanEntered = enteredPin.trim();
-    const cleanTargetPin = (adminPin || "1234").trim();
-
-    if (cleanEntered.length > 0 && cleanEntered === cleanTargetPin) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem("bewacht_vernetzt_admin_auth", "true");
-      setPinError(false);
-      setEnteredPin("");
-    } else {
-      setPinError(true);
-      setEnteredPin("");
-    }
-  };
-
   const handleLogoutAdmin = () => {
     handleFirebaseSignOut();
-  };
-
-  const handleChangePin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPinInput.trim().length >= 4) {
-      setAdminPin(newPinInput.trim());
-      localStorage.setItem("bewacht_vernetzt_admin_pin", newPinInput.trim());
-      setNewPinInput("");
-      alert(`Admin PIN erfolgreich aktualisiert! Ihr neuer PIN lautet: ${newPinInput.trim()}`);
-    } else {
-      alert("Der PIN muss mindestens 4 Zeichen lang sein.");
-    }
   };
 
   // Logo management state
@@ -1942,7 +1902,7 @@ export default function AdminPanel({
   const openCallbacksCount = callbacks.filter(c => c.status === "Offen").length;
 
   // Access check
-  const isAccessAllowed = firebaseUser !== null || isAuthenticated;
+  const isAccessAllowed = firebaseUser !== null;
 
   if (!isOpen) return null;
 
@@ -1966,32 +1926,7 @@ export default function AdminPanel({
             </p>
           </div>
 
-          {/* Auth Method Toggle */}
-          <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setAuthMethod("firebase")}
-              className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                authMethod === "firebase" ? "bg-[#FF5E2E] text-white shadow-md font-extrabold" : "text-slate-400 hover:text-white"
-              }`}
-            >
-              <Shield className="w-3.5 h-3.5" />
-              Firebase Auth
-            </button>
-            <button
-              type="button"
-              onClick={() => setAuthMethod("pin")}
-              className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                authMethod === "pin" ? "bg-[#FF5E2E] text-white shadow-md font-extrabold" : "text-slate-400 hover:text-white"
-              }`}
-            >
-              <Key className="w-3.5 h-3.5" />
-              Admin PIN
-            </button>
-          </div>
-
-          {authMethod === "firebase" ? (
-            <div className="space-y-4">
+          <div className="space-y-4">
               <div className="text-center border-b border-slate-800 pb-2">
                 <span className="text-xs font-extrabold text-white uppercase tracking-wider">{mfaResolver ? "Zwei-Faktor-Bestätigung" : "Admin-Anmeldung"}</span>
               </div>
@@ -2097,14 +2032,6 @@ export default function AdminPanel({
                           <ExternalLink className="w-3.5 h-3.5" />
                           <span>Firebase Console Öffnen</span>
                         </a>
-
-                        <button
-                          type="button"
-                          onClick={() => { setAuthMethod("pin"); setFbAuthError(null); }}
-                          className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[11px] rounded-xl transition-all cursor-pointer text-center"
-                        >
-                          Mit PIN (1234) anmelden
-                        </button>
                       </div>
                     </div>
                   ) : (
@@ -2129,40 +2056,6 @@ export default function AdminPanel({
               </form>
               )}
             </div>
-          ) : (
-            <form onSubmit={handleLoginWithPin} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Admin PIN / Passwort
-                </label>
-                <input
-                  type="password"
-                  value={enteredPin}
-                  onChange={(e) => {
-                    setEnteredPin(e.target.value);
-                    setPinError(false);
-                  }}
-                  placeholder="Standard-PIN: 1234"
-                  autoFocus
-                  className={`w-full bg-slate-950 border ${
-                    pinError ? "border-rose-500 text-rose-300" : "border-slate-800 focus:border-[#FF5E2E]"
-                  } rounded-xl px-4 py-3 text-center text-lg font-mono tracking-widest text-white outline-none transition-all shadow-inner`}
-                />
-                {pinError && (
-                  <p className="text-[11px] text-rose-400 font-bold text-center mt-1">
-                    Ungültiger PIN! Bitte überprüfen Sie Ihre Eingabe.
-                  </p>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 bg-gradient-to-r from-[#FF5E2E] to-amber-500 hover:from-[#ff4d17] hover:to-amber-400 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-[#FF5E2E]/20 transition-all cursor-pointer"
-              >
-                Anmelden & Admin Freischalten
-              </button>
-            </form>
-          )}
 
           <div className="pt-3 border-t border-slate-800/80 text-center">
             <button
@@ -5735,43 +5628,6 @@ export default function AdminPanel({
                       </button>
                     )}
                   </div>
-                </form>
-              </div>
-
-              {/* Admin Access PIN Settings */}
-              <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 shadow-xl max-w-xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <Shield className="w-5 h-5 text-emerald-400" />
-                  <h3 className="text-lg font-extrabold text-white font-display">
-                    Admin-Sicherheit & Zugriffs-PIN
-                  </h3>
-                </div>
-                <p className="text-xs text-slate-400 mb-6 leading-relaxed">
-                  Schützen Sie Ihr Admin-Interface bei der Bereitstellung über Hostinger oder andere Webhoster mit einem individuellen PIN / Passwort.
-                </p>
-
-                <form onSubmit={handleChangePin} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300">Neuer Admin PIN / Passwort</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={newPinInput}
-                        onChange={(e) => setNewPinInput(e.target.value)}
-                        placeholder="Z.B. 8972 oder MeinGeheimerPin2026"
-                        className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#FF5E2E] font-mono"
-                      />
-                      <button
-                        type="submit"
-                        className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-lg shadow-emerald-600/20"
-                      >
-                        PIN Ändern
-                      </button>
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-slate-500">
-                    Aktueller PIN im System hinterlegt. Standard bei Erstnutzung: <code className="bg-slate-900 text-amber-400 px-1.5 py-0.5 rounded font-mono">1234</code>
-                  </p>
                 </form>
               </div>
 

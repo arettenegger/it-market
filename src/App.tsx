@@ -152,14 +152,10 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCallbackOpen, setIsCallbackOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  // Admin-Status: Firebase-Login ODER PIN-Freischaltung im Admin-Panel.
+  // Admin-Status: ausschließlich per Firebase-Login (PIN-Login wurde entfernt).
   // Steuert u. a. die Sichtbarkeit von Inline-Bearbeiten-Buttons (z. B. im Hero).
-  const [firebaseAdmin, setFirebaseAdmin] = useState<boolean>(() => !!auth.currentUser);
-  const [panelUnlocked, setPanelUnlocked] = useState<boolean>(() => {
-    try { return sessionStorage.getItem("bewacht_vernetzt_admin_auth") === "true"; } catch { return false; }
-  });
-  const isAdmin = firebaseAdmin || panelUnlocked;
-  useEffect(() => onAuthStateChanged(auth, (user) => setFirebaseAdmin(!!user)), []);
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => !!auth.currentUser);
+  useEffect(() => onAuthStateChanged(auth, (user) => setIsAdmin(!!user)), []);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
@@ -911,7 +907,6 @@ export default function App() {
             onUpdatePageSeo={handleUpdatePageSeo}
             lastSyncedAt={lastSyncedAt}
             onRefreshFromCloud={handleRefreshFromCloud}
-            onAuthChange={setPanelUnlocked}
           />
         </Suspense>
       )}
