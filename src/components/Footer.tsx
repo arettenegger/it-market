@@ -122,7 +122,7 @@ export default function Footer({
               {footerLinks.shop.map((link, i) => (
                 <a
                   key={i}
-                  href={`/kategorie/${categoryIdFromName(link.categoryName)}`}
+                  href={`/kategorie/${categoryIdFromName(link.categoryName)}/`}
                   onClick={(e) => { e.preventDefault(); handleCategoryClick(link.categoryName); }}
                   className="hover:text-white transition-colors text-left cursor-pointer no-underline text-slate-400"
                 >

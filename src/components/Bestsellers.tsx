@@ -129,7 +129,7 @@ export default function Bestsellers({
                     </div>
 
                     <a
-                      href={`/produkt/${productSlug(product)}`}
+                      href={`/produkt/${productSlug(product)}/`}
                       onClick={(e) => { e.preventDefault(); onOpenProduct(product); }}
                       aria-label={product.name}
                       className="w-full h-full relative transition-transform duration-500 group-hover:scale-[1.03] flex items-center justify-center cursor-pointer"
@@ -177,7 +177,7 @@ export default function Bestsellers({
                       </span>
                     </div>
 
-                    <a href={`/produkt/${productSlug(product)}`} onClick={(e) => { e.preventDefault(); onOpenProduct(product); }}>
+                    <a href={`/produkt/${productSlug(product)}/`} onClick={(e) => { e.preventDefault(); onOpenProduct(product); }}>
                       <h3 className="text-sm font-bold text-slate-900 group-hover:text-red-600 transition-colors font-display line-clamp-1 mb-1.5 cursor-pointer">
                         {product.name}
                       </h3>

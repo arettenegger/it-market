@@ -434,7 +434,7 @@ export default function CategoryPage({
 
                     {/* Product Visual Area */}
                     <a
-                      href={`/produkt/${productSlug(product)}`}
+                      href={`/produkt/${productSlug(product)}/`}
                       onClick={(e) => { e.preventDefault(); onOpenProduct(product); }}
                       aria-label={product.name}
                       className="relative h-48 sm:h-52 bg-slate-50 rounded-xl flex items-center justify-center p-2 mb-3 overflow-hidden group-hover:scale-[1.01] transition-transform block cursor-pointer">
@@ -461,7 +461,7 @@ export default function CategoryPage({
                     </a>
 
                     {/* Title */}
-                    <a href={`/produkt/${productSlug(product)}`} onClick={(e) => { e.preventDefault(); onOpenProduct(product); }}>
+                    <a href={`/produkt/${productSlug(product)}/`} onClick={(e) => { e.preventDefault(); onOpenProduct(product); }}>
                       <h3 className="font-extrabold font-display text-sm text-slate-900 mb-2 leading-snug group-hover:text-red-600 transition-colors line-clamp-2 cursor-pointer">
                         {product.name}
                       </h3>

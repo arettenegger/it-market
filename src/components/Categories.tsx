@@ -58,7 +58,7 @@ export default function Categories({ onSelectCategory, selectedCategory, categor
             return (
               <a
                 key={cat.id}
-                href={`/kategorie/${categoryIdFromName(cat.name)}`}
+                href={`/kategorie/${categoryIdFromName(cat.name)}/`}
                 onClick={(e) => { e.preventDefault(); onSelectCategory(cat.name); }}
                 className={`group relative bg-slate-50 hover:bg-white rounded-3xl p-6 border transition-all duration-300 ease-out cursor-pointer flex flex-col justify-between overflow-hidden no-underline ${
                   isSelected

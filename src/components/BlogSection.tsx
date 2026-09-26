@@ -1000,7 +1000,7 @@ export default function BlogSection({ blogPosts, activeSlug, onOpenArticle, onCl
                 {filteredPosts.map((post) => (
                   <a
                     key={post.id}
-                    href={`/blog/${blogSlug(post)}`}
+                    href={`/blog/${blogSlug(post)}/`}
                     onClick={(e) => { e.preventDefault(); openArticle(post); }}
                     className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:border-blue-200 transition-all duration-300 flex flex-col group cursor-pointer no-underline"
                   >

@@ -112,15 +112,16 @@ function withNvrCategory(cats: Category[]): Category[] {
 
 // URL <-> Ansicht (echte Adressen für SEO & Deep-Links)
 function buildPath(page: PageKey, categoryId?: string, slug?: string): string {
+  // Einheitlich MIT Trailing-Slash (passt zur Ordnerstruktur der vorgerenderten Seiten).
   switch (page) {
-    case "blog": return "/blog";
-    case "blogPost": return "/blog/" + (slug || "");
-    case "category": return "/kategorie/" + (categoryId || "pc-hardware");
-    case "product": return "/produkt/" + (slug || "");
-    case "kontakt": return "/kontakt";
-    case "about": return "/ueber-uns";
-    case "impressum": return "/impressum";
-    case "datenschutz": return "/datenschutz";
+    case "blog": return "/blog/";
+    case "blogPost": return "/blog/" + (slug || "") + "/";
+    case "category": return "/kategorie/" + (categoryId || "pc-hardware") + "/";
+    case "product": return "/produkt/" + (slug || "") + "/";
+    case "kontakt": return "/kontakt/";
+    case "about": return "/ueber-uns/";
+    case "impressum": return "/impressum/";
+    case "datenschutz": return "/datenschutz/";
     default: return "/";
   }
 }
@@ -348,8 +349,10 @@ export default function App() {
   useEffect(() => {
     const base = "IT-MARKET — Sicherheit, Netzwerk & IT-Hardware";
     const routeSlug = currentPage === "blogPost" ? activeBlogSlug : activeProductSlug;
-    const routeKey = buildPath(currentPage, activeCategoryId, routeSlug);
-    const seo = pageSeo[routeKey];
+    const routeKey = buildPath(currentPage, activeCategoryId, routeSlug); // mit Trailing-Slash (Canonical/URL)
+    // SEO-Manager-Schlüssel & Analytics-Buckets bleiben ohne Trailing-Slash (stabil).
+    const seoKey = routeKey === "/" ? "/" : routeKey.replace(/\/$/, "");
+    const seo = pageSeo[seoKey];
     let title = base;
     let description = "";
     if (currentPage === "category") {
@@ -422,9 +425,9 @@ export default function App() {
     setOg("og:title", title);
     if (description) setOg("og:description", description);
     // Seitenaufruf an Google Analytics melden (SPA-Navigation)
-    trackPageView(routeKey, title);
+    trackPageView(seoKey, title);
     // Eigener anonymer Zähler (cookielos, unabhängig vom Consent)
-    recordPageView(routeKey);
+    recordPageView(seoKey);
   }, [currentPage, activeCategoryId, activeProductSlug, activeBlogSlug, products, blogPosts, categories, pageSeo]);
 
   // Browser Zurück/Vorwärts-Buttons unterstützen (URL -> Ansicht) + Analytics init

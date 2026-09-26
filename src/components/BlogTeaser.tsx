@@ -54,7 +54,7 @@ export default function BlogTeaser({ blogPosts, onOpenBlogPage, onOpenArticle }:
           {featuredPosts.map((post) => (
             <a
               key={post.id}
-              href={`/blog/${blogSlug(post)}`}
+              href={`/blog/${blogSlug(post)}/`}
               onClick={(e) => { e.preventDefault(); if (onOpenArticle) onOpenArticle(post); else onOpenBlogPage(); }}
               className="bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col overflow-hidden group cursor-pointer no-underline"
             >

@@ -64,7 +64,7 @@ export default function ProductPage({
   const catId = categoryIdFromName(product.category);
   const catEntry = CATEGORIES.find((c) => c.id === catId);
   const catName = catEntry?.name || product.category;
-  const canonical = `${SITE}/produkt/${productSlug(product)}`;
+  const canonical = `${SITE}/produkt/${productSlug(product)}/`;
   const hasRealImage = !!product.image && (product.image.startsWith("http") || product.image.startsWith("data:"));
   const labels = getSpecLabels(product.category);
   const specItems = [
@@ -110,7 +110,7 @@ export default function ProductPage({
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Startseite", item: `${SITE}/` },
-      { "@type": "ListItem", position: 2, name: catName, item: `${SITE}/kategorie/${catId}` },
+      { "@type": "ListItem", position: 2, name: catName, item: `${SITE}/kategorie/${catId}/` },
       { "@type": "ListItem", position: 3, name: product.name },
     ],
   };
@@ -125,7 +125,7 @@ export default function ProductPage({
       <nav aria-label="Breadcrumb" className="flex items-center flex-wrap gap-1 text-xs text-slate-500 mb-6">
         <a href="/" onClick={(e) => { e.preventDefault(); onBackToHome(); }} className="hover:text-blue-600 cursor-pointer">Start</a>
         <ChevronRight className="w-3 h-3 text-slate-300" />
-        <a href={`/kategorie/${catId}`} onClick={(e) => { e.preventDefault(); onSelectCategory(catName); }} className="hover:text-blue-600 cursor-pointer">{catName}</a>
+        <a href={`/kategorie/${catId}/`} onClick={(e) => { e.preventDefault(); onSelectCategory(catName); }} className="hover:text-blue-600 cursor-pointer">{catName}</a>
         <ChevronRight className="w-3 h-3 text-slate-300" />
         <span className="text-slate-800 font-semibold line-clamp-1">{product.name}</span>
       </nav>
@@ -153,7 +153,7 @@ export default function ProductPage({
         {/* Details */}
         <div className="lg:col-span-6 flex flex-col">
           <a
-            href={`/kategorie/${catId}`}
+            href={`/kategorie/${catId}/`}
             onClick={(e) => { e.preventDefault(); onSelectCategory(catName); }}
             className="text-[10px] font-bold text-red-600 bg-red-50 px-2.5 py-0.5 rounded uppercase tracking-wider self-start cursor-pointer"
           >
@@ -238,7 +238,7 @@ export default function ProductPage({
               return (
                 <a
                   key={p.id}
-                  href={`/produkt/${productSlug(p)}`}
+                  href={`/produkt/${productSlug(p)}/`}
                   onClick={(e) => { e.preventDefault(); onOpenProduct(p); }}
                   className="group bg-white border border-slate-100 rounded-2xl p-3 hover:shadow-lg hover:border-slate-200 transition-all cursor-pointer flex flex-col"
                 >
@@ -261,7 +261,7 @@ export default function ProductPage({
       {/* Zurück */}
       <div className="mt-12">
         <a
-          href={`/kategorie/${catId}`}
+          href={`/kategorie/${catId}/`}
           onClick={(e) => { e.preventDefault(); onSelectCategory(catName); }}
           className="inline-flex items-center gap-2 text-slate-500 hover:text-blue-600 text-sm font-semibold cursor-pointer"
         >

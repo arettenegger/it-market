@@ -161,6 +161,7 @@ async function fetchMainConfig() {
         title: fval(f.title) || "",
         slug: fval(f.slug),
         excerpt: fval(f.excerpt) || "",
+        content: fval(f.content) || "",
         category: fval(f.category) || "",
         author: fval(f.author) || "",
         date: fval(f.date) || "",
@@ -212,7 +213,7 @@ function breadcrumbLdJson(p) {
     "@context": "https://schema.org/", "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Startseite", item: `${SITE}/` },
-      { "@type": "ListItem", position: 2, name: catName, item: `${SITE}/kategorie/${catId}` },
+      { "@type": "ListItem", position: 2, name: catName, item: `${SITE}/kategorie/${catId}/` },
       { "@type": "ListItem", position: 3, name: p.name },
     ],
   };
@@ -240,13 +241,13 @@ function blogBreadcrumbLdJson(post) {
     "@context": "https://schema.org/", "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Startseite", item: `${SITE}/` },
-      { "@type": "ListItem", position: 2, name: "Ratgeber & Magazin", item: `${SITE}/blog` },
+      { "@type": "ListItem", position: 2, name: "Ratgeber & Magazin", item: `${SITE}/blog/` },
       { "@type": "ListItem", position: 3, name: post.title },
     ],
   };
 }
 
-function renderHtml(base, { title, description, canonical, keywords, jsonLd }) {
+function renderHtml(base, { title, description, canonical, keywords, jsonLd, bodyHtml }) {
   const t = esc(title), d = esc(description);
   let html = base;
   html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${t}</title>`);
@@ -265,7 +266,118 @@ function renderHtml(base, { title, description, canonical, keywords, jsonLd }) {
     const blocks = jsonLd.map((o) => `  <script type="application/ld+json">${JSON.stringify(o)}</script>`).join("\n");
     html = html.replace(/<\/head>/i, `${blocks}\n</head>`);
   }
+  // Body-Prerender: SEO-Inhalt in #root legen (React ersetzt ihn beim Laden via createRoot).
+  if (bodyHtml) {
+    html = html.replace(/<div id="root">\s*<\/div>/i, `<div id="root">${bodyHtml}</div>`);
+  }
   return html;
+}
+
+// ---- Body-Prerender-Helfer (SEO-Inhalt für #root, browser-frei) ----
+const WRAP_OPEN = `<div style="max-width:64rem;margin:0 auto;padding:2rem 1rem;font-family:system-ui,Arial,sans-serif;line-height:1.6">`;
+const WRAP_CLOSE = `</div>`;
+
+// Inline-Markdown: **fett** und [Text](url|/relativ)
+function inlineMd(s) {
+  let h = esc(s || "");
+  h = h.replace(/\[([^\]]+)\]\(((?:https?:\/\/|\/)[^\s)]+)\)/g, '<a href="$2">$1</a>');
+  h = h.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  return h;
+}
+
+// Minimaler Markdown->HTML-Wandler (spiegelt die Blog-Anzeige: Überschriften, Listen,
+// Tabellen, Bilder, fett, Links). Nur für den vorgerenderten SEO-Body.
+function mdToHtml(raw) {
+  if (!raw) return "";
+  const blocks = String(raw).replace(/\r\n/g, "\n").split(/\n\n+/);
+  const out = [];
+  for (const block of blocks) {
+    const t = block.trim();
+    if (!t) continue;
+    const img = t.match(/^!\[(.*?)\]\((https?:\/\/[^\s)]+)\)$/);
+    if (img) { out.push(`<figure><img src="${esc(img[2])}" alt="${esc(img[1])}" loading="lazy" /></figure>`); continue; }
+    const h = t.match(/^(#{1,4})\s+(.*)$/);
+    if (h && !t.includes("\n")) { const lvl = Math.max(2, h[1].length); out.push(`<h${lvl}>${inlineMd(h[2])}</h${lvl}>`); continue; }
+    const lines = t.split("\n").map((l) => l.trim()).filter(Boolean);
+    const isTable = lines.length >= 2 && lines[0].includes("|") && /^\|?[\s:|-]*-[\s:|-]*\|?$/.test(lines[1]) && lines[1].includes("-");
+    if (isTable) {
+      const parseRow = (line) => { const c = line.split("|").map((x) => x.trim()); if (c.length && c[0] === "") c.shift(); if (c.length && c[c.length - 1] === "") c.pop(); return c; };
+      const header = parseRow(lines[0]);
+      const rows = lines.slice(2).map(parseRow);
+      const thead = "<thead><tr>" + header.map((hh) => `<th>${inlineMd(hh)}</th>`).join("") + "</tr></thead>";
+      const tbody = "<tbody>" + rows.map((r) => "<tr>" + r.map((c) => `<td>${inlineMd(c)}</td>`).join("") + "</tr>").join("") + "</tbody>";
+      out.push(`<table>${thead}${tbody}</table>`);
+      continue;
+    }
+    if (lines.every((l) => /^[-*]\s+/.test(l))) {
+      out.push("<ul>" + lines.map((l) => `<li>${inlineMd(l.replace(/^[-*]\s+/, ""))}</li>`).join("") + "</ul>");
+      continue;
+    }
+    out.push(`<p>${inlineMd(t)}</p>`);
+  }
+  return out.join("\n");
+}
+
+function productsInCategory(products, catId) {
+  return products.filter((p) => categoryIdFromName(p.category) === catId);
+}
+
+function homeBody(products, blogPosts) {
+  const cats = Object.keys(CATEGORY_NAMES).map((id) => `<li><a href="/kategorie/${id}/">${esc(CATEGORY_NAMES[id])}</a></li>`).join("");
+  const prods = products.slice(0, 8).map((p) => `<li><a href="/produkt/${productSlug(p)}/">${esc(p.name)}</a></li>`).join("");
+  const posts = (blogPosts || []).filter((b) => b.isPublished).slice(0, 5).map((b) => `<li><a href="/blog/${blogSlug(b)}/">${esc(b.title)}</a></li>`).join("");
+  return `${WRAP_OPEN}
+    <h1>IT-MARKET — Sicherheit, Netzwerk &amp; IT-Hardware in Österreich</h1>
+    <p>Premium IP-Kameras, Netzwerktechnik, NAS-Systeme, Hotspot- &amp; Wireless-Lösungen, PC-Hardware und Smart-Home. Stellen Sie Ihre Wunschprodukte zusammen und fordern Sie ein unverbindliches Angebot per E-Mail an.</p>
+    <h2>Produktkategorien</h2>
+    <ul>${cats}</ul>
+    ${prods ? `<h2>Beliebte Produkte</h2><ul>${prods}</ul>` : ""}
+    ${posts ? `<h2>Ratgeber &amp; Magazin</h2><ul>${posts}</ul>` : ""}
+  ${WRAP_CLOSE}`;
+}
+
+function categoryBody(catId, description, products) {
+  const name = CATEGORY_NAMES[catId] || catId;
+  const list = productsInCategory(products, catId).map((p) => `<li><a href="/produkt/${productSlug(p)}/">${esc(p.name)}</a></li>`).join("");
+  return `${WRAP_OPEN}
+    <nav><a href="/">Startseite</a> / <span>${esc(name)}</span></nav>
+    <h1>${esc(name)}</h1>
+    <p>${esc(description || "")}</p>
+    ${list ? `<h2>Produkte</h2><ul>${list}</ul>` : "<p>Produkte auf Anfrage.</p>"}
+  ${WRAP_CLOSE}`;
+}
+
+function productBody(p) {
+  const catId = categoryIdFromName(p.category);
+  const catName = CATEGORY_NAMES[catId] || p.category;
+  const price = p.price != null && Number(p.price) > 0 ? `<p><strong>${Number(p.price).toFixed(2)} €</strong> inkl. MwSt. zzgl. Versand</p>` : "";
+  return `${WRAP_OPEN}
+    <nav><a href="/">Startseite</a> / <a href="/kategorie/${catId}/">${esc(catName)}</a> / <span>${esc(p.name)}</span></nav>
+    <h1>${esc(p.name)}</h1>
+    ${price}
+    <p>${esc(p.description || p.metaDescription || "")}</p>
+    <p><a href="/kategorie/${catId}/">Weitere Produkte aus ${esc(catName)}</a></p>
+  ${WRAP_CLOSE}`;
+}
+
+function blogIndexBody(blogPosts) {
+  const list = (blogPosts || []).filter((b) => b.isPublished).map((b) => `<li><a href="/blog/${blogSlug(b)}/">${esc(b.title)}</a></li>`).join("");
+  return `${WRAP_OPEN}
+    <h1>Ratgeber &amp; Technik-Magazin</h1>
+    <p>Praxisnahe Ratgeber zu IP-Kameras, Netzwerk, NAS, Smart-Home &amp; IT-Sicherheit.</p>
+    ${list ? `<ul>${list}</ul>` : ""}
+  ${WRAP_CLOSE}`;
+}
+
+function blogPostBody(post) {
+  return `${WRAP_OPEN}
+    <nav><a href="/">Startseite</a> / <a href="/blog/">Ratgeber &amp; Magazin</a> / <span>${esc(post.title)}</span></nav>
+    <article>
+      <h1>${esc(post.title)}</h1>
+      ${post.excerpt ? `<p>${esc(post.excerpt)}</p>` : ""}
+      ${mdToHtml(post.content)}
+    </article>
+  ${WRAP_CLOSE}`;
 }
 
 try {
@@ -276,11 +388,18 @@ try {
   // 1) Statische + Kategorie-Seiten
   for (const r of routes) {
     const override = pageSeo[r.path] || {};
+    const canonical = SITE + (r.home ? "/" : r.path + "/");
+    const title = override.title || r.title;
+    const description = override.description || r.description;
+    // Body-Prerender: Home, Blog-Übersicht und Kategorien bekommen SEO-Inhalt.
+    let bodyHtml = "";
+    if (r.home) bodyHtml = homeBody(products, blogPosts);
+    else if (r.path === "/blog") bodyHtml = blogIndexBody(blogPosts);
+    else if (r.path.startsWith("/kategorie/")) bodyHtml = categoryBody(r.path.slice("/kategorie/".length), description, products);
     const html = renderHtml(base, {
-      title: override.title || r.title,
-      description: override.description || r.description,
-      canonical: SITE + r.path,
+      title, description, canonical,
       keywords: override.keywords || "",
+      bodyHtml,
     });
     if (r.home) {
       writeFileSync(join(DIST, "index.html"), html, "utf8");
@@ -297,7 +416,7 @@ try {
   for (const p of products) {
     const slug = productSlug(p);
     const path = `/produkt/${slug}`;
-    const canonical = SITE + path;
+    const canonical = SITE + path + "/";
     // SEO-Manager-Überschreibung (analog zum Client in App.tsx) berücksichtigen.
     const override = pageSeo[path] || {};
     const title = override.title || p.seoTitle || `${p.name} kaufen & Angebot anfordern | IT-MARKET`;
@@ -306,6 +425,7 @@ try {
       title, description, canonical,
       keywords: override.keywords || "",
       jsonLd: [productLdJson(p, canonical), breadcrumbLdJson(p)],
+      bodyHtml: productBody(p),
     });
     const outDir = join(DIST, path);
     mkdirSync(outDir, { recursive: true });
@@ -320,7 +440,7 @@ try {
     if (!post.isPublished) continue;
     const slug = blogSlug(post);
     const path = `/blog/${slug}`;
-    const canonical = SITE + path;
+    const canonical = SITE + path + "/";
     const override = pageSeo[path] || {};
     const title = override.title || post.seoTitle || `${post.title} | IT-MARKET Ratgeber`;
     const description = override.description || post.metaDescription || post.excerpt || "";
@@ -328,6 +448,7 @@ try {
     const html = renderHtml(base, {
       title, description, canonical, keywords,
       jsonLd: [blogPostLdJson(post, canonical), blogBreadcrumbLdJson(post)],
+      bodyHtml: blogPostBody(post),
     });
     const outDir = join(DIST, path);
     mkdirSync(outDir, { recursive: true });
@@ -338,7 +459,7 @@ try {
 
   // 3) Sitemap (statische + Kategorie- + Produkt- + Blog-URLs, mit lastmod)
   const sitemapAll = [
-    ...routes.map((r) => ({ loc: SITE + r.path, priority: r.priority || "0.7", changefreq: r.path === "/" ? "weekly" : "weekly", lastmod: TODAY })),
+    ...routes.map((r) => ({ loc: SITE + (r.home ? "/" : r.path + "/"), priority: r.priority || "0.7", changefreq: "weekly", lastmod: TODAY })),
     ...productUrls.map((u) => ({ loc: u.loc, priority: u.priority, changefreq: "weekly", lastmod: TODAY })),
     ...blogUrls.map((u) => ({ loc: u.loc, priority: u.priority, changefreq: "monthly", lastmod: u.lastmod })),
   ];
