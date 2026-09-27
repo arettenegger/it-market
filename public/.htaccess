@@ -13,12 +13,38 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
 RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
 RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 
-# --- 301: Reolink Video Doorbell -> kurze Produkt-URL (Audit 6.1) ---
-# Faengt beide alten Adressen ab und leitet dauerhaft (301) auf die kurze URL um:
-#  1) alte Tippfehler-URL ("doorbel", ein l)
-#  2) lange korrekte URL ("doorbell...", zuvor kurz live gewesen)
+# --- 301: Produkt-URLs auf kurze Slugs umleiten -----------
+# Leitet alte, lange Produkt-URLs dauerhaft (301) auf die neuen kurzen um,
+# damit bereits bekannte/indexierte Adressen nicht ins Leere laufen.
+# Sonderfall zuerst: alte Tippfehler-URL der Tuerklingel ("doorbel", ein l).
 RewriteRule ^produkt/reolink-video-doorbel-smarte-2k-tuerklingel-mit-personenerkennung/?$ /produkt/reolink-video-doorbell/ [R=301,L]
+RewriteRule ^produkt/reolink-solar-floodlight-cam/?$ /produkt/reolink-solar-floodlight/ [R=301,L]
+RewriteRule ^produkt/reolink-rln12w-12-kanal-wifi-6-nvr-mit-2-tb/?$ /produkt/reolink-nvr-2tb/ [R=301,L]
+RewriteRule ^produkt/reolink-omvi-3i-wifi-triple-lens-18-mp/?$ /produkt/reolink-omvi-3i/ [R=301,L]
+RewriteRule ^produkt/reolink-elite-floodlight-wifi/?$ /produkt/reolink-elite-floodlight/ [R=301,L]
+RewriteRule ^produkt/unifi-u7-lite-u7-lite-kompakter-wifi-7-access-point/?$ /produkt/unifi-u7-lite/ [R=301,L]
+RewriteRule ^produkt/unifi-u7-pro-wall-u7-pro-wall-wifi-7-wand-ap-6-ghz/?$ /produkt/unifi-u7-pro-wall/ [R=301,L]
+RewriteRule ^produkt/unifi-u7-outdoor-wifi-7-outdoor-ap-465-m/?$ /produkt/unifi-u7-outdoor/ [R=301,L]
+RewriteRule ^produkt/unifi-u7-mesh-u7-mesh-wifi-7-indoor-outdoor-ap/?$ /produkt/unifi-u7-mesh/ [R=301,L]
+RewriteRule ^produkt/unifi-device-bridge-pro-udb-pro-5-ghz-bridge-5-km/?$ /produkt/unifi-device-bridge-pro/ [R=301,L]
+RewriteRule ^produkt/unifi-building-bridge-ubb-60-ghz-point-to-point-bridge/?$ /produkt/unifi-building-bridge/ [R=301,L]
+RewriteRule ^produkt/unifi-switch-24-usw-24-1u-rack-mit-24-gigabit-sfp/?$ /produkt/unifi-switch-24/ [R=301,L]
+RewriteRule ^produkt/unifi-switch-lite-16-poe-usw-lite-16-poe-8-poe/?$ /produkt/unifi-switch-lite-16-poe/ [R=301,L]
+RewriteRule ^produkt/unifi-switch-flex-2-5g-8-usw-flex-2-5g-8-mit-10g-uplink/?$ /produkt/unifi-switch-flex-2-5g-8/ [R=301,L]
+RewriteRule ^produkt/unifi-dream-router-7-udr7-wifi-7-10g-cloud-gateway/?$ /produkt/unifi-dream-router-7/ [R=301,L]
+RewriteRule ^produkt/unifi-cloud-gateway-fiber-ucg-fiber-10g-router-nvr/?$ /produkt/unifi-cloud-gateway-fiber/ [R=301,L]
+RewriteRule ^produkt/unifi-cloud-gateway-max-ucg-max-2-5g-router-nvr/?$ /produkt/unifi-cloud-gateway-max/ [R=301,L]
+RewriteRule ^produkt/gaming-power-pc-amd-ryzen-5-5500-rtx-5050-16gb-ddr4/?$ /produkt/gaming-pc-ryzen-5-5500-rtx-5050/ [R=301,L]
+RewriteRule ^produkt/pc-aufruestkit-amd-ryzen-5-pro-5655g/?$ /produkt/pc-aufruestkit-ryzen-5-pro-5655g/ [R=301,L]
+RewriteRule ^produkt/office-pc-intel-core-i7-12700k-intel-uhd-grafik-16gb-ddr5/?$ /produkt/office-pc-intel-i7-12700k/ [R=301,L]
+RewriteRule ^produkt/office-pc-amd-ryzen-7-4700g-radeon-grafik-16gb-ddr/?$ /produkt/office-pc-ryzen-7-4700g/ [R=301,L]
+RewriteRule ^produkt/terramaster-f4-425-leistungsstarkes-4-bay-high-performance-nas/?$ /produkt/terramaster-f4-425/ [R=301,L]
+RewriteRule ^produkt/ugreen-nasync-dxp4800-plus-4-bay-nas/?$ /produkt/ugreen-nasync-dxp4800-plus/ [R=301,L]
+RewriteRule ^produkt/synology-ds224/?$ /produkt/synology-ds224-plus/ [R=301,L]
+RewriteRule ^produkt/switchbot-video-tuerklingel-smarte-tuerklingel-mit-kamera-4-3/?$ /produkt/switchbot-video-tuerklingel/ [R=301,L]
 RewriteRule ^produkt/reolink-video-doorbell-smarte-2k-tuerklingel-mit-personenerkennung/?$ /produkt/reolink-video-doorbell/ [R=301,L]
+RewriteRule ^produkt/ecowitt-ws90-7-in-1-wetterstation-powered-by-shelly/?$ /produkt/ecowitt-ws90-wetterstation/ [R=301,L]
+RewriteRule ^produkt/shelly-power-strip-4-gen4-smarte-steckdosenleiste-mit-vier-steuerbaren-steckdose/?$ /produkt/shelly-power-strip-4-gen4/ [R=301,L]
 
 # --- Trailing Slash: einheitlich MIT "/" ------------------
 # Die vorgerenderten Seiten sind Ordner (/produkt/<slug>/index.html); LiteSpeed
