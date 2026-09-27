@@ -46,6 +46,17 @@ RewriteRule ^produkt/reolink-video-doorbell-smarte-2k-tuerklingel-mit-personener
 RewriteRule ^produkt/ecowitt-ws90-7-in-1-wetterstation-powered-by-shelly/?$ /produkt/ecowitt-ws90-wetterstation/ [R=301,L]
 RewriteRule ^produkt/shelly-power-strip-4-gen4-smarte-steckdosenleiste-mit-vier-steuerbaren-steckdose/?$ /produkt/shelly-power-strip-4-gen4/ [R=301,L]
 
+# --- 301: Blog-Artikel auf kurze/saubere Slugs umleiten ---
+RewriteRule ^blog/5g-business-internet-kmu-hotspot-l-sung-firma-warum-fixed-wireless-access-2026-e/?$ /blog/5g-business-internet-kmu/ [R=301,L]
+RewriteRule ^blog/heimnetzwerk-sichern-smart-home-iot-segmentieren/?$ /blog/heimnetzwerk-sichern-iot/ [R=301,L]
+RewriteRule ^blog/wlan-l-cken-eigenheim-beheben-ursachen-l-sungen-2026/?$ /blog/wlan-luecken-eigenheim-beheben/ [R=301,L]
+RewriteRule ^blog/warum-pc-aufr-sten-statt-neu-kaufen-der-smarte-weg-zu-mehr-leistung-2026/?$ /blog/pc-aufruesten-statt-neu-kaufen/ [R=301,L]
+RewriteRule ^blog/nas-eigene-cloud-google-drive-dropbox-sicher-ersetzen-2026/?$ /blog/nas-eigene-cloud/ [R=301,L]
+RewriteRule ^blog/smart-home-sicherheit-ip-kameras-automation-2026/?$ /blog/smart-home-sicherheit-ip-kameras/ [R=301,L]
+RewriteRule ^blog/nas-kaufen-was-ist-das-was-bringt-es-und-was-kostet-es/?$ /blog/nas-kaufen-was-bringt-es/ [R=301,L]
+RewriteRule ^blog/netzwerk-optimierung-f-r-kleinbetriebe-der-komplette-guide-2026/?$ /blog/netzwerk-optimierung-kleinbetriebe/ [R=301,L]
+RewriteRule ^blog/wlan-f-r-garten-terrasse-stabiles-internet-auf-der-terrasse-einrichten/?$ /blog/wlan-garten-terrasse/ [R=301,L]
+
 # --- Trailing Slash: einheitlich MIT "/" ------------------
 # Die vorgerenderten Seiten sind Ordner (/produkt/<slug>/index.html); LiteSpeed
 # (DirectorySlash) haengt bei Ordner-Aufrufen automatisch ein "/" an. Canonical,
