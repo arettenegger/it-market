@@ -267,7 +267,7 @@ function blogBreadcrumbLdJson(post) {
   };
 }
 
-function renderHtml(base, { title, description, canonical, keywords, jsonLd, bodyHtml }) {
+function renderHtml(base, { title, description, canonical, keywords, jsonLd, bodyHtml, image }) {
   const t = esc(title), d = esc(description);
   let html = base;
   html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${t}</title>`);
@@ -278,6 +278,12 @@ function renderHtml(base, { title, description, canonical, keywords, jsonLd, bod
   html = html.replace(/<meta\s+property="og:description"[\s\S]*?>/i, `<meta property="og:description" content="${d}" />`);
   html = html.replace(/<meta\s+name="twitter:title"[\s\S]*?>/i, `<meta name="twitter:title" content="${t}" />`);
   html = html.replace(/<meta\s+name="twitter:description"[\s\S]*?>/i, `<meta name="twitter:description" content="${d}" />`);
+  // Social-Vorschaubild: bei Produkt/Artikel das jeweilige Bild, sonst bleibt das Standardbild.
+  if (image && /^https?:\/\//.test(image)) {
+    const img = esc(image);
+    html = html.replace(/<meta\s+property="og:image"[\s\S]*?>/i, `<meta property="og:image" content="${img}" />`);
+    html = html.replace(/<meta\s+name="twitter:image"[\s\S]*?>/i, `<meta name="twitter:image" content="${img}" />`);
+  }
   if (keywords) {
     html = html.replace(/<meta\s+name="keywords"[\s\S]*?>/i, "");
     html = html.replace(/<\/head>/i, `  <meta name="keywords" content="${esc(keywords)}" />\n</head>`);
@@ -347,7 +353,7 @@ function homeBody(products, blogPosts) {
   const prods = products.slice(0, 8).map((p) => `<li><a href="/produkt/${productSlug(p)}/">${esc(p.name)}</a></li>`).join("");
   const posts = (blogPosts || []).filter((b) => isBlogLive(b)).slice(0, 5).map((b) => `<li><a href="/blog/${blogSlug(b)}/">${esc(b.title)}</a></li>`).join("");
   return `${WRAP_OPEN}
-    <h1>IT-MARKET — Sicherheit, Netzwerk &amp; IT-Hardware in Österreich</h1>
+    <h1>Sicherheitskameras, Netzwerk- &amp; IT-Hardware – IT-MARKET Österreich</h1>
     <p>Premium IP-Kameras, Netzwerktechnik, NAS-Systeme, Hotspot- &amp; Wireless-Lösungen, PC-Hardware und Smart-Home. Stellen Sie Ihre Wunschprodukte zusammen und fordern Sie ein unverbindliches Angebot per E-Mail an.</p>
     <h2>Produktkategorien</h2>
     <ul>${cats}</ul>
@@ -446,6 +452,7 @@ try {
       keywords: override.keywords || "",
       jsonLd: [productLdJson(p, canonical), breadcrumbLdJson(p)],
       bodyHtml: productBody(p),
+      image: p.image,
     });
     const outDir = join(DIST, path);
     mkdirSync(outDir, { recursive: true });
@@ -469,6 +476,7 @@ try {
       title, description, canonical, keywords,
       jsonLd: [blogPostLdJson(post, canonical), blogBreadcrumbLdJson(post)],
       bodyHtml: blogPostBody(post),
+      image: post.image,
     });
     const outDir = join(DIST, path);
     mkdirSync(outDir, { recursive: true });

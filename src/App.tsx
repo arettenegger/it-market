@@ -355,6 +355,8 @@ export default function App() {
     const seo = pageSeo[seoKey];
     let title = base;
     let description = "";
+    // Social-Vorschaubild (og:image): Standard, für Produkt/Artikel das jeweilige Bild.
+    let ogImage = "https://it-market.at/og-image.jpg";
     if (currentPage === "category") {
       // Kategorien im Admin haben ggf. eine cat-… ID; darum über den Namen auf die semantische ID abbilden.
       const cat = categories.find((c) => categoryIdFromName(c.name) === activeCategoryId) || categories.find((c) => c.id === activeCategoryId);
@@ -367,6 +369,7 @@ export default function App() {
       if (prod) {
         title = prod.seoTitle || `${prod.name} kaufen & Angebot anfordern | IT-MARKET`;
         description = prod.metaDescription || `${prod.name} bei IT-MARKET Österreich – ${(prod.description || "").slice(0, 130)}`;
+        if (prod.image && /^https?:\/\//.test(prod.image)) ogImage = prod.image;
       }
     } else if (currentPage === "blog") {
       title = "Ratgeber & Technik-Magazin | IT-MARKET";
@@ -375,6 +378,7 @@ export default function App() {
       if (post) {
         title = post.seoTitle || `${post.title} | IT-MARKET Ratgeber`;
         description = post.metaDescription || post.excerpt || "";
+        if (post.image && /^https?:\/\//.test(post.image)) ogImage = post.image;
       } else {
         title = "Ratgeber & Technik-Magazin | IT-MARKET";
       }
@@ -424,6 +428,15 @@ export default function App() {
     setOg("og:url", canonicalUrl);
     setOg("og:title", title);
     if (description) setOg("og:description", description);
+    setOg("og:image", ogImage);
+    // twitter:image nutzt name= (nicht property=)
+    let tw = document.querySelector('meta[name="twitter:image"]');
+    if (!tw) {
+      tw = document.createElement("meta");
+      tw.setAttribute("name", "twitter:image");
+      document.head.appendChild(tw);
+    }
+    tw.setAttribute("content", ogImage);
     // Seitenaufruf an Google Analytics melden (SPA-Navigation)
     trackPageView(seoKey, title);
     // Eigener anonymer Zähler (cookielos, unabhängig vom Consent)

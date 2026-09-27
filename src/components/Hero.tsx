@@ -474,7 +474,13 @@ export default function Hero({
       {/* Main Slide Content Overlays */}
       <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
         <div className="max-w-2xl lg:max-w-3xl">
-          
+
+          {/* Feste, keyword-optimierte H1 für SEO – für Besucher unsichtbar (sr-only),
+              für Suchmaschinen lesbar. Der sichtbare Slider-Titel ist eine H2. */}
+          <h1 className="sr-only">
+            Sicherheitskameras, Netzwerk- &amp; IT-Hardware – IT-MARKET Österreich
+          </h1>
+
           {/* Tagline category selector indicator */}
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white border border-white/10 text-xs font-bold px-3 py-1.5 rounded-full mb-6 uppercase tracking-wider animate-fadeIn">
             <span className="relative flex h-2 w-2">
@@ -484,8 +490,8 @@ export default function Hero({
             {activeSlide.subtitle}
           </div>
 
-          {/* Majestic Animated Heading */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold font-display text-white tracking-tight leading-[1.1] mb-6">
+          {/* Majestic Animated Heading (sichtbarer Slider-Titel = H2, feste H1 steht oben) */}
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold font-display text-white tracking-tight leading-[1.1] mb-6">
             {activeSlide.title.split(" ").map((word, i) => {
               // Highlight central key product words with premium brand color orange
               const isHighlight = word.toLowerCase().includes("ip-kameras") || 
@@ -501,7 +507,7 @@ export default function Hero({
                 </span>
               );
             })}
-          </h1>
+          </h2>
 
           {/* Slide Description */}
           <p className="text-sm sm:text-base md:text-lg text-slate-300 leading-relaxed mb-8 max-w-2xl font-normal">
