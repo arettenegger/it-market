@@ -937,6 +937,8 @@ export default function AdminPanel({
   const [newFeatureText, setNewFeatureText] = useState("");
   const [formImage, setFormImage] = useState("");
   const [formImageAlt, setFormImageAlt] = useState("");
+  // URL-Kennung (Slug) des Produkts. Leer = automatisch aus dem Namen erzeugt.
+  const [formSlug, setFormSlug] = useState("");
   const [formArticleNumber, setFormArticleNumber] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   
@@ -1117,6 +1119,7 @@ export default function AdminPanel({
     setIsAddingNew(false);
     
     setFormName(product.name);
+    setFormSlug(product.slug || "");
     setFormCategory(product.category);
     setFormPrice(product.price);
     setFormOldPrice(product.oldPrice || product.price + 50);
@@ -1143,6 +1146,7 @@ export default function AdminPanel({
     setIsAddingNew(true);
     
     setFormName("");
+    setFormSlug("");
     setFormCategory("IP-Kameras");
     setFormPrice(150);
     setFormOldPrice(199);
@@ -1225,6 +1229,7 @@ export default function AdminPanel({
       const newProduct: Product = {
         id: newId,
         name: trimmedName,
+        slug: slugify(formSlug.trim() || trimmedName),
         category: categoryToSave,
         description: formDescription ? formDescription.trim() : "Professionelle Lösung von Bewacht & Vernetzt.",
         price: sanitizedPrice,
@@ -1261,6 +1266,7 @@ export default function AdminPanel({
           return {
             ...p,
             name: trimmedName,
+            slug: slugify(formSlug.trim() || trimmedName),
             category: categoryToSave,
             description: formDescription ? formDescription.trim() : p.description,
             price: sanitizedPrice,
@@ -2714,6 +2720,35 @@ export default function AdminPanel({
                           placeholder="z.B. Pro Dome 4K"
                           className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 outline-none focus:border-[#FF5E2E] transition-all"
                         />
+                      </div>
+
+                      {/* URL-Kennung (Slug) */}
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">URL-Kennung (Slug)</label>
+                          {formName.trim() && (
+                            <button
+                              type="button"
+                              onClick={() => setFormSlug(slugify(formName))}
+                              className="text-[10px] text-[#FF5E2E] hover:text-[#ff7a52] font-semibold underline cursor-pointer"
+                            >
+                              Aus Name erzeugen
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-slate-500 font-mono shrink-0">/produkt/</span>
+                          <input
+                            type="text"
+                            value={formSlug}
+                            onChange={(e) => setFormSlug(e.target.value)}
+                            placeholder={formName.trim() ? slugify(formName) : "z.B. reolink-video-doorbell"}
+                            className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 outline-none focus:border-[#FF5E2E] transition-all font-mono"
+                          />
+                        </div>
+                        <span className="text-[10px] text-slate-500 block mt-1">
+                          Bestimmt die Adresse (z.&nbsp;B. kurz halten). Leer lassen = automatisch aus dem Namen. Umlaute werden zu ae/oe/ue/ss. ⚠️ Bei bestehenden Produkten ändert ein neuer Slug die URL – alte Links funktionieren dann nur mit einer Weiterleitung.
+                        </span>
                       </div>
 
                       {/* Artikelnummer (nur intern) */}

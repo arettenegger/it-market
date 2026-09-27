@@ -13,6 +13,11 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
 RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
 RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 
+# --- 301: Tippfehler-Produkt-URL korrigiert (Audit 6.1) ---
+# Alt: "doorbel" (ein l) -> Neu: "doorbell" (zwei l). Faengt bereits indexierte
+# alte Adresse ab und leitet dauerhaft (301) auf die korrigierte URL um.
+RewriteRule ^produkt/reolink-video-doorbel-smarte-2k-tuerklingel-mit-personenerkennung/?$ /produkt/reolink-video-doorbell-smarte-2k-tuerklingel-mit-personenerkennung/ [R=301,L]
+
 # --- Trailing Slash: einheitlich MIT "/" ------------------
 # Die vorgerenderten Seiten sind Ordner (/produkt/<slug>/index.html); LiteSpeed
 # (DirectorySlash) haengt bei Ordner-Aufrufen automatisch ein "/" an. Canonical,
