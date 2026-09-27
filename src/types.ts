@@ -30,6 +30,8 @@ export interface Product {
   keywords?: string;
   // Interne Artikelnummer – nur im Admin sichtbar, NICHT auf der Website.
   articleNumber?: string;
+  // Letzte Änderung (ISO) – wird beim Speichern im Admin gesetzt, für echtes <lastmod> in der Sitemap.
+  updatedAt?: string;
 }
 
 // SEO-Daten für Unterseiten (Startseite, Kategorien, Blog, Kontakt …)

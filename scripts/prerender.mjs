@@ -58,6 +58,15 @@ const MERCHANT_RETURN_LD = {
   returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
 };
 
+// Echtes <lastmod>: gültiges ISO-/Datums-Feld -> Datumsteil, sonst Build-Datum (TODAY).
+function toLastmod(value) {
+  const s = String(value || "").trim();
+  if (!s) return TODAY;
+  const t = new Date(s).getTime();
+  if (isNaN(t)) return TODAY;
+  return new Date(t).toISOString().slice(0, 10);
+}
+
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const xmlEsc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -157,6 +166,7 @@ async function fetchMainConfig() {
         seoTitle: fval(f.seoTitle) || "",
         category: fval(f.category) || "",
         inStock: fval(f.inStock) !== false,
+        updatedAt: fval(f.updatedAt) || "",
       };
     }).filter((p) => p.name);
 
@@ -440,7 +450,7 @@ try {
     const outDir = join(DIST, path);
     mkdirSync(outDir, { recursive: true });
     writeFileSync(join(outDir, "index.html"), html, "utf8");
-    productUrls.push({ loc: canonical, priority: "0.8" });
+    productUrls.push({ loc: canonical, priority: "0.8", lastmod: toLastmod(p.updatedAt) });
     count++;
   }
 
@@ -468,9 +478,20 @@ try {
   }
 
   // 3) Sitemap (statische + Kategorie- + Produkt- + Blog-URLs, mit lastmod)
+  // Kategorie-lastmod = jüngstes echtes Änderungsdatum der enthaltenen Produkte (sonst Build-Datum).
+  const categoryLastmod = (catId) => {
+    const dates = productsInCategory(products, catId)
+      .map((p) => (p.updatedAt && !isNaN(new Date(p.updatedAt).getTime())) ? new Date(p.updatedAt).toISOString().slice(0, 10) : null)
+      .filter(Boolean)
+      .sort();
+    return dates.length ? dates[dates.length - 1] : TODAY;
+  };
   const sitemapAll = [
-    ...routes.map((r) => ({ loc: SITE + (r.home ? "/" : r.path + "/"), priority: r.priority || "0.7", changefreq: "weekly", lastmod: TODAY })),
-    ...productUrls.map((u) => ({ loc: u.loc, priority: u.priority, changefreq: "weekly", lastmod: TODAY })),
+    ...routes.map((r) => {
+      const lastmod = r.path.startsWith("/kategorie/") ? categoryLastmod(r.path.slice("/kategorie/".length)) : TODAY;
+      return { loc: SITE + (r.home ? "/" : r.path + "/"), priority: r.priority || "0.7", changefreq: "weekly", lastmod };
+    }),
+    ...productUrls.map((u) => ({ loc: u.loc, priority: u.priority, changefreq: "weekly", lastmod: u.lastmod })),
     ...blogUrls.map((u) => ({ loc: u.loc, priority: u.priority, changefreq: "monthly", lastmod: u.lastmod })),
   ];
   // Doppelte URLs entfernen (z. B. zwei Artikel mit identischem Slug), erste gewinnt.

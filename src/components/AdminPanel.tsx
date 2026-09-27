@@ -1246,7 +1246,8 @@ export default function AdminPanel({
           storage: specStorage || "MicroSD & Cloud",
           power: specPower || "PoE / Netzteil"
         },
-        articleNumber: formArticleNumber.trim() || undefined
+        articleNumber: formArticleNumber.trim() || undefined,
+        updatedAt: new Date().toISOString()
       };
 
       const updated = [newProduct, ...products];
@@ -1279,7 +1280,8 @@ export default function AdminPanel({
               storage: specStorage || p.specs?.storage || "MicroSD & Cloud",
               power: specPower || p.specs?.power || "PoE / Netzteil"
             },
-            articleNumber: formArticleNumber.trim() || undefined
+            articleNumber: formArticleNumber.trim() || undefined,
+            updatedAt: new Date().toISOString()
           };
         }
         return p;
