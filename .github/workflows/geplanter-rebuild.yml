@@ -1,0 +1,39 @@
+name: Täglicher Rebuild für geplante Blogartikel
+
+# Zweck: Hostinger baut die Seite nur bei einem Git-Push neu. Blogartikel mit
+# geplantem Veröffentlichungsdatum (Feld "publishAt") erscheinen für Besucher
+# zwar automatisch (die Seite lädt live aus Firebase), aber ihre eigene, für
+# Google sichtbare URL + der Sitemap-Eintrag entstehen erst beim nächsten Build.
+# Dieser Workflow löst deshalb einmal täglich automatisch einen Push aus, damit
+# der Prerender neu läuft und inzwischen fällige Artikel auch für Google live gehen.
+
+on:
+  schedule:
+    # Täglich um 04:30 UTC (= ca. 05:30 Winter / 06:30 Sommer in Österreich).
+    # GitHub kann geplante Läufe um einige Minuten verschieben – das ist normal.
+    - cron: "30 4 * * *"
+  # Erlaubt zusätzlich einen manuellen Klick-Start auf GitHub (Tab "Actions").
+  workflow_dispatch: {}
+
+# Erlaubt dem Workflow, einen Commit in dasselbe Repo zu pushen.
+permissions:
+  contents: write
+
+# Nie zwei Rebuilds gleichzeitig laufen lassen.
+concurrency:
+  group: geplanter-rebuild
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Leeren Commit erzeugen und pushen (löst den Hostinger-Build aus)
+        run: |
+          git config user.name "it-market Auto-Deploy"
+          git config user.email "actions@users.noreply.github.com"
+          git commit --allow-empty -m "Automatischer Rebuild: geplante Blogartikel veröffentlichen [skip ci]"
+          git push
