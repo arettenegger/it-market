@@ -349,7 +349,8 @@ function productsInCategory(products, catId) {
 }
 
 function homeBody(products, blogPosts) {
-  const cats = Object.keys(CATEGORY_NAMES).map((id) => `<li><a href="/kategorie/${id}/">${esc(CATEGORY_NAMES[id])}</a></li>`).join("");
+  // "nvr" (Netzwerkrekorder) auf der Startseite ausblenden; die Kategorieseite selbst bleibt erhalten.
+  const cats = Object.keys(CATEGORY_NAMES).filter((id) => id !== "nvr").map((id) => `<li><a href="/kategorie/${id}/">${esc(CATEGORY_NAMES[id])}</a></li>`).join("");
   const prods = products.slice(0, 8).map((p) => `<li><a href="/produkt/${productSlug(p)}/">${esc(p.name)}</a></li>`).join("");
   const posts = (blogPosts || []).filter((b) => isBlogLive(b)).slice(0, 5).map((b) => `<li><a href="/blog/${blogSlug(b)}/">${esc(b.title)}</a></li>`).join("");
   return `${WRAP_OPEN}
