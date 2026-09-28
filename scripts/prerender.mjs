@@ -320,6 +320,8 @@ function mdToHtml(raw) {
     if (!t) continue;
     const img = t.match(/^!\[(.*?)\]\((https?:\/\/[^\s)]+)\)$/);
     if (img) { out.push(`<figure><img src="${esc(img[2])}" alt="${esc(img[1])}" loading="lazy" /></figure>`); continue; }
+    const yt = t.match(/^https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{6,})/i);
+    if (yt && !/\s/.test(t)) { out.push(`<figure><div style="position:relative;width:100%;padding-bottom:56.25%"><iframe src="https://www.youtube-nocookie.com/embed/${esc(yt[1])}" title="YouTube-Video" style="position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:1rem" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div></figure>`); continue; }
     const h = t.match(/^(#{1,4})\s+(.*)$/);
     if (h && !t.includes("\n")) { const lvl = Math.max(2, h[1].length); out.push(`<h${lvl}>${inlineMd(h[2])}</h${lvl}>`); continue; }
     const lines = t.split("\n").map((l) => l.trim()).filter(Boolean);

@@ -133,8 +133,8 @@ const QUICK_START_GUIDES: QuickStartGuide[] = [
 const parseInlineFormatting = (text: string) => {
   if (!text) return text;
   
-  const parts = text.split(/(\*\*.*?\*\*|\[.*?\]\(https?:\/\/[^\s\)]+\))/g);
-  
+  const parts = text.split(/(\*\*.*?\*\*|\[.*?\]\((?:https?:\/\/|\/)[^\s\)]+\))/g);
+
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
       return (
@@ -143,15 +143,16 @@ const parseInlineFormatting = (text: string) => {
         </strong>
       );
     }
-    
-    const linkMatch = part.match(/^\[(.*?)\]\((https?:\/\/[^\s\)]+)\)$/);
+
+    const linkMatch = part.match(/^\[(.*?)\]\(((?:https?:\/\/|\/)[^\s\)]+)\)$/);
     if (linkMatch) {
+      const href = linkMatch[2];
+      const isInternal = href.startsWith("/");
       return (
-        <a 
-          key={i} 
-          href={linkMatch[2]} 
-          target="_blank" 
-          rel="noopener noreferrer" 
+        <a
+          key={i}
+          href={href}
+          {...(isInternal ? {} : { target: "_blank", rel: "noopener noreferrer" })}
           className="text-blue-600 font-semibold underline hover:text-blue-800 transition-colors"
         >
           {linkMatch[1]}
@@ -222,6 +223,27 @@ const renderFormattedContent = (rawContent: string) => {
               {altText}
             </figcaption>
           )}
+        </figure>
+      );
+    }
+
+    // 2b. YouTube-Video: eigenständige YouTube-URL auf eigener Zeile -> responsives Embed
+    const ytMatch = trimmed.match(/^https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{6,})/i);
+    if (ytMatch && !/\s/.test(trimmed)) {
+      const vid = ytMatch[1];
+      return (
+        <figure key={blockIdx} className="my-6">
+          <div className="relative w-full overflow-hidden rounded-2xl border border-slate-200/80 shadow-md bg-slate-950" style={{ paddingBottom: "56.25%" }}>
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${vid}`}
+              title="YouTube-Video"
+              className="absolute inset-0 h-full w-full"
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+            />
+          </div>
         </figure>
       );
     }
