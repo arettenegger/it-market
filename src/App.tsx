@@ -6,7 +6,6 @@ import Bestsellers from "./components/Bestsellers";
 import WhyUs from "./components/WhyUs";
 import Brands from "./components/Brands";
 import Applications from "./components/Applications";
-import NvrHighlight from "./components/NvrHighlight";
 import Reviews from "./components/Reviews";
 import Faq from "./components/Faq";
 import Newsletter from "./components/Newsletter";
@@ -80,35 +79,7 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 }
 
 type PageKey = "home" | "blog" | "blogPost" | "category" | "product" | "impressum" | "datenschutz" | "about" | "kontakt";
-const CATEGORY_IDS = ["pc-hardware", "netzwerke", "hotspot", "nas", "kameras", "nvr", "smarthome"];
-
-// Stellt die NVR-Kategorie sicher und belegt eine nur generisch angelegte NVR-Gruppe
-// mit sinnvollen Standard-Texten & Spec-Feldern vor (selbstheilend: sobald der Admin
-// eigene Werte speichert, werden diese nicht mehr überschrieben).
-const NVR_CATEGORY = CATEGORIES.find((c) => c.id === "nvr")!;
-function withNvrCategory(cats: Category[]): Category[] {
-  const idx = cats.findIndex((c) => c.id === "nvr" || /nvr|rekorder|recorder/i.test(c.name || ""));
-  if (idx === -1) return [...cats, NVR_CATEGORY];
-  const ex = cats[idx];
-  // "Bare" = automatisch über "Neue Gruppe" angelegt und noch nicht angepasst.
-  const isBare =
-    ex.tagline === "Neue Produktgruppe" ||
-    !ex.description ||
-    ex.description === "Individuelle Produktgruppe für professionelle Lösungen";
-  if (!isBare) return cats;
-  const upgraded: Category = {
-    ...ex,
-    name: NVR_CATEGORY.name,
-    tagline: NVR_CATEGORY.tagline,
-    description: NVR_CATEGORY.description,
-    iconName: NVR_CATEGORY.iconName,
-    image: NVR_CATEGORY.image,
-    specLabels: ex.specLabels || NVR_CATEGORY.specLabels,
-  };
-  const copy = [...cats];
-  copy[idx] = upgraded;
-  return copy;
-}
+const CATEGORY_IDS = ["pc-hardware", "netzwerke", "hotspot", "nas", "kameras", "smarthome"];
 
 // URL <-> Ansicht (echte Adressen für SEO & Deep-Links)
 function buildPath(page: PageKey, categoryId?: string, slug?: string): string {
@@ -166,7 +137,7 @@ export default function App() {
   const [products, setProducts] = useState<Product[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [reviews, setReviews] = useState<Review[]>(REVIEWS);
-  const [categories, setCategories] = useState<Category[]>(withNvrCategory(CATEGORIES));
+  const [categories, setCategories] = useState<Category[]>(CATEGORIES);
   // Frei benennbare Spec-Feld-Bezeichnungen je Kategorie registrieren (für getSpecLabels).
   useEffect(() => { registerCategorySpecLabels(categories); }, [categories]);
   const [configuratorData, setConfiguratorData] = useState<ConfiguratorData>(DEFAULT_CONFIGURATOR_DATA);
@@ -288,7 +259,7 @@ export default function App() {
       setProducts(Array.isArray(data?.products) && data.products.length ? data.products : PRODUCTS);
       setBlogPosts(Array.isArray(data?.blogPosts) ? data.blogPosts : INITIAL_BLOG_POSTS);
       setReviews(Array.isArray(data?.reviews) && data.reviews.length ? data.reviews : REVIEWS);
-      setCategories(withNvrCategory(Array.isArray(data?.categories) && data.categories.length ? data.categories : CATEGORIES));
+      setCategories(Array.isArray(data?.categories) && data.categories.length ? data.categories : CATEGORIES);
       // Fehlende Felder (z.B. baseConfigurations bei Altdaten) aus den Defaults auffüllen,
       // vorhandene Firestore-Werte (Banner, Zusatzoptionen) bleiben erhalten.
       setConfiguratorData({ ...DEFAULT_CONFIGURATOR_DATA, ...(data?.configuratorData || {}) });
@@ -499,7 +470,7 @@ export default function App() {
         if (data.products) setProducts(data.products);
         if (data.blogPosts) setBlogPosts(data.blogPosts);
         if (data.reviews) setReviews(data.reviews);
-        if (data.categories) setCategories(withNvrCategory(data.categories));
+        if (data.categories) setCategories(data.categories);
         if (data.configuratorData) setConfiguratorData({ ...DEFAULT_CONFIGURATOR_DATA, ...data.configuratorData });
         if (data.logoImage !== undefined) setLogoImage(data.logoImage);
         if (data.heroImages) setHeroImages(data.heroImages);
@@ -858,12 +829,6 @@ export default function App() {
 
             {/* Areas of application grid containing safety tips */}
             <Applications />
-
-            {/* Highlight Komplettsystem packages selector */}
-            <NvrHighlight 
-              onAddToCart={handleAddToCart} 
-              scrollToBestsellers={() => scrollToSection("bestseller")}
-            />
 
             {/* Slideable customer reviews list */}
             <Reviews reviews={reviews} />

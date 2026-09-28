@@ -11,9 +11,7 @@ interface CategoriesProps {
 }
 
 export default function Categories({ onSelectCategory, selectedCategory, categories = CATEGORIES }: CategoriesProps) {
-  const source = categories && categories.length > 0 ? categories : CATEGORIES;
-  // Kategorie "Netzwerkrekorder (NVR)" auf der Startseite ausblenden (Kategorieseite /kategorie/nvr/ bleibt bestehen).
-  const displayCategories = source.filter((cat) => categoryIdFromName(cat.name) !== "nvr");
+  const displayCategories = categories && categories.length > 0 ? categories : CATEGORIES;
 
   // Icon finder helper
   const renderCategoryIcon = (iconName: string) => {

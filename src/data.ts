@@ -42,21 +42,6 @@ export const CATEGORIES: Category[] = [
     image: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?q=80&w=800&auto=format&fit=crop"
   },
   {
-    id: "nvr",
-    name: "Netzwerkrekorder NVR",
-    tagline: "Aufzeichnung & Videomanagement",
-    description: "Netzwerk-Videorekorder (NVR) zur zentralen Aufzeichnung und Verwaltung Ihrer IP-Kameras – mit PoE, großzügigem Speicher und intelligenter Suche.",
-    iconName: "HardDrive",
-    image: "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=800&auto=format&fit=crop",
-    specLabels: {
-      resolution: "Kanäle / Kameras",
-      viewAngle: "Max. Auflösung",
-      nightVision: "Videokompression",
-      storage: "Speicher / HDD-Bays",
-      power: "Netzwerk / PoE"
-    }
-  },
-  {
     id: "smarthome",
     name: "Smart-Home",
     tagline: "Intelligente Haussteuerung",

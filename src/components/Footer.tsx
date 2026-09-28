@@ -63,7 +63,6 @@ export default function Footer({
       { name: "Hotspot & Wireless", categoryName: "Hotspot & Wireless-Lösungen" },
       { name: "NAS-Systeme", categoryName: "NAS-Systeme" },
       { name: "IP-Kameras", categoryName: "IP-Kameras" },
-      { name: "Netzwerkrekorder NVR", categoryName: "Netzwerkrekorder NVR" },
       { name: "Smart-Home", categoryName: "Smart-Home" }
     ],
     unternehmen: [

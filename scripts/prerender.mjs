@@ -19,7 +19,6 @@ const routes = [
   { path: "/", title: "IT-MARKET — Sicherheit, Netzwerk & IT-Hardware | it-market.at", description: "IT-MARKET: Premium IP-Kameras, Netzwerktechnik, NAS-Systeme, Hotspot-Lösungen, PC-Hardware & Smart-Home. Angebot per E-Mail anfordern.", home: true, priority: "1.0" },
   { path: "/blog", title: "Ratgeber & Technik-Magazin | IT-MARKET", description: "Praxisnahe Ratgeber zu IP-Kameras, Netzwerk, NAS, Smart-Home & IT-Sicherheit. Tipps, Vergleiche und Anleitungen von IT-MARKET.", priority: "0.8" },
   { path: "/kategorie/kameras", title: "IP-Kameras kaufen & Angebot anfordern | IT-MARKET", description: "4K IP-Überwachungskameras mit KI-Erkennung für innen & außen. Unverbindliches Angebot per E-Mail bei IT-MARKET anfordern.", priority: "0.9" },
-  { path: "/kategorie/nvr", title: "Netzwerkrekorder NVR kaufen & Angebot anfordern | IT-MARKET", description: "Netzwerk-Videorekorder (NVR) mit PoE & großem Speicher zur zentralen Aufzeichnung Ihrer IP-Kameras. Unverbindliches Angebot bei IT-MARKET.", priority: "0.9" },
   { path: "/kategorie/netzwerke", title: "Netzwerktechnik & PoE-Switches | IT-MARKET", description: "Professionelle PoE-Switches, Router & Access Points. Unverbindliches Angebot per E-Mail bei IT-MARKET anfordern.", priority: "0.9" },
   { path: "/kategorie/hotspot", title: "Hotspot & Wireless-Lösungen | IT-MARKET", description: "Professionelle WLAN-Hotspots, Outdoor-Funk für Freizeitparks & Lagerhallen sowie Richtfunk zur Standortvernetzung. Kostenlose Beratung bei IT-MARKET.", priority: "0.9" },
   { path: "/kategorie/nas", title: "NAS-Systeme & Netzwerkspeicher | IT-MARKET", description: "NAS-Systeme für sichere lokale Speicherung & Backups. Unverbindliches Angebot per E-Mail bei IT-MARKET anfordern.", priority: "0.9" },
@@ -33,7 +32,7 @@ const routes = [
 
 const CATEGORY_NAMES = {
   "pc-hardware": "PC-Hardware", "netzwerke": "Netzwerke", "hotspot": "Hotspot & Wireless-Lösungen",
-  "nas": "NAS-Systeme", "kameras": "IP-Kameras", "nvr": "Netzwerkrekorder NVR", "smarthome": "Smart-Home",
+  "nas": "NAS-Systeme", "kameras": "IP-Kameras", "smarthome": "Smart-Home",
 };
 
 // Fallback-Produktbilder je Kategorie (Merchant-Listings verlangen ein image).
@@ -43,7 +42,6 @@ const CATEGORY_IMAGES = {
   "hotspot": "https://images.unsplash.com/photo-1563770660941-20978e870e26?q=80&w=800&auto=format&fit=crop",
   "nas": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=800&auto=format&fit=crop",
   "kameras": "https://images.unsplash.com/photo-1557597774-9d273605dfa9?q=80&w=800&auto=format&fit=crop",
-  "nvr": "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=800&auto=format&fit=crop",
   "smarthome": "https://images.unsplash.com/photo-1558002038-1055907df827?q=80&w=800&auto=format&fit=crop",
 };
 const DEFAULT_PRODUCT_IMAGE = "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=800&auto=format&fit=crop";
@@ -349,8 +347,7 @@ function productsInCategory(products, catId) {
 }
 
 function homeBody(products, blogPosts) {
-  // "nvr" (Netzwerkrekorder) auf der Startseite ausblenden; die Kategorieseite selbst bleibt erhalten.
-  const cats = Object.keys(CATEGORY_NAMES).filter((id) => id !== "nvr").map((id) => `<li><a href="/kategorie/${id}/">${esc(CATEGORY_NAMES[id])}</a></li>`).join("");
+  const cats = Object.keys(CATEGORY_NAMES).map((id) => `<li><a href="/kategorie/${id}/">${esc(CATEGORY_NAMES[id])}</a></li>`).join("");
   const prods = products.slice(0, 8).map((p) => `<li><a href="/produkt/${productSlug(p)}/">${esc(p.name)}</a></li>`).join("");
   const posts = (blogPosts || []).filter((b) => isBlogLive(b)).slice(0, 5).map((b) => `<li><a href="/blog/${blogSlug(b)}/">${esc(b.title)}</a></li>`).join("");
   return `${WRAP_OPEN}
