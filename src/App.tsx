@@ -31,8 +31,6 @@ import { PRODUCTS, INITIAL_BLOG_POSTS, DEFAULT_CONFIGURATOR_DATA, REVIEWS, CATEG
 import { initAnalytics, trackPageView } from "./lib/analytics";
 import { recordPageView } from "./lib/pageStats";
 import { ShoppingBag, ChevronRight, Shield, Check, Settings, CheckCircle2, ShieldCheck, Mail } from "lucide-react";
-import { auth } from "./lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
 
 enum OperationType {
   CREATE = 'create',
@@ -131,8 +129,23 @@ export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   // Admin-Status: ausschließlich per Firebase-Login (PIN-Login wurde entfernt).
   // Steuert u. a. die Sichtbarkeit von Inline-Bearbeiten-Buttons (z. B. im Hero).
-  const [isAdmin, setIsAdmin] = useState<boolean>(() => !!auth.currentUser);
-  useEffect(() => onAuthStateChanged(auth, (user) => setIsAdmin(!!user)), []);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  useEffect(() => {
+    let active = true;
+    let unsub: () => void = () => {};
+    (async () => {
+      // Firebase-Auth erst nach dem ersten Rendern laden, damit das schwere
+      // Firebase-SDK nicht den initialen Seitenaufbau (Mobile-Performance) blockiert.
+      const [{ auth }, { onAuthStateChanged }] = await Promise.all([
+        import("./lib/firebase"),
+        import("firebase/auth"),
+      ]);
+      if (!active) return;
+      setIsAdmin(!!auth.currentUser);
+      unsub = onAuthStateChanged(auth, (user) => setIsAdmin(!!user));
+    })();
+    return () => { active = false; unsub(); };
+  }, []);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
