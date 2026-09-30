@@ -524,7 +524,9 @@ export default function Hero({
           </h2>
 
           {/* Slide Description */}
-          <p className="text-sm sm:text-base md:text-lg text-slate-300 leading-relaxed mb-8 max-w-2xl font-normal">
+          {/* Mindesthöhe reserviert, damit unterschiedlich lange Slide-Beschreibungen
+              beim Autoplay-Wechsel kein Layout-Springen (CLS) verursachen. */}
+          <p className="text-sm sm:text-base md:text-lg text-slate-300 leading-relaxed mb-8 max-w-2xl font-normal min-h-[96px] sm:min-h-[112px] md:min-h-[128px]">
             {activeSlide.description}
           </p>
 
