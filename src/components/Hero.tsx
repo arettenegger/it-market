@@ -44,7 +44,7 @@ const DEFAULT_SLIDES = [
     title: "IP-Kameras & Videoüberwachung aus Österreich",
     subtitle: "Sicherheits- & Überwachungskameras",
     description: "Hochauflösende 4K IP-Kameras mit intelligenter KI-Erkennung für den Innen- und Außenbereich. Schützen Sie Ihr Eigentum mit modernster, vollfarbiger Nachtsicht.",
-    image: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=1920",
+    image: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=70&w=1280",
     highlights: [
       "Gestochen scharfe 4K Ultra-HD Auflösung",
       "Smarte KI-Objekterkennung (Menschen, Fahrzeuge, Tiere)",
@@ -60,7 +60,7 @@ const DEFAULT_SLIDES = [
     title: "Smart Home & Gebäudesicherheit für Österreich",
     subtitle: "Smart Home & Videoüberwachung",
     description: "Smart Home & Videoüberwachung aus einer Hand – persönlich, aus der Region.",
-    image: "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=80&w=1920",
+    image: "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=70&w=1280",
     highlights: [
       "Schlüsselloser Zugang mit V-Lock Pro Smart Doorlocks",
       "Echtzeit-Meldung bei Erschütterung oder Öffnungsversuch",
@@ -76,7 +76,7 @@ const DEFAULT_SLIDES = [
     title: "NAS-Systeme & lokale Datensicherheit in Österreich",
     subtitle: "Zentrale Datenspeicherung",
     description: "Netzwerkspeicher für die sichere, lokale Langzeitaufzeichnung Ihrer Überwachungsdaten und private Backups. 100% datenschutzkonform und vollkommen cloudfrei.",
-    image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=1920",
+    image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=70&w=1280",
     highlights: [
       "Zentrale, vollkommen private Aufzeichnungsspeicherung",
       "Redundante Festplattenspiegelung vor Datenverlust (RAID)",
@@ -106,29 +106,29 @@ const DEFAULT_SLIDES = [
 
 const PRESETS: Record<string, { name: string; url: string }[]> = {
   kameras: [
-    { name: "Premium 4K Cam", url: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=1920" },
-    { name: "CCTV Outdoor", url: "https://images.unsplash.com/photo-1521992257252-cbf1c7a87e59?auto=format&fit=crop&q=80&w=1920" },
-    { name: "Smart Dome Kamera", url: "https://images.unsplash.com/photo-1617791160536-598cf32026fb?auto=format&fit=crop&q=80&w=1920" },
-    { name: "Home Entrance Safety", url: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&q=80&w=1920" }
+    { name: "Premium 4K Cam", url: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=70&w=1280" },
+    { name: "CCTV Outdoor", url: "https://images.unsplash.com/photo-1521992257252-cbf1c7a87e59?auto=format&fit=crop&q=70&w=1280" },
+    { name: "Smart Dome Kamera", url: "https://images.unsplash.com/photo-1617791160536-598cf32026fb?auto=format&fit=crop&q=70&w=1280" },
+    { name: "Home Entrance Safety", url: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&q=70&w=1280" }
   ],
   smarthome: [
-    { name: "Keypad Entry", url: "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=80&w=1920" },
-    { name: "Warm Cozy Smart Home", url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&q=80&w=1920" },
-    { name: "Living Hub Control", url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1920" },
-    { name: "Automated Control", url: "https://images.unsplash.com/photo-1558036117-15d82a90b9b1?auto=format&fit=crop&q=80&w=1920" }
+    { name: "Keypad Entry", url: "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=70&w=1280" },
+    { name: "Warm Cozy Smart Home", url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&q=70&w=1280" },
+    { name: "Living Hub Control", url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=70&w=1280" },
+    { name: "Automated Control", url: "https://images.unsplash.com/photo-1558036117-15d82a90b9b1?auto=format&fit=crop&q=70&w=1280" }
   ],
   nas: [
-    { name: "Server Storage Room", url: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=1920" },
-    { name: "Local Disk RAID", url: "https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&q=80&w=1920" },
-    { name: "Premium Data Center", url: "https://images.unsplash.com/photo-1600132806370-bf17e65e942f?auto=format&fit=crop&q=80&w=1920" },
-    { name: "Network Drives", url: "https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&q=80&w=1920" }
+    { name: "Server Storage Room", url: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=70&w=1280" },
+    { name: "Local Disk RAID", url: "https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&q=70&w=1280" },
+    { name: "Premium Data Center", url: "https://images.unsplash.com/photo-1600132806370-bf17e65e942f?auto=format&fit=crop&q=70&w=1280" },
+    { name: "Network Drives", url: "https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&q=70&w=1280" }
   ],
   netzwerk: [
     { name: "Netzwerk Hero Section", url: "/netzwerk-hero-section.jpg" },
-    { name: "Blue PoE Fiber", url: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=1920" },
-    { name: "Switch Ethernet", url: "https://images.unsplash.com/photo-1501526029524-a8ea952b15be?auto=format&fit=crop&q=80&w=1920" },
-    { name: "Fiber Optic Nodes", url: "https://images.unsplash.com/photo-1551703599-6b3e8379aa81?auto=format&fit=crop&q=80&w=1920" },
-    { name: "Tech Network Servers", url: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=1920" }
+    { name: "Blue PoE Fiber", url: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=70&w=1280" },
+    { name: "Switch Ethernet", url: "https://images.unsplash.com/photo-1501526029524-a8ea952b15be?auto=format&fit=crop&q=70&w=1280" },
+    { name: "Fiber Optic Nodes", url: "https://images.unsplash.com/photo-1551703599-6b3e8379aa81?auto=format&fit=crop&q=70&w=1280" },
+    { name: "Tech Network Servers", url: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=70&w=1280" }
   ]
 };
 
@@ -170,13 +170,27 @@ export default function Hero({
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
+  // Performance/LCP: initial nur den ersten Slide laden; weitere Slides erst,
+  // sobald sie (bald) sichtbar werden. Verhindert, dass alle Hero-Bilder
+  // gleichzeitig die Bandbreite sättigen (Mobile-LCP).
+  const [loadedSlides, setLoadedSlides] = useState<Set<number>>(() => new Set([0]));
+  useEffect(() => {
+    setLoadedSlides((prev) => {
+      const nextIdx = (currentSlide + 1) % DEFAULT_SLIDES.length;
+      if (prev.has(currentSlide) && prev.has(nextIdx)) return prev;
+      const set = new Set(prev);
+      set.add(currentSlide);
+      set.add(nextIdx);
+      return set;
+    });
+  }, [currentSlide]);
   
   // Custom Slider Images state (loaded from props or local storage)
   const [slideImages, setSlideImages] = useState<Record<string, string>>(() => {
     const defaults = {
-      kameras: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=1920",
-      smarthome: "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=80&w=1920",
-      nas: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=1920",
+      kameras: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=70&w=1280",
+      smarthome: "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=70&w=1280",
+      nas: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=70&w=1280",
       netzwerk: "/netzwerk-hero-section.jpg"
     };
     if (heroImages) return { ...defaults, ...heroImages };
@@ -186,9 +200,9 @@ export default function Hero({
   useEffect(() => {
     if (heroImages) {
       const defaults = {
-        kameras: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=1920",
-        smarthome: "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=80&w=1920",
-        nas: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=1920",
+        kameras: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=70&w=1280",
+        smarthome: "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=70&w=1280",
+        nas: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=70&w=1280",
         netzwerk: "/netzwerk-hero-section.jpg"
       };
       setSlideImages({ ...defaults, ...heroImages });
@@ -425,7 +439,7 @@ export default function Hero({
 
               {/* Bild/Video erst zeigen, wenn die echten Bilder aus der Cloud geladen sind
                   (verhindert kurzes Aufblitzen der Standard-/Unsplash-Bilder beim Start) */}
-              {cloudLoaded && (isVideo ? (
+              {(isCurrent || cloudLoaded) && loadedSlides.has(idx) && (isVideo ? (
                 <VideoBackground
                   src={mediaSrc}
                   onError={() => {
