@@ -192,14 +192,10 @@ async function fetchMainConfig() {
       };
     }).filter((p) => p.title);
 
-    // Hero-Bild des ersten Slides (kameras) fuer <link rel=preload> (LCP).
-    const heroMap = doc?.fields?.heroImages?.mapValue?.fields || {};
-    const heroImage = heroMap.kameras?.stringValue || "";
-
-    return { pageSeo, products, blogPosts, heroImage };
+    return { pageSeo, products, blogPosts };
   } catch (e) {
     console.warn("Prerender: main_config aus Firestore nicht ladbar (nutze Standardwerte):", (e && e.message) || e);
-    return { pageSeo: {}, products: [], blogPosts: [], heroImage: "" };
+    return { pageSeo: {}, products: [], blogPosts: [] };
   }
 }
 
@@ -269,7 +265,7 @@ function blogBreadcrumbLdJson(post) {
   };
 }
 
-function renderHtml(base, { title, description, canonical, keywords, jsonLd, bodyHtml, image, heroPreload }) {
+function renderHtml(base, { title, description, canonical, keywords, jsonLd, bodyHtml, image }) {
   const t = esc(title), d = esc(description);
   let html = base;
   html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${t}</title>`);
@@ -289,10 +285,6 @@ function renderHtml(base, { title, description, canonical, keywords, jsonLd, bod
   if (keywords) {
     html = html.replace(/<meta\s+name="keywords"[\s\S]*?>/i, "");
     html = html.replace(/<\/head>/i, `  <meta name="keywords" content="${esc(keywords)}" />\n</head>`);
-  }
-  // LCP-Optimierung: das erste Hero-Bild vorab laden (nur Startseite).
-  if (heroPreload && /^https?:\/\//.test(heroPreload)) {
-    html = html.replace(/<\/head>/i, `  <link rel="preload" as="image" href="${esc(heroPreload)}" fetchpriority="high" />\n</head>`);
   }
   if (jsonLd && jsonLd.length) {
     const blocks = jsonLd.map((o) => `  <script type="application/ld+json">${JSON.stringify(o)}</script>`).join("\n");
@@ -416,7 +408,7 @@ function blogPostBody(post) {
 
 try {
   const base = readFileSync(join(DIST, "index.html"), "utf8");
-  const { pageSeo, products, blogPosts, heroImage } = await fetchMainConfig();
+  const { pageSeo, products, blogPosts } = await fetchMainConfig();
   let count = 0;
 
   // 1) Statische + Kategorie-Seiten
@@ -434,7 +426,6 @@ try {
       title, description, canonical,
       keywords: override.keywords || "",
       bodyHtml,
-      heroPreload: r.home ? heroImage : "",
     });
     if (r.home) {
       writeFileSync(join(DIST, "index.html"), html, "utf8");
