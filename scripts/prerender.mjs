@@ -66,6 +66,8 @@ function toLastmod(value) {
 }
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const descHasHtml = (s) => /<\/?[a-z][a-z0-9]*(\s[^>]*)?>/i.test(String(s || ""));
+const stripTags = (s) => String(s || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 const xmlEsc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 // ---- Slug-Logik: MUSS identisch zu src/lib/slug.ts sein ----
@@ -204,7 +206,7 @@ function productLdJson(p, canonical) {
   const ld = {
     "@context": "https://schema.org/", "@type": "Product",
     name: p.name,
-    description: p.metaDescription || p.description,
+    description: p.metaDescription || stripTags(p.description),
     sku: p.id || productSlug(p),
     brand: { "@type": "Brand", name: brand },
     category: p.category,
@@ -381,7 +383,7 @@ function productBody(p) {
     <nav><a href="/">Startseite</a> / <a href="/kategorie/${catId}/">${esc(catName)}</a> / <span>${esc(p.name)}</span></nav>
     <h1>${esc(p.name)}</h1>
     ${price}
-    <p>${esc(p.description || p.metaDescription || "")}</p>
+    ${descHasHtml(p.description) ? `<div>${p.description}</div>` : `<p>${esc(p.description || p.metaDescription || "")}</p>`}
     <p><a href="/kategorie/${catId}/">Weitere Produkte aus ${esc(catName)}</a></p>
   ${WRAP_CLOSE}`;
 }
@@ -446,7 +448,7 @@ try {
     // SEO-Manager-Überschreibung (analog zum Client in App.tsx) berücksichtigen.
     const override = pageSeo[path] || {};
     const title = override.title || p.seoTitle || `${p.name} kaufen & Angebot anfordern | IT-MARKET`;
-    const description = override.description || p.metaDescription || `${p.name} bei IT-MARKET Österreich – ${(p.description || "").slice(0, 130)}`;
+    const description = override.description || p.metaDescription || `${p.name} bei IT-MARKET Österreich – ${stripTags(p.description).slice(0, 130)}`;
     const html = renderHtml(base, {
       title, description, canonical,
       keywords: override.keywords || "",

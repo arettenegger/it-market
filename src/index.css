@@ -110,3 +110,22 @@
   outline: 2px solid #ff5e2e;
   outline-offset: 2px;
 }
+
+/* HTML-Produktbeschreibungen (Admin-gepflegt): Standard-Formatierung wiederherstellen,
+   da Tailwind-Preflight Listen/Überschriften zurücksetzt. */
+.product-desc-html > * + * { margin-top: 0.6rem; }
+.product-desc-html p { margin: 0; line-height: 1.6; }
+.product-desc-html strong, .product-desc-html b { font-weight: 700; color: #0f172a; }
+.product-desc-html em, .product-desc-html i { font-style: italic; }
+.product-desc-html ul { list-style: disc; padding-left: 1.3rem; margin: 0.4rem 0; }
+.product-desc-html ol { list-style: decimal; padding-left: 1.4rem; margin: 0.4rem 0; }
+.product-desc-html li { margin: 0.2rem 0; line-height: 1.55; }
+.product-desc-html li::marker { color: #e04b1d; }
+.product-desc-html h2 { font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0.8rem 0 0.3rem; }
+.product-desc-html h3 { font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0.7rem 0 0.3rem; }
+.product-desc-html h4 { font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0.6rem 0 0.2rem; }
+.product-desc-html a { color: #e04b1d; font-weight: 600; text-decoration: underline; }
+.product-desc-html a:hover { color: #bd3a12; }
+.product-desc-html table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; }
+.product-desc-html th, .product-desc-html td { border: 1px solid #e2e8f0; padding: 0.4rem 0.6rem; text-align: left; }
+.product-desc-html img { max-width: 100%; height: auto; border-radius: 0.5rem; }

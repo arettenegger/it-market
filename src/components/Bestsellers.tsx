@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Heart, ShoppingCart, Check, Info, ShieldAlert, Sparkles, X } from "lucide-react";
 import { Product, getSpecLabels, formatPrice } from "../types";
+import { descriptionToPlain } from "./ProductDescription";
 import { PRODUCTS } from "../data";
 import { productSlug } from "../lib/slug";
 import CameraSvg from "./CameraSvg";
@@ -321,7 +322,7 @@ export default function Bestsellers({
                   </h3>
                   
                   <p className="text-xs text-slate-500 leading-relaxed mb-3 line-clamp-3">
-                    {activeQuickDetail.description}
+                    {descriptionToPlain(activeQuickDetail.description)}
                   </p>
 
                   {/* Technical specs table (Specs grid) */}

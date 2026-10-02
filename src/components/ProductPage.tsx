@@ -3,7 +3,8 @@ import { Product, getSpecLabels, formatPrice } from "../types";
 import { CATEGORIES } from "../data";
 import { productSlug, categoryIdFromName } from "../lib/slug";
 import CameraSvg from "./CameraSvg";
-import { ArrowLeft, ChevronRight, ArrowRight, ShoppingBag, PhoneCall, Check, Truck, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ChevronRight, ShoppingBag, PhoneCall, Check, Truck, ShieldCheck } from "lucide-react";
+import ProductDescription, { descriptionToPlain } from "./ProductDescription";
 
 interface ProductPageProps {
   product: Product | null;
@@ -87,7 +88,7 @@ export default function ProductPage({
     "@context": "https://schema.org/",
     "@type": "Product",
     name: product.name,
-    description: product.metaDescription || product.description,
+    description: product.metaDescription || descriptionToPlain(product.description),
     sku: product.id,
     brand: { "@type": "Brand", name: brand },
     category: product.category,
@@ -164,37 +165,7 @@ export default function ProductPage({
             {product.name}
           </h1>
 
-          <div className="text-sm text-slate-600 leading-relaxed mb-5 mt-4 space-y-2">
-            {(() => {
-              const lines = (product.description || "").split("\n");
-              const blocks: any[] = [];
-              let bullets: string[] = [];
-              const flush = (key: string) => {
-                if (bullets.length) {
-                  blocks.push(
-                    <ul key={"ul-" + key} className="space-y-1.5">
-                      {bullets.map((b, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <ArrowRight className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                          <span>{b}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  );
-                  bullets = [];
-                }
-              };
-              lines.forEach((raw, idx) => {
-                const line = raw.trim();
-                if (!line) { flush("e" + idx); return; }
-                if (/^[•\-*]\s+/.test(line)) { bullets.push(line.replace(/^[•\-*]\s+/, "")); return; }
-                flush("p" + idx);
-                blocks.push(<p key={"p-" + idx}>{line}</p>);
-              });
-              flush("end");
-              return blocks;
-            })()}
-          </div>
+          <ProductDescription text={product.description} className="text-sm text-slate-600 leading-relaxed mb-5 mt-4" />
 
           {/* Preis */}
           <div className="flex items-baseline gap-2 mb-5">

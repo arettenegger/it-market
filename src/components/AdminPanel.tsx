@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { VideoBackground } from "./VideoBackground";
 import { FirebaseStorageManager } from "./FirebaseStorageManager";
+import ProductDescription, { descriptionHasHtml } from "./ProductDescription";
 import { uploadImageToStorage, uploadFileToStorage, uploadDataUrlToStorage, uploadImageUrlToStorage } from "../lib/storageService";
 import { fetchInquiries, fetchCallbacks, deleteInquiry, deleteCallback, updateCallbackStatus } from "../lib/leadsService";
 import { fetchPageStats, resetPageStats, aggregateDays, lastNDayKeys, PageStats } from "../lib/pageStats";
@@ -929,6 +930,7 @@ export default function AdminPanel({
   const [formPrice, setFormPrice] = useState(199);
   const [formOldPrice, setFormOldPrice] = useState(249);
   const [formDescription, setFormDescription] = useState("");
+  const [descMode, setDescMode] = useState<"text" | "html">("text");
   const [formIsBestseller, setFormIsBestseller] = useState(false);
   const [formInStock, setFormInStock] = useState(true);
   const [formShippingStatus, setFormShippingStatus] = useState("5-7 Werktage");
@@ -1124,6 +1126,7 @@ export default function AdminPanel({
     setFormPrice(product.price);
     setFormOldPrice(product.oldPrice || product.price + 50);
     setFormDescription(product.description);
+    setDescMode(descriptionHasHtml(product.description) ? "html" : "text");
     setFormIsBestseller(!!product.isBestseller);
     setFormInStock(product.inStock);
     setFormShippingStatus(product.shippingStatus || "5-7 Werktage");
@@ -1151,6 +1154,7 @@ export default function AdminPanel({
     setFormPrice(150);
     setFormOldPrice(199);
     setFormDescription("");
+    setDescMode("text");
     setFormIsBestseller(false);
     setFormInStock(true);
     setFormShippingStatus("5-7 Werktage");
@@ -2869,14 +2873,30 @@ export default function AdminPanel({
 
                       {/* Description */}
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Beschreibung</label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Beschreibung</label>
+                          <div className="flex rounded-md overflow-hidden border border-slate-700 text-[10px] font-bold">
+                            <button type="button" onClick={() => setDescMode("text")} className={`px-2.5 py-0.5 transition-colors ${descMode === "text" ? "bg-[#FF5E2E] text-white" : "bg-slate-800 text-slate-300 hover:text-white"}`}>Text</button>
+                            <button type="button" onClick={() => setDescMode("html")} className={`px-2.5 py-0.5 transition-colors ${descMode === "html" ? "bg-[#FF5E2E] text-white" : "bg-slate-800 text-slate-300 hover:text-white"}`}>HTML</button>
+                          </div>
+                        </div>
                         <textarea
-                          rows={2.5}
+                          rows={10}
                           value={formDescription}
                           onChange={(e) => setFormDescription(e.target.value)}
-                          placeholder="Kurze werbewirksame Produktbeschreibung..."
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 outline-none focus:border-[#FF5E2E] transition-all resize-none"
+                          placeholder={descMode === "html"
+                            ? 'HTML erlaubt, z. B. <b>fett</b>, <ul><li>Punkt</li></ul>, <a href="/kontakt/">Link</a>, <br>'
+                            : "Produktbeschreibung. Leerzeile = Absatz. Zeilen mit • werden zu einer Aufzählung."}
+                          className={`w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 outline-none focus:border-[#FF5E2E] transition-all resize-y min-h-[11rem] ${descMode === "html" ? "font-mono text-xs leading-relaxed" : "text-sm"}`}
                         />
+                        {descMode === "html" && (
+                          <div className="mt-2">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Vorschau</div>
+                            <div className="bg-white rounded-lg p-3 border border-slate-700 max-h-64 overflow-auto">
+                              <ProductDescription text={formDescription} className="text-sm text-slate-700 leading-relaxed" />
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Produktbild */}

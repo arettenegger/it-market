@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { VideoBackground } from "./VideoBackground";
+import { descriptionToPlain } from "./ProductDescription";
 import { Category, Product, ConfiguratorData, getSpecLabels, formatPrice } from "../types";
 import { CATEGORIES } from "../data";
 import { productSlug } from "../lib/slug";
@@ -612,7 +613,7 @@ export default function CategoryPage({
                   </h3>
                   
                   <p className="text-xs text-slate-600 leading-relaxed mb-3 line-clamp-3">
-                    {selectedProductForModal.description}
+                    {descriptionToPlain(selectedProductForModal.description)}
                   </p>
 
                   {/* Technical specs table (Specs grid) */}

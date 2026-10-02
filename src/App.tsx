@@ -29,6 +29,7 @@ import { Product, CartItem, BlogPost, ConfiguratorData, Review, Category, PageSe
 import { productSlug, resolveProduct, categoryIdFromName, blogSlug, resolveBlogPost } from "./lib/slug";
 import { PRODUCTS, INITIAL_BLOG_POSTS, DEFAULT_CONFIGURATOR_DATA, REVIEWS, CATEGORIES } from "./data";
 import { initAnalytics, trackPageView } from "./lib/analytics";
+import { descriptionToPlain } from "./components/ProductDescription";
 import { recordPageView } from "./lib/pageStats";
 import { ShoppingBag, ChevronRight, Shield, Check, Settings, CheckCircle2, ShieldCheck, Mail } from "lucide-react";
 
@@ -352,7 +353,7 @@ export default function App() {
       const prod = resolveProduct(products, activeProductSlug);
       if (prod) {
         title = prod.seoTitle || `${prod.name} kaufen & Angebot anfordern | IT-MARKET`;
-        description = prod.metaDescription || `${prod.name} bei IT-MARKET Österreich – ${(prod.description || "").slice(0, 130)}`;
+        description = prod.metaDescription || `${prod.name} bei IT-MARKET Österreich – ${descriptionToPlain(prod.description).slice(0, 130)}`;
         if (prod.image && /^https?:\/\//.test(prod.image)) ogImage = prod.image;
       }
     } else if (currentPage === "blog") {
