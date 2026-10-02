@@ -369,8 +369,9 @@ export default function CategoryPage({
         </div>
       )}
 
-      {/* SECTION 3: Auszug aus den Produkten (Product Grid) — nicht für reine Dienstleistungs-Kategorien */}
-      {categoryId !== "hotspot" && (
+      {/* SECTION 3: Auszug aus den Produkten (Product Grid) — bei reinen Dienstleistungs-
+          Kategorien (Hotspot) nur anzeigen, wenn tatsächlich Produkte vorhanden sind. */}
+      {(categoryId !== "hotspot" || filteredProducts.length > 0) && (
       <div id="kategorie-produkte" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 pb-4 border-b border-slate-200 gap-4">
           <div>
