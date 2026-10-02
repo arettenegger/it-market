@@ -3,7 +3,7 @@ import { Product, getSpecLabels, formatPrice } from "../types";
 import { CATEGORIES } from "../data";
 import { productSlug, categoryIdFromName } from "../lib/slug";
 import CameraSvg from "./CameraSvg";
-import { ArrowLeft, ChevronRight, ShoppingBag, PhoneCall, Check, Truck, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ChevronRight, ArrowRight, ShoppingBag, PhoneCall, Check, Truck, ShieldCheck } from "lucide-react";
 
 interface ProductPageProps {
   product: Product | null;
@@ -172,8 +172,13 @@ export default function ProductPage({
               const flush = (key: string) => {
                 if (bullets.length) {
                   blocks.push(
-                    <ul key={"ul-" + key} className="list-disc pl-5 space-y-1">
-                      {bullets.map((b, i) => <li key={i}>{b}</li>)}
+                    <ul key={"ul-" + key} className="space-y-1.5">
+                      {bullets.map((b, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <ArrowRight className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                          <span>{b}</span>
+                        </li>
+                      ))}
                     </ul>
                   );
                   bullets = [];
