@@ -164,7 +164,32 @@ export default function ProductPage({
             {product.name}
           </h1>
 
-          <p className="text-sm text-slate-600 leading-relaxed mb-5 mt-4">{product.description}</p>
+          <div className="text-sm text-slate-600 leading-relaxed mb-5 mt-4 space-y-2">
+            {(() => {
+              const lines = (product.description || "").split("\n");
+              const blocks: any[] = [];
+              let bullets: string[] = [];
+              const flush = (key: string) => {
+                if (bullets.length) {
+                  blocks.push(
+                    <ul key={"ul-" + key} className="list-disc pl-5 space-y-1">
+                      {bullets.map((b, i) => <li key={i}>{b}</li>)}
+                    </ul>
+                  );
+                  bullets = [];
+                }
+              };
+              lines.forEach((raw, idx) => {
+                const line = raw.trim();
+                if (!line) { flush("e" + idx); return; }
+                if (/^[•\-*]\s+/.test(line)) { bullets.push(line.replace(/^[•\-*]\s+/, "")); return; }
+                flush("p" + idx);
+                blocks.push(<p key={"p-" + idx}>{line}</p>);
+              });
+              flush("end");
+              return blocks;
+            })()}
+          </div>
 
           {/* Preis */}
           <div className="flex items-baseline gap-2 mb-5">
