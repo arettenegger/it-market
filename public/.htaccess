@@ -48,6 +48,7 @@ RewriteRule ^produkt/switchbot-video-tuerklingel-smarte-tuerklingel-mit-kamera-4
 RewriteRule ^produkt/reolink-video-doorbell-smarte-2k-tuerklingel-mit-personenerkennung/?$ /produkt/reolink-video-doorbell/ [R=301,L]
 RewriteRule ^produkt/ecowitt-ws90-7-in-1-wetterstation-powered-by-shelly/?$ /produkt/ecowitt-ws90-wetterstation/ [R=301,L]
 RewriteRule ^produkt/shelly-power-strip-4-gen4-smarte-steckdosenleiste-mit-vier-steuerbaren-steckdose/?$ /produkt/shelly-power-strip-4-gen4/ [R=301,L]
+RewriteRule ^produkt/mikrotik-wireless-wire-cube-pro-richtfunk-it-market/?$ /produkt/mikrotik-cube-60-ghz/ [R=301,L]
 
 # --- 301: Blog-Artikel auf kurze/saubere Slugs umleiten ---
 RewriteRule ^blog/5g-business-internet-kmu-hotspot-l-sung-firma-warum-fixed-wireless-access-2026-e/?$ /blog/5g-business-internet-kmu/ [R=301,L]
