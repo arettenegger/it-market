@@ -98,7 +98,7 @@ export default function ProductPage({
       priceCurrency: "EUR",
       price: Number(product.price || 0).toFixed(2),
       itemCondition: "https://schema.org/NewCondition",
-      availability: product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      availability: product.inStock ? "https://schema.org/BackOrder" : "https://schema.org/OutOfStock",
       seller: { "@type": "Organization", name: "IT-MARKET" },
       hasMerchantReturnPolicy: MERCHANT_RETURN_LD,
     },

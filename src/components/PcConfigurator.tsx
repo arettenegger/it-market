@@ -134,7 +134,7 @@ export default function PcConfigurator({ onAddToCart, onOpenCallback, configData
           "@type": "Offer",
           "price": cfg.price,
           "priceCurrency": "EUR",
-          "availability": "https://schema.org/InStock",
+          "availability": "https://schema.org/BackOrder",
           "url": "https://it-market.at/kategorie/pc-hardware",
           "itemCondition": "https://schema.org/NewCondition",
           "seller": { "@type": "Organization", "name": "IT-MARKET" },

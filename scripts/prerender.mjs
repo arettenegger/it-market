@@ -214,7 +214,7 @@ function productLdJson(p, canonical) {
       "@type": "Offer", url: canonical, priceCurrency: "EUR",
       price: Number(p.price || 0).toFixed(2),
       itemCondition: "https://schema.org/NewCondition",
-      availability: p.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      availability: p.inStock ? "https://schema.org/BackOrder" : "https://schema.org/OutOfStock",
       seller: { "@type": "Organization", name: "IT-MARKET" },
       hasMerchantReturnPolicy: MERCHANT_RETURN_LD,
     },
