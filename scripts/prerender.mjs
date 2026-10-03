@@ -133,6 +133,25 @@ const fval = (f) => {
   return undefined;
 };
 
+// Rekursiver Konverter: Firestore-REST-Wert -> einfaches JS-Objekt (inkl. map/array).
+const fvalDeep = (v) => {
+  if (v == null) return undefined;
+  if (v.stringValue !== undefined) return v.stringValue;
+  if (v.integerValue !== undefined) return Number(v.integerValue);
+  if (v.doubleValue !== undefined) return v.doubleValue;
+  if (v.booleanValue !== undefined) return v.booleanValue;
+  if (v.nullValue !== undefined) return null;
+  if (v.timestampValue !== undefined) return v.timestampValue;
+  if (v.arrayValue !== undefined) return (v.arrayValue.values || []).map(fvalDeep);
+  if (v.mapValue !== undefined) {
+    const o = {};
+    const f = v.mapValue.fields || {};
+    for (const k of Object.keys(f)) o[k] = fvalDeep(f[k]);
+    return o;
+  }
+  return undefined;
+};
+
 async function fetchMainConfig() {
   try {
     const url = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/${DB}/documents/shop_data/main_config`;
@@ -194,10 +213,25 @@ async function fetchMainConfig() {
       };
     }).filter((p) => p.title);
 
-    return { pageSeo, products, blogPosts };
+    // Vollständiger Seed für das ausgelieferte HTML: damit die App Produkte,
+    // Kategorien & SEO sofort rendern kann, auch bevor/ohne dass Firestore lädt
+    // (behebt Soft-404, da Googlebot nicht auf Firestore warten muss).
+    const seed = {
+      products: (doc?.fields?.products?.arrayValue?.values || [])
+        .map(fvalDeep)
+        .filter((p) => p && p.name)
+        // Große Base64-Bilder (data:) nicht in den Seed packen – sie würden jede Seite
+        // massiv aufblähen. http-URLs bleiben; data:-Bilder lädt der Client aus Firestore nach.
+        .map((p) => (typeof p.image === "string" && p.image.startsWith("data:") ? { ...p, image: "" } : p)),
+      categories: (doc?.fields?.categories?.arrayValue?.values || []).map(fvalDeep).filter(Boolean),
+      pageSeo,
+      heroImages: fvalDeep(doc?.fields?.heroImages) || {},
+    };
+
+    return { pageSeo, products, blogPosts, seed };
   } catch (e) {
     console.warn("Prerender: main_config aus Firestore nicht ladbar (nutze Standardwerte):", (e && e.message) || e);
-    return { pageSeo: {}, products: [], blogPosts: [] };
+    return { pageSeo: {}, products: [], blogPosts: [], seed: null };
   }
 }
 
@@ -267,7 +301,7 @@ function blogBreadcrumbLdJson(post) {
   };
 }
 
-function renderHtml(base, { title, description, canonical, keywords, jsonLd, bodyHtml, image }) {
+function renderHtml(base, { title, description, canonical, keywords, jsonLd, bodyHtml, image, seedJson }) {
   const t = esc(title), d = esc(description);
   let html = base;
   html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${t}</title>`);
@@ -291,6 +325,11 @@ function renderHtml(base, { title, description, canonical, keywords, jsonLd, bod
   if (jsonLd && jsonLd.length) {
     const blocks = jsonLd.map((o) => `  <script type="application/ld+json">${JSON.stringify(o)}</script>`).join("\n");
     html = html.replace(/<\/head>/i, `${blocks}\n</head>`);
+  }
+  // App-Seed einbetten: Produkte/Kategorien/SEO, damit React sofort rendern kann
+  // (Soft-404-Fix). "<" wird escaped, damit das Skript nicht vorzeitig schließt.
+  if (seedJson) {
+    html = html.replace(/<\/head>/i, `  <script id="__APP_DATA__" type="application/json">${seedJson.replace(/</g, "\\u003c")}</script>\n</head>`);
   }
   // Body-Prerender: SEO-Inhalt in #root legen (React ersetzt ihn beim Laden via createRoot).
   if (bodyHtml) {
@@ -410,7 +449,13 @@ function blogPostBody(post) {
 
 try {
   const base = readFileSync(join(DIST, "index.html"), "utf8");
-  const { pageSeo, products, blogPosts } = await fetchMainConfig();
+  const { pageSeo, products, blogPosts, seed } = await fetchMainConfig();
+  // Seed pro Seite schlank halten: gemeinsame Daten (Kategorien/SEO/Hero) überall,
+  // Produkte nur die auf der Seite gezeigten (Kategorie bzw. Bestseller).
+  const seedCommon = seed ? { categories: seed.categories, pageSeo: seed.pageSeo, heroImages: seed.heroImages } : null;
+  const seedProducts = seed ? seed.products : [];
+  const seedByCat = (catId) => seedProducts.filter((sp) => categoryIdFromName(sp.category) === catId);
+  const makeSeedJson = (subset) => (seedCommon ? JSON.stringify({ products: subset, ...seedCommon }) : null);
   let count = 0;
 
   // 1) Statische + Kategorie-Seiten
@@ -424,10 +469,15 @@ try {
     if (r.home) bodyHtml = homeBody(products, blogPosts);
     else if (r.path === "/blog") bodyHtml = blogIndexBody(blogPosts);
     else if (r.path.startsWith("/kategorie/")) bodyHtml = categoryBody(r.path.slice("/kategorie/".length), description, products);
+    let pageSeed;
+    if (r.home) { const bs = seedProducts.filter((p) => p.isBestseller); pageSeed = bs.length ? bs : seedProducts.slice(0, 8); }
+    else if (r.path.startsWith("/kategorie/")) pageSeed = seedByCat(r.path.slice("/kategorie/".length));
+    else pageSeed = [];
     const html = renderHtml(base, {
       title, description, canonical,
       keywords: override.keywords || "",
       bodyHtml,
+      seedJson: makeSeedJson(pageSeed),
     });
     if (r.home) {
       writeFileSync(join(DIST, "index.html"), html, "utf8");
@@ -455,6 +505,7 @@ try {
       jsonLd: [productLdJson(p, canonical), breadcrumbLdJson(p)],
       bodyHtml: productBody(p),
       image: p.image,
+      seedJson: makeSeedJson(seedByCat(categoryIdFromName(p.category))),
     });
     const outDir = join(DIST, path);
     mkdirSync(outDir, { recursive: true });
@@ -479,6 +530,7 @@ try {
       jsonLd: [blogPostLdJson(post, canonical), blogBreadcrumbLdJson(post)],
       bodyHtml: blogPostBody(post),
       image: post.image,
+      seedJson: makeSeedJson([]),
     });
     const outDir = join(DIST, path);
     mkdirSync(outDir, { recursive: true });

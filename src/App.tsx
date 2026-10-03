@@ -116,6 +116,18 @@ function parsePath(pathname: string): { page: PageKey; categoryId?: string; prod
 }
 const initialRoute = parsePath(typeof window !== "undefined" ? window.location.pathname : "/");
 
+// Seed-Daten aus dem vorgerenderten HTML (<script id="__APP_DATA__">). Damit kann die App
+// Produkte/Kategorien/SEO sofort rendern – auch bevor/ohne dass Firestore lädt (Soft-404-Fix).
+const APP_SEED: { products?: Product[]; categories?: Category[]; pageSeo?: Record<string, PageSeo>; heroImages?: Record<string, string> } = (() => {
+  try {
+    if (typeof document === "undefined") return {};
+    const el = document.getElementById("__APP_DATA__");
+    return el && el.textContent ? JSON.parse(el.textContent) : {};
+  } catch {
+    return {};
+  }
+})();
+
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageKey>(initialRoute.page);
   const [activeCategoryId, setActiveCategoryId] = useState<string>(initialRoute.categoryId || "pc-hardware");
@@ -148,22 +160,23 @@ export default function App() {
     return () => { active = false; unsub(); };
   }, []);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => (APP_SEED.products && APP_SEED.products.length ? APP_SEED.products : []));
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [reviews, setReviews] = useState<Review[]>(REVIEWS);
-  const [categories, setCategories] = useState<Category[]>(CATEGORIES);
+  const [categories, setCategories] = useState<Category[]>(() => (APP_SEED.categories && APP_SEED.categories.length ? APP_SEED.categories : CATEGORIES));
   // Frei benennbare Spec-Feld-Bezeichnungen je Kategorie registrieren (für getSpecLabels).
   useEffect(() => { registerCategorySpecLabels(categories); }, [categories]);
   const [configuratorData, setConfiguratorData] = useState<ConfiguratorData>(DEFAULT_CONFIGURATOR_DATA);
   const [logoImage, setLogoImage] = useState<string>("");
-  const [pageSeo, setPageSeo] = useState<Record<string, PageSeo>>({});
+  const [pageSeo, setPageSeo] = useState<Record<string, PageSeo>>(() => APP_SEED.pageSeo || {});
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(new Date());
-  const [heroImages, setHeroImages] = useState<Record<string, string>>({
+  const [heroImages, setHeroImages] = useState<Record<string, string>>(() => ({
     kameras: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=1920",
     smarthome: "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=80&w=1920",
     nas: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=1920",
-    netzwerk: "/netzwerk-hero-section.jpg"
-  });
+    netzwerk: "/netzwerk-hero-section.jpg",
+    ...(APP_SEED.heroImages || {}),
+  }));
 
   const [heroVideos, setHeroVideos] = useState<Record<string, string>>({
     smarthome: "https://raw.githubusercontent.com/intel-iot-devkit/sample-videos/master/store-aisle-detection.mp4"
@@ -380,6 +393,17 @@ export default function App() {
     if (seo?.description) description = seo.description;
     document.title = title;
 
+    // robots: eine echte "Produkt nicht gefunden"-Seite (Cloud geladen, Slug fehlt) -> noindex.
+    const productMissing = currentPage === "product" && !resolveProduct(products, activeProductSlug);
+    const robotsVal = productMissing && cloudLoaded ? "noindex, follow" : "index, follow";
+    let robotsEl = document.querySelector('meta[name="robots"]');
+    if (!robotsEl) {
+      robotsEl = document.createElement("meta");
+      robotsEl.setAttribute("name", "robots");
+      document.head.appendChild(robotsEl);
+    }
+    robotsEl.setAttribute("content", robotsVal);
+
     // Meta-Beschreibung setzen (falls für diese Route bekannt)
     if (description) {
       let m = document.querySelector('meta[name="description"]');
@@ -426,7 +450,7 @@ export default function App() {
     trackPageView(seoKey, title);
     // Eigener anonymer Zähler (cookielos, unabhängig vom Consent)
     recordPageView(seoKey);
-  }, [currentPage, activeCategoryId, activeProductSlug, activeBlogSlug, products, blogPosts, categories, pageSeo]);
+  }, [currentPage, activeCategoryId, activeProductSlug, activeBlogSlug, products, blogPosts, categories, pageSeo, cloudLoaded]);
 
   // Browser Zurück/Vorwärts-Buttons unterstützen (URL -> Ansicht) + Analytics init
   useEffect(() => {
@@ -783,6 +807,7 @@ export default function App() {
           <ProductPage
             product={resolveProduct(products, activeProductSlug) || null}
             allProducts={products}
+            cloudLoaded={cloudLoaded}
             onAddToCart={handleAddToCart}
             onBackToHome={() => handleNavigatePage("home")}
             onSelectCategory={handleSelectCategory}

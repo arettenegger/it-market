@@ -9,6 +9,7 @@ import ProductDescription, { descriptionToPlain } from "./ProductDescription";
 interface ProductPageProps {
   product: Product | null;
   allProducts: Product[];
+  cloudLoaded?: boolean;
   onAddToCart: (product: Product, quantity?: number) => void;
   onBackToHome: () => void;
   onSelectCategory: (catName: string) => void;
@@ -43,13 +44,24 @@ const DEFAULT_PRODUCT_IMAGE = "https://images.unsplash.com/photo-1591799264318-7
 export default function ProductPage({
   product,
   allProducts,
+  cloudLoaded = true,
   onAddToCart,
   onBackToHome,
   onSelectCategory,
   onOpenProduct,
   onOpenCallback,
 }: ProductPageProps) {
-  // Produkt nicht gefunden (z. B. gelöscht oder alter Link)
+  // Solange die Cloud-Daten noch laden und das Produkt (noch) nicht da ist:
+  // Ladeanzeige statt "nicht gefunden" – verhindert Soft-404 bei Googlebot.
+  if (!product && !cloudLoaded) {
+    return (
+      <div className="min-h-[60vh] max-w-3xl mx-auto px-4 py-20 text-center">
+        <div className="inline-block w-8 h-8 border-2 border-slate-300 border-t-[#FF5E2E] rounded-full animate-spin mb-4" />
+        <p className="text-slate-500 text-sm">Produkt wird geladen …</p>
+      </div>
+    );
+  }
+  // Produkt wirklich nicht gefunden (Cloud geladen, Slug existiert nicht) -> noindex.
   if (!product) {
     return (
       <div className="min-h-[60vh] max-w-3xl mx-auto px-4 py-20 text-center">
