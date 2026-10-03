@@ -195,7 +195,7 @@ export default function ProductPage({
           {/* Trust-Zeile */}
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500 mb-6">
             <span className="flex items-center gap-1.5"><Truck className="w-4 h-4 text-emerald-500" /> {product.shippingStatus || "5-7 Werktage"}</span>
-            <span className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-emerald-500" /> {product.inStock ? "Auf Lager" : "Auf Anfrage"}</span>
+            <span className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-emerald-500" /> {product.inStock ? "Auf Bestellung" : "Auf Anfrage"}</span>
             <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-500" /> Unverbindliches Angebot</span>
           </div>
 
