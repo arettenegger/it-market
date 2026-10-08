@@ -62,6 +62,17 @@ RewriteRule ^blog/nas-kaufen-was-ist-das-was-bringt-es-und-was-kostet-es/?$ /blo
 RewriteRule ^blog/netzwerk-optimierung-f-r-kleinbetriebe-der-komplette-guide-2026/?$ /blog/netzwerk-optimierung-kleinbetriebe/ [R=301,L]
 RewriteRule ^blog/wlan-f-r-garten-terrasse-stabiles-internet-auf-der-terrasse-einrichten/?$ /blog/wlan-garten-terrasse/ [R=301,L]
 
+# --- 301: Alte Adressen (vorherige Website) -> neue Seiten ---
+RewriteRule ^index\.php$ / [R=301,L]
+RewriteRule ^home/?$ / [R=301,L,NC]
+RewriteRule ^netzwerke?/?$ /kategorie/netzwerke/ [R=301,L]
+RewriteRule ^pc-hilfe/?$ /kategorie/pc-hardware/ [R=301,L]
+RewriteRule ^notebook/?$ /kategorie/pc-hardware/ [R=301,L]
+RewriteRule ^wie-man-die-richtigen-smart-home-geraete-auswaehlt/?$ /kategorie/smarthome/ [R=301,L]
+RewriteRule ^der-ultimative-leitfaden-zur-verkabelung-heimnetzwerk/?$ /kategorie/netzwerke/ [R=301,L]
+RewriteRule ^docker-die-technik-die-ihr-netzwerk-verbessert/?$ /kategorie/nas/ [R=301,L]
+# sip-trunks bleibt bewusst 404 (Leistung wird nicht mehr angeboten)
+
 # --- Trailing Slash: einheitlich MIT "/" ------------------
 # Die vorgerenderten Seiten sind Ordner (/produkt/<slug>/index.html); LiteSpeed
 # (DirectorySlash) haengt bei Ordner-Aufrufen automatisch ein "/" an. Canonical,
