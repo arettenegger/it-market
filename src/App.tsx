@@ -27,7 +27,7 @@ const ContactPage = lazy(() => import("./components/ContactPage"));
 const ProductPage = lazy(() => import("./components/ProductPage"));
 import { Product, CartItem, BlogPost, ConfiguratorData, Review, Category, PageSeo, formatPrice, registerCategorySpecLabels } from "./types";
 import { productSlug, resolveProduct, categoryIdFromName, blogSlug, resolveBlogPost } from "./lib/slug";
-import { PRODUCTS, INITIAL_BLOG_POSTS, DEFAULT_CONFIGURATOR_DATA, REVIEWS, CATEGORIES } from "./data";
+import { DEFAULT_CONFIGURATOR_DATA, REVIEWS, CATEGORIES } from "./data";
 import { initAnalytics, trackPageView } from "./lib/analytics";
 import { descriptionToPlain } from "./components/ProductDescription";
 import { recordPageView } from "./lib/pageStats";
@@ -185,6 +185,10 @@ export default function App() {
   const [doiConfirmedInfo, setDoiConfirmedInfo] = useState<{ email: string; message: string } | null>(null);
   // true, sobald die Shop-Daten erstmals aus der Cloud geladen sind (verhindert kurzes Aufblitzen der Standard-/Unsplash-Bilder)
   const [cloudLoaded, setCloudLoaded] = useState(false);
+  // true erst, wenn ECHTE Firestore-Daten geladen wurden (nicht aus leerem Offline-Cache).
+  // Steuert "Produkt nicht gefunden" + noindex, damit Googlebot (Firestore evtl. nicht
+  // erreichbar) nicht faelschlich eine Nicht-gefunden-Seite sieht.
+  const [dataConfirmed, setDataConfirmed] = useState(false);
 
   // Initialize and persist state with localStorage
   useEffect(() => {
@@ -283,10 +287,12 @@ export default function App() {
     // Shop-Daten live aus Firestore laden (cloud-only, kein localStorage).
     // Änderungen im Admin erscheinen dadurch sofort bei allen Besuchern.
     const applyCloudData = (data: any) => {
-      setProducts(Array.isArray(data?.products) && data.products.length ? data.products : PRODUCTS);
-      setBlogPosts(Array.isArray(data?.blogPosts) ? data.blogPosts : INITIAL_BLOG_POSTS);
+      // Fehlende/leere Cloud-Felder NICHT durch Demo-Listen ersetzen, sondern den
+      // bereits vorbelegten Stand (__APP_DATA__) behalten.
+      setProducts((prev) => (Array.isArray(data?.products) && data.products.length ? data.products : prev));
+      setBlogPosts((prev) => (Array.isArray(data?.blogPosts) && data.blogPosts.length ? data.blogPosts : prev));
       setReviews(Array.isArray(data?.reviews) && data.reviews.length ? data.reviews : REVIEWS);
-      setCategories(Array.isArray(data?.categories) && data.categories.length ? data.categories : CATEGORIES);
+      setCategories((prev) => (Array.isArray(data?.categories) && data.categories.length ? data.categories : prev));
       // Fehlende Felder (z.B. baseConfigurations bei Altdaten) aus den Defaults auffüllen,
       // vorhandene Firestore-Werte (Banner, Zusatzoptionen) bleiben erhalten.
       setConfiguratorData({ ...DEFAULT_CONFIGURATOR_DATA, ...(data?.configuratorData || {}) });
@@ -317,25 +323,32 @@ export default function App() {
         unsub = onSnapshot(
           SHOP_DOC_REF,
           (snap) => {
+            const fromCache = !!snap.metadata?.fromCache;
             if (snap.exists()) {
               applyCloudData(snap.data());
+              setDataConfirmed(true);
+              markLoaded();
+            } else if (fromCache) {
+              // Leerer Offline-Cache (Firestore nicht erreichbar): ignorieren und die
+              // per __APP_DATA__ vorbelegten echten Daten behalten. KEIN Demo-Fallback,
+              // kein markLoaded -> Googlebot sieht keine Nicht-gefunden-Seite.
+              return;
             } else {
-              setProducts(PRODUCTS);
-              setBlogPosts(INITIAL_BLOG_POSTS);
+              // Server bestaetigt: Dokument existiert nicht (sollte nicht vorkommen).
+              // Seed behalten, nicht auf Demo zurueckfallen.
+              markLoaded();
             }
-            markLoaded();
           },
           (err) => {
             console.error("Firestore onSnapshot error:", err);
-            setProducts((prev) => (prev.length ? prev : PRODUCTS));
-            setBlogPosts((prev) => (prev.length ? prev : INITIAL_BLOG_POSTS));
+            // Vorbelegte Daten behalten (kein Demo). cloudLoaded setzen, damit der Hero
+            // nicht ewig wartet; dataConfirmed bleibt false -> kein faelschliches noindex.
             markLoaded();
           }
         );
       } catch (e) {
         console.error("Firebase konnte nicht geladen werden:", e);
-        setProducts((prev) => (prev.length ? prev : PRODUCTS));
-        setBlogPosts((prev) => (prev.length ? prev : INITIAL_BLOG_POSTS));
+        // Vorbelegte __APP_DATA__-Daten behalten (kein Demo); Hero nicht blockieren.
         markLoaded();
       }
     })();
@@ -395,7 +408,7 @@ export default function App() {
 
     // robots: eine echte "Produkt nicht gefunden"-Seite (Cloud geladen, Slug fehlt) -> noindex.
     const productMissing = currentPage === "product" && !resolveProduct(products, activeProductSlug);
-    const robotsVal = productMissing && cloudLoaded ? "noindex, follow" : "index, follow";
+    const robotsVal = productMissing && dataConfirmed ? "noindex, follow" : "index, follow";
     let robotsEl = document.querySelector('meta[name="robots"]');
     if (!robotsEl) {
       robotsEl = document.createElement("meta");
@@ -450,7 +463,7 @@ export default function App() {
     trackPageView(seoKey, title);
     // Eigener anonymer Zähler (cookielos, unabhängig vom Consent)
     recordPageView(seoKey);
-  }, [currentPage, activeCategoryId, activeProductSlug, activeBlogSlug, products, blogPosts, categories, pageSeo, cloudLoaded]);
+  }, [currentPage, activeCategoryId, activeProductSlug, activeBlogSlug, products, blogPosts, categories, pageSeo, dataConfirmed]);
 
   // Browser Zurück/Vorwärts-Buttons unterstützen (URL -> Ansicht) + Analytics init
   useEffect(() => {
@@ -807,7 +820,7 @@ export default function App() {
           <ProductPage
             product={resolveProduct(products, activeProductSlug) || null}
             allProducts={products}
-            cloudLoaded={cloudLoaded}
+            dataConfirmed={dataConfirmed}
             onAddToCart={handleAddToCart}
             onBackToHome={() => handleNavigatePage("home")}
             onSelectCategory={handleSelectCategory}

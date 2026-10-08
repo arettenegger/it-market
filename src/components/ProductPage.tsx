@@ -9,7 +9,7 @@ import ProductDescription, { descriptionToPlain } from "./ProductDescription";
 interface ProductPageProps {
   product: Product | null;
   allProducts: Product[];
-  cloudLoaded?: boolean;
+  dataConfirmed?: boolean;
   onAddToCart: (product: Product, quantity?: number) => void;
   onBackToHome: () => void;
   onSelectCategory: (catName: string) => void;
@@ -44,16 +44,17 @@ const DEFAULT_PRODUCT_IMAGE = "https://images.unsplash.com/photo-1591799264318-7
 export default function ProductPage({
   product,
   allProducts,
-  cloudLoaded = true,
+  dataConfirmed = true,
   onAddToCart,
   onBackToHome,
   onSelectCategory,
   onOpenProduct,
   onOpenCallback,
 }: ProductPageProps) {
-  // Solange die Cloud-Daten noch laden und das Produkt (noch) nicht da ist:
-  // Ladeanzeige statt "nicht gefunden" – verhindert Soft-404 bei Googlebot.
-  if (!product && !cloudLoaded) {
+  // Solange noch keine ECHTEN Cloud-Daten bestaetigt sind und das Produkt (noch)
+  // nicht da ist: Ladeanzeige statt "nicht gefunden" – verhindert faelschliches
+  // noindex bei Googlebot, wenn Firestore nicht erreichbar ist.
+  if (!product && !dataConfirmed) {
     return (
       <div className="min-h-[60vh] max-w-3xl mx-auto px-4 py-20 text-center">
         <div className="inline-block w-8 h-8 border-2 border-slate-300 border-t-[#FF5E2E] rounded-full animate-spin mb-4" />
