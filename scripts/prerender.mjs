@@ -226,6 +226,12 @@ async function fetchMainConfig() {
       categories: (doc?.fields?.categories?.arrayValue?.values || []).map(fvalDeep).filter(Boolean),
       pageSeo,
       heroImages: fvalDeep(doc?.fields?.heroImages) || {},
+      // Vollständige Blogartikel (inkl. content) – pro Seite wird daraus der passende
+      // Ausschnitt eingebettet (Artikelseite: dieser Artikel; Übersicht/Home: Teaser).
+      blogPostsFull: (doc?.fields?.blogPosts?.arrayValue?.values || [])
+        .map(fvalDeep)
+        .filter((p) => p && p.title)
+        .map((p) => (typeof p.image === "string" && p.image.startsWith("data:") ? { ...p, image: "" } : p)),
     };
 
     return { pageSeo, products, blogPosts, seed };
@@ -455,7 +461,11 @@ try {
   const seedCommon = seed ? { categories: seed.categories, pageSeo: seed.pageSeo, heroImages: seed.heroImages } : null;
   const seedProducts = seed ? seed.products : [];
   const seedByCat = (catId) => seedProducts.filter((sp) => categoryIdFromName(sp.category) === catId);
-  const makeSeedJson = (subset) => (seedCommon ? JSON.stringify({ products: subset, ...seedCommon }) : null);
+  // Blog: volle Artikel (fuer Artikelseiten) und Teaser ohne content (fuer Uebersicht/Home).
+  const seedBlogFull = seed ? seed.blogPostsFull : [];
+  const blogTeasers = seedBlogFull.filter((b) => isBlogLive(b)).map(({ content, ...rest }) => rest);
+  const blogSeedFor = (slug) => { const p = seedBlogFull.find((b) => blogSlug(b) === slug); return p ? [p] : []; };
+  const makeSeedJson = (productSubset, blogSubset) => (seedCommon ? JSON.stringify({ products: productSubset || [], blogPosts: blogSubset || [], ...seedCommon }) : null);
   let count = 0;
 
   // 1) Statische + Kategorie-Seiten
@@ -473,11 +483,13 @@ try {
     if (r.home) { const bs = seedProducts.filter((p) => p.isBestseller); pageSeed = bs.length ? bs : seedProducts.slice(0, 8); }
     else if (r.path.startsWith("/kategorie/")) pageSeed = seedByCat(r.path.slice("/kategorie/".length));
     else pageSeed = [];
+    // Blog-Teaser nur dort einbetten, wo Artikel gezeigt werden (Home + Uebersicht).
+    const pageBlog = (r.home || r.path === "/blog") ? blogTeasers : [];
     const html = renderHtml(base, {
       title, description, canonical,
       keywords: override.keywords || "",
       bodyHtml,
-      seedJson: makeSeedJson(pageSeed),
+      seedJson: makeSeedJson(pageSeed, pageBlog),
     });
     if (r.home) {
       writeFileSync(join(DIST, "index.html"), html, "utf8");
@@ -505,7 +517,7 @@ try {
       jsonLd: [productLdJson(p, canonical), breadcrumbLdJson(p)],
       bodyHtml: productBody(p),
       image: p.image,
-      seedJson: makeSeedJson(seedByCat(categoryIdFromName(p.category))),
+      seedJson: makeSeedJson(seedByCat(categoryIdFromName(p.category)), []),
     });
     const outDir = join(DIST, path);
     mkdirSync(outDir, { recursive: true });
@@ -522,7 +534,10 @@ try {
     const path = `/blog/${slug}`;
     const canonical = SITE + path + "/";
     const override = pageSeo[path] || {};
-    const title = override.title || post.seoTitle || `${post.title} | IT-MARKET Ratgeber`;
+    // Doppeltes Suffix vermeiden: Enthaelt der Basistitel bereits "| IT-MARKET",
+    // kein weiteres "| IT-MARKET Ratgeber" anhaengen.
+    const titleBase = override.title || post.seoTitle || post.title;
+    const title = /\|\s*IT-MARKET/i.test(titleBase) ? titleBase : `${titleBase} | IT-MARKET Ratgeber`;
     const description = override.description || post.metaDescription || post.excerpt || "";
     const keywords = override.keywords || (post.tags || []).join(", ");
     const html = renderHtml(base, {
@@ -530,7 +545,7 @@ try {
       jsonLd: [blogPostLdJson(post, canonical), blogBreadcrumbLdJson(post)],
       bodyHtml: blogPostBody(post),
       image: post.image,
-      seedJson: makeSeedJson([]),
+      seedJson: makeSeedJson([], blogSeedFor(slug)),
     });
     const outDir = join(DIST, path);
     mkdirSync(outDir, { recursive: true });

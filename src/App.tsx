@@ -118,7 +118,7 @@ const initialRoute = parsePath(typeof window !== "undefined" ? window.location.p
 
 // Seed-Daten aus dem vorgerenderten HTML (<script id="__APP_DATA__">). Damit kann die App
 // Produkte/Kategorien/SEO sofort rendern – auch bevor/ohne dass Firestore lädt (Soft-404-Fix).
-const APP_SEED: { products?: Product[]; categories?: Category[]; pageSeo?: Record<string, PageSeo>; heroImages?: Record<string, string> } = (() => {
+const APP_SEED: { products?: Product[]; blogPosts?: BlogPost[]; categories?: Category[]; pageSeo?: Record<string, PageSeo>; heroImages?: Record<string, string> } = (() => {
   try {
     if (typeof document === "undefined") return {};
     const el = document.getElementById("__APP_DATA__");
@@ -161,7 +161,7 @@ export default function App() {
   }, []);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>(() => (APP_SEED.products && APP_SEED.products.length ? APP_SEED.products : []));
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>(() => (APP_SEED.blogPosts && APP_SEED.blogPosts.length ? APP_SEED.blogPosts : []));
   const [reviews, setReviews] = useState<Review[]>(REVIEWS);
   const [categories, setCategories] = useState<Category[]>(() => (APP_SEED.categories && APP_SEED.categories.length ? APP_SEED.categories : CATEGORIES));
   // Frei benennbare Spec-Feld-Bezeichnungen je Kategorie registrieren (für getSpecLabels).
@@ -387,11 +387,14 @@ export default function App() {
     } else if (currentPage === "blogPost") {
       const post = resolveBlogPost(blogPosts, activeBlogSlug);
       if (post) {
-        title = post.seoTitle || `${post.title} | IT-MARKET Ratgeber`;
+        // Artikel-Titel setzen; Doppel-Suffix "| IT-MARKET | IT-MARKET Ratgeber" vermeiden.
+        const tBase = post.seoTitle && post.seoTitle.trim() ? post.seoTitle.trim() : post.title.trim();
+        title = /\|\s*IT-MARKET/i.test(tBase) ? tBase : `${tBase} | IT-MARKET Ratgeber`;
         description = post.metaDescription || post.excerpt || "";
         if (post.image && /^https?:\/\//.test(post.image)) ogImage = post.image;
       } else {
-        title = "Ratgeber & Technik-Magazin | IT-MARKET";
+        // Nicht aufloesbarer Artikel: NICHT den Uebersichts-Titel verwenden (sonst Duplikat).
+        title = "Artikel nicht gefunden | IT-MARKET";
       }
     } else if (currentPage === "kontakt") {
       title = "Kontakt & Beratung | IT-MARKET";
@@ -408,7 +411,8 @@ export default function App() {
 
     // robots: eine echte "Produkt nicht gefunden"-Seite (Cloud geladen, Slug fehlt) -> noindex.
     const productMissing = currentPage === "product" && !resolveProduct(products, activeProductSlug);
-    const robotsVal = productMissing && dataConfirmed ? "noindex, follow" : "index, follow";
+    const blogPostMissing = currentPage === "blogPost" && !resolveBlogPost(blogPosts, activeBlogSlug);
+    const robotsVal = (productMissing || blogPostMissing) && dataConfirmed ? "noindex, follow" : "index, follow";
     let robotsEl = document.querySelector('meta[name="robots"]');
     if (!robotsEl) {
       robotsEl = document.createElement("meta");
@@ -898,6 +902,23 @@ export default function App() {
             {/* High-converting Newsletter CTA with input verification */}
             <Newsletter />
           </>
+        ) : currentPage === "blogPost" && !resolveBlogPost(blogPosts, activeBlogSlug) ? (
+          dataConfirmed ? (
+            // Artikel wirklich nicht gefunden (echte Daten geladen) -> 404 statt Uebersicht.
+            <div className="min-h-[60vh] max-w-3xl mx-auto px-4 py-20 text-center">
+              <h1 className="text-2xl font-black text-slate-900 mb-3">Artikel nicht gefunden</h1>
+              <p className="text-slate-500 text-sm mb-8">Dieser Beitrag ist nicht mehr verfügbar oder der Link ist veraltet.</p>
+              <button onClick={() => handleNavigatePage("blog")} className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm px-5 py-3 rounded-xl transition-all cursor-pointer">
+                Zur Ratgeber-Übersicht
+              </button>
+            </div>
+          ) : (
+            // Noch keine echten Daten -> Ladeanzeige (kein voreiliges 404/Uebersicht).
+            <div className="min-h-[60vh] max-w-3xl mx-auto px-4 py-20 text-center">
+              <div className="inline-block w-8 h-8 border-2 border-slate-300 border-t-[#FF5E2E] rounded-full animate-spin mb-4" />
+              <p className="text-slate-500 text-sm">Beitrag wird geladen …</p>
+            </div>
+          )
         ) : (
           <>
             {/* Dedicated Standalone Blog Page */}
