@@ -2295,7 +2295,7 @@ export default function AdminPanel({
             }`}
           >
             <Search className="w-4 h-4 shrink-0" />
-            Startseite (SEO)
+            Startseiten/Kategorie SEO
           </button>
 
           <button
@@ -5377,8 +5377,9 @@ export default function AdminPanel({
           {activeTab === "homeseo" && (
             <div className="space-y-6 animate-fadeIn pb-12 max-w-2xl">
               <div>
-                <h3 className="text-lg font-black text-white">Startseite – SEO</h3>
-                <p className="text-xs text-slate-400 mt-1">Titel, Meta-Beschreibung und die (für Besucher unsichtbare) SEO-Überschrift der Startseite. Diese Werte haben Vorrang vor dem SEO-Manager.</p>
+                <h3 className="text-lg font-black text-white">Startseiten/Kategorie SEO</h3>
+                <p className="text-xs text-slate-400 mt-1">Hier: Titel, Meta-Beschreibung und die (für Besucher unsichtbare) SEO-Überschrift der <strong className="text-slate-200">Startseite</strong>. Diese Werte haben Vorrang vor dem SEO-Manager.</p>
+                <p className="text-xs text-amber-400/90 mt-2">➜ Kategorie-SEO (Titel, Meta, H1, Untertitel, Kachel-Texte) bearbeitest du pro Kategorie im Tab „Kategorien" → Kategorie bearbeiten → Block „SEO & Seiteninhalt der Kategorieseite".</p>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1">SEO-Titel</label>
