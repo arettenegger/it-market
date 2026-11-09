@@ -226,6 +226,7 @@ async function fetchMainConfig() {
       categories: (doc?.fields?.categories?.arrayValue?.values || []).map(fvalDeep).filter(Boolean),
       pageSeo,
       heroImages: fvalDeep(doc?.fields?.heroImages) || {},
+      homeSeo: fvalDeep(doc?.fields?.homeSeo) || {},
       // Vollständige Blogartikel (inkl. content) – pro Seite wird daraus der passende
       // Ausschnitt eingebettet (Artikelseite: dieser Artikel; Übersicht/Home: Teaser).
       blogPostsFull: (doc?.fields?.blogPosts?.arrayValue?.values || [])
@@ -395,12 +396,12 @@ function productsInCategory(products, catId) {
   return products.filter((p) => categoryIdFromName(p.category) === catId);
 }
 
-function homeBody(products, blogPosts) {
+function homeBody(products, blogPosts, homeH1) {
   const cats = Object.keys(CATEGORY_NAMES).map((id) => `<li><a href="/kategorie/${id}/">${esc(CATEGORY_NAMES[id])}</a></li>`).join("");
   const prods = products.slice(0, 8).map((p) => `<li><a href="/produkt/${productSlug(p)}/">${esc(p.name)}</a></li>`).join("");
   const posts = (blogPosts || []).filter((b) => isBlogLive(b)).slice(0, 5).map((b) => `<li><a href="/blog/${blogSlug(b)}/">${esc(b.title)}</a></li>`).join("");
   return `${WRAP_OPEN}
-    <h1>Sicherheitskameras, Netzwerk- &amp; IT-Hardware – IT-MARKET Österreich</h1>
+    <h1>${esc(homeH1 && homeH1.trim() ? homeH1 : "Sicherheitskameras, Netzwerk- & IT-Hardware – IT-MARKET Österreich")}</h1>
     <p>Premium IP-Kameras, Netzwerktechnik, NAS-Systeme, Hotspot- &amp; Wireless-Lösungen, PC-Hardware und Smart-Home. Stellen Sie Ihre Wunschprodukte zusammen und fordern Sie ein unverbindliches Angebot per E-Mail an.</p>
     <h2>Produktkategorien</h2>
     <ul>${cats}</ul>
@@ -409,13 +410,13 @@ function homeBody(products, blogPosts) {
   ${WRAP_CLOSE}`;
 }
 
-function categoryBody(catId, description, products) {
+function categoryBody(catId, description, products, h1, subtitle) {
   const name = CATEGORY_NAMES[catId] || catId;
   const list = productsInCategory(products, catId).map((p) => `<li><a href="/produkt/${productSlug(p)}/">${esc(p.name)}</a></li>`).join("");
   return `${WRAP_OPEN}
     <nav><a href="/">Startseite</a> / <span>${esc(name)}</span></nav>
-    <h1>${esc(name)}</h1>
-    <p>${esc(description || "")}</p>
+    <h1>${esc(h1 && h1.trim() ? h1 : name)}</h1>
+    <p>${esc((subtitle && subtitle.trim()) ? subtitle : (description || ""))}</p>
     ${list ? `<h2>Produkte</h2><ul>${list}</ul>` : "<p>Produkte auf Anfrage.</p>"}
   ${WRAP_CLOSE}`;
 }
@@ -458,8 +459,10 @@ try {
   const { pageSeo, products, blogPosts, seed } = await fetchMainConfig();
   // Seed pro Seite schlank halten: gemeinsame Daten (Kategorien/SEO/Hero) überall,
   // Produkte nur die auf der Seite gezeigten (Kategorie bzw. Bestseller).
-  const seedCommon = seed ? { categories: seed.categories, pageSeo: seed.pageSeo, heroImages: seed.heroImages } : null;
+  const seedCommon = seed ? { categories: seed.categories, pageSeo: seed.pageSeo, heroImages: seed.heroImages, homeSeo: seed.homeSeo } : null;
   const seedProducts = seed ? seed.products : [];
+  const homeSeo = (seed && seed.homeSeo) || {};
+  const liveCatById = (catId) => (seed ? seed.categories.find((c) => categoryIdFromName(c.name) === catId) : null);
   const seedByCat = (catId) => seedProducts.filter((sp) => categoryIdFromName(sp.category) === catId);
   // Blog: volle Artikel (fuer Artikelseiten) und Teaser ohne content (fuer Uebersicht/Home).
   const seedBlogFull = seed ? seed.blogPostsFull : [];
@@ -472,13 +475,23 @@ try {
   for (const r of routes) {
     const override = pageSeo[r.path] || {};
     const canonical = SITE + (r.home ? "/" : r.path + "/");
-    const title = override.title || r.title;
-    const description = override.description || r.description;
+    const catId = r.path.startsWith("/kategorie/") ? r.path.slice("/kategorie/".length) : null;
+    const liveCat = catId ? liveCatById(catId) : null;
+    // Vorrang: Admin-Feld (homeSeo/Kategorie) > SEO-Manager (override) > Default.
+    let title = override.title || r.title;
+    let description = override.description || r.description;
+    if (r.home) {
+      title = (homeSeo.seoTitle && homeSeo.seoTitle.trim()) || title;
+      description = (homeSeo.metaDescription && homeSeo.metaDescription.trim()) || description;
+    } else if (liveCat) {
+      title = (liveCat.seoTitle && liveCat.seoTitle.trim()) || title;
+      description = (liveCat.metaDescription && liveCat.metaDescription.trim()) || description;
+    }
     // Body-Prerender: Home, Blog-Übersicht und Kategorien bekommen SEO-Inhalt.
     let bodyHtml = "";
-    if (r.home) bodyHtml = homeBody(products, blogPosts);
+    if (r.home) bodyHtml = homeBody(products, blogPosts, homeSeo.h1);
     else if (r.path === "/blog") bodyHtml = blogIndexBody(blogPosts);
-    else if (r.path.startsWith("/kategorie/")) bodyHtml = categoryBody(r.path.slice("/kategorie/".length), description, products);
+    else if (catId) bodyHtml = categoryBody(catId, description, products, liveCat && liveCat.h1, liveCat && liveCat.subtitle);
     let pageSeed;
     if (r.home) { const bs = seedProducts.filter((p) => p.isBestseller); pageSeed = bs.length ? bs : seedProducts.slice(0, 8); }
     else if (r.path.startsWith("/kategorie/")) pageSeed = seedByCat(r.path.slice("/kategorie/".length));

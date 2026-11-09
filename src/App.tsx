@@ -118,7 +118,8 @@ const initialRoute = parsePath(typeof window !== "undefined" ? window.location.p
 
 // Seed-Daten aus dem vorgerenderten HTML (<script id="__APP_DATA__">). Damit kann die App
 // Produkte/Kategorien/SEO sofort rendern – auch bevor/ohne dass Firestore lädt (Soft-404-Fix).
-const APP_SEED: { products?: Product[]; blogPosts?: BlogPost[]; categories?: Category[]; pageSeo?: Record<string, PageSeo>; heroImages?: Record<string, string> } = (() => {
+type HomeSeo = { seoTitle?: string; metaDescription?: string; h1?: string };
+const APP_SEED: { products?: Product[]; blogPosts?: BlogPost[]; categories?: Category[]; pageSeo?: Record<string, PageSeo>; heroImages?: Record<string, string>; homeSeo?: HomeSeo } = (() => {
   try {
     if (typeof document === "undefined") return {};
     const el = document.getElementById("__APP_DATA__");
@@ -169,6 +170,7 @@ export default function App() {
   const [configuratorData, setConfiguratorData] = useState<ConfiguratorData>(DEFAULT_CONFIGURATOR_DATA);
   const [logoImage, setLogoImage] = useState<string>("");
   const [pageSeo, setPageSeo] = useState<Record<string, PageSeo>>(() => APP_SEED.pageSeo || {});
+  const [homeSeo, setHomeSeo] = useState<HomeSeo>(() => APP_SEED.homeSeo || {});
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(new Date());
   const [heroImages, setHeroImages] = useState<Record<string, string>>(() => ({
     kameras: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=1920",
@@ -298,6 +300,7 @@ export default function App() {
       setConfiguratorData({ ...DEFAULT_CONFIGURATOR_DATA, ...(data?.configuratorData || {}) });
       if (typeof data?.logoImage === "string") setLogoImage(data.logoImage);
       if (data?.pageSeo && typeof data.pageSeo === "object") setPageSeo(data.pageSeo);
+      if (data?.homeSeo && typeof data.homeSeo === "object") setHomeSeo(data.homeSeo);
       if (data?.heroImages && typeof data.heroImages === "object") {
         setHeroImages((prev) => ({ ...prev, ...data.heroImages }));
       }
@@ -407,6 +410,15 @@ export default function App() {
     }
     if (seo?.title) title = seo.title;
     if (seo?.description) description = seo.description;
+    // Startseiten-/Kategorie-SEO-Felder (Admin) haben Vorrang vor dem SEO-Manager.
+    if (currentPage === "home") {
+      if (homeSeo?.seoTitle && homeSeo.seoTitle.trim()) title = homeSeo.seoTitle.trim();
+      if (homeSeo?.metaDescription && homeSeo.metaDescription.trim()) description = homeSeo.metaDescription.trim();
+    } else if (currentPage === "category") {
+      const cat = categories.find((c) => categoryIdFromName(c.name) === activeCategoryId) || categories.find((c) => c.id === activeCategoryId);
+      if (cat?.seoTitle && cat.seoTitle.trim()) title = cat.seoTitle.trim();
+      if (cat?.metaDescription && cat.metaDescription.trim()) description = cat.metaDescription.trim();
+    }
     document.title = title;
 
     // robots: eine echte "Produkt nicht gefunden"-Seite (Cloud geladen, Slug fehlt) -> noindex.
@@ -467,7 +479,7 @@ export default function App() {
     trackPageView(seoKey, title);
     // Eigener anonymer Zähler (cookielos, unabhängig vom Consent)
     recordPageView(seoKey);
-  }, [currentPage, activeCategoryId, activeProductSlug, activeBlogSlug, products, blogPosts, categories, pageSeo, dataConfirmed]);
+  }, [currentPage, activeCategoryId, activeProductSlug, activeBlogSlug, products, blogPosts, categories, pageSeo, homeSeo, dataConfirmed]);
 
   // Browser Zurück/Vorwärts-Buttons unterstützen (URL -> Ansicht) + Analytics init
   useEffect(() => {
@@ -599,6 +611,12 @@ export default function App() {
     syncToFirestore({ pageSeo: updated });
     triggerToast("SEO-Einstellungen gespeichert!");
     triggerToast("Logo Branding synchronisiert!");
+  };
+
+  const handleUpdateHomeSeo = (updated: HomeSeo) => {
+    setHomeSeo(updated);
+    syncToFirestore({ homeSeo: updated });
+    triggerToast("Startseiten-SEO gespeichert!");
   };
 
   const saveCartToStorage = (updatedCart: CartItem[]) => {
@@ -810,6 +828,7 @@ export default function App() {
         {currentPage === "category" ? (
           <CategoryPage
             categoryId={activeCategoryId}
+            category={categories.find((c) => categoryIdFromName(c.name) === activeCategoryId) || categories.find((c) => c.id === activeCategoryId)}
             products={products}
             wishlist={wishlist}
             onToggleWishlist={handleToggleWishlist}
@@ -845,6 +864,7 @@ export default function App() {
             <Hero
               isAdmin={isAdmin}
               cloudLoaded={cloudLoaded}
+              homeH1={homeSeo.h1}
               heroImages={heroImages}
               heroVideos={heroVideos}
               onUpdateHeroImages={handleUpdateHeroImages}
@@ -996,6 +1016,8 @@ export default function App() {
             onUpdateLogoImage={handleUpdateLogoImage}
             pageSeo={pageSeo}
             onUpdatePageSeo={handleUpdatePageSeo}
+            homeSeo={homeSeo}
+            onUpdateHomeSeo={handleUpdateHomeSeo}
             lastSyncedAt={lastSyncedAt}
             onRefreshFromCloud={handleRefreshFromCloud}
           />

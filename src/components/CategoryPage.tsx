@@ -16,6 +16,7 @@ import CameraSvg from "./CameraSvg";
 
 interface CategoryPageProps {
   categoryId: string; // e.g. "pc-hardware", "netzwerke", "hotspot", "nas", "kameras", "smarthome"
+  category?: Category; // Live-Kategorie aus dem Admin (hat Vorrang vor statischen Daten)
   products: Product[];
   wishlist: string[];
   onToggleWishlist: (productId: string) => void;
@@ -29,6 +30,7 @@ interface CategoryPageProps {
 
 export default function CategoryPage({
   categoryId,
+  category,
   products,
   wishlist,
   onToggleWishlist,
@@ -42,8 +44,8 @@ export default function CategoryPage({
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
   const [videoError, setVideoError] = useState(false);
 
-  // Find category meta data
-  const categoryInfo = CATEGORIES.find(c => c.id === categoryId) || CATEGORIES[0];
+  // Live-Kategorie (Admin) hat Vorrang, sonst statische Fallback-Daten.
+  const categoryInfo = category || CATEGORIES.find(c => c.id === categoryId) || CATEGORIES[0];
   const categoryName = categoryInfo.name;
 
   // Filter products for this category
@@ -279,10 +281,10 @@ export default function CategoryPage({
               <span>{categoryName}</span>
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-display tracking-tight text-white leading-tight">
-              {categoryId === "netzwerke" ? "Schnell. Sicher. Lückenlos." : services.title}
+              {categoryInfo.h1 || (categoryId === "netzwerke" ? "Schnell. Sicher. Lückenlos." : services.title)}
             </h1>
             <p className="mt-4 text-slate-300 text-sm sm:text-base leading-relaxed">
-              {categoryId === "netzwerke" ? "Professionelle PoE-Switches, High-Speed Mesh Access Points und Enterprise-Router für ausfallsichere Netzwerk-Infrastruktur im Wohn- and Geschäftsbereich." : services.subtitle}
+              {categoryInfo.subtitle || (categoryId === "netzwerke" ? "Professionelle PoE-Switches, High-Speed Mesh Access Points und Enterprise-Router für ausfallsichere Netzwerk-Infrastruktur im Wohn- and Geschäftsbereich." : services.subtitle)}
             </p>
 
             <div className="mt-6 flex flex-wrap gap-4">

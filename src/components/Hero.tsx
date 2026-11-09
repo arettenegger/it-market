@@ -25,6 +25,7 @@ import { CATEGORIES } from "../data";
 interface HeroProps {
   isAdmin?: boolean;
   cloudLoaded?: boolean;
+  homeH1?: string;
   heroImages?: Record<string, string>;
   heroVideos?: Record<string, string>;
   onUpdateHeroImages?: (updated: Record<string, string>) => void;
@@ -158,6 +159,7 @@ const VIDEO_PRESETS: Record<string, { name: string; url: string }[]> = {
 export default function Hero({
   isAdmin = false,
   cloudLoaded = true,
+  homeH1,
   heroImages,
   heroVideos,
   onUpdateHeroImages,
@@ -492,7 +494,7 @@ export default function Hero({
           {/* Feste, keyword-optimierte H1 für SEO – für Besucher unsichtbar (sr-only),
               für Suchmaschinen lesbar. Der sichtbare Slider-Titel ist eine H2. */}
           <h1 className="sr-only">
-            Sicherheitskameras, Netzwerk- &amp; IT-Hardware – IT-MARKET Österreich
+            {homeH1 && homeH1.trim() ? homeH1 : "Sicherheitskameras, Netzwerk- & IT-Hardware – IT-MARKET Österreich"}
           </h1>
 
           {/* Tagline category selector indicator */}

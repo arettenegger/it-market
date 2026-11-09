@@ -102,6 +102,8 @@ interface AdminPanelProps {
   onUpdateLogoImage?: (url: string) => void;
   pageSeo?: Record<string, PageSeo>;
   onUpdatePageSeo?: (updated: Record<string, PageSeo>) => void;
+  homeSeo?: { seoTitle?: string; metaDescription?: string; h1?: string };
+  onUpdateHomeSeo?: (updated: { seoTitle?: string; metaDescription?: string; h1?: string }) => void;
   lastSyncedAt?: Date | null;
   onRefreshFromCloud?: () => Promise<void>;
   /** Meldet dem Eltern-Component, ob der Admin per Firebase eingeloggt ist. */
@@ -125,12 +127,15 @@ export default function AdminPanel({
   onUpdateLogoImage,
   pageSeo = {},
   onUpdatePageSeo,
+  homeSeo = {},
+  onUpdateHomeSeo,
   lastSyncedAt,
   onRefreshFromCloud,
   onAuthChange
 }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<"products" | "configurator" | "inquiries" | "callbacks" | "newsletter" | "analytics" | "blog" | "reviews" | "categories" | "logo" | "storage" | "seo">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "configurator" | "inquiries" | "callbacks" | "newsletter" | "analytics" | "blog" | "reviews" | "categories" | "logo" | "storage" | "seo" | "homeseo">("products");
   const [searchQuery, setSearchQuery] = useState("");
+  const [homeSeoDraft, setHomeSeoDraft] = useState<{ seoTitle?: string; metaDescription?: string; h1?: string }>(homeSeo);
 
   // --- SEO-Manager: Unterseiten-Routen + lokale Entwürfe ---
   const SEO_ROUTES: { key: string; label: string }[] = [
@@ -178,6 +183,9 @@ export default function AdminPanel({
       setSeoProductDraft(products.map((p) => ({ ...p })));
       setSeoBaseConfigDraft(((configuratorData || DEFAULT_CONFIGURATOR_DATA).baseConfigurations || []).map((c) => ({ ...c })));
       setSeoSavedMsg(null);
+    }
+    if (activeTab === "homeseo") {
+      setHomeSeoDraft({ ...homeSeo });
     }
   }, [activeTab]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -461,6 +469,11 @@ export default function AdminPanel({
   const [catDesc, setCatDesc] = useState("");
   const [catImage, setCatImage] = useState("");
   const [catIconName, setCatIconName] = useState("Shield");
+  // SEO-/Inhaltsfelder der Kategorieseite
+  const [catSeoTitle, setCatSeoTitle] = useState("");
+  const [catMetaDescription, setCatMetaDescription] = useState("");
+  const [catH1, setCatH1] = useState("");
+  const [catSubtitle, setCatSubtitle] = useState("");
   // Frei benennbare Spezifikations-Felder je Kategorie (leer = Standard-Bezeichnung)
   const [catSpecResolution, setCatSpecResolution] = useState("");
   const [catSpecViewAngle, setCatSpecViewAngle] = useState("");
@@ -475,6 +488,7 @@ export default function AdminPanel({
     setCatDesc("");
     setCatImage("https://images.unsplash.com/photo-1544197150-b99a580bb7a8?q=80&w=800&auto=format&fit=crop");
     setCatIconName("Shield");
+    setCatSeoTitle(""); setCatMetaDescription(""); setCatH1(""); setCatSubtitle("");
     setCatSpecResolution(""); setCatSpecViewAngle(""); setCatSpecNightVision(""); setCatSpecStorage(""); setCatSpecPower("");
     setIsAddingCategory(true);
   };
@@ -505,6 +519,7 @@ export default function AdminPanel({
   const resetCategoryForm = () => {
     setEditingCategory(null);
     setCatName(""); setCatTagline(""); setCatDesc(""); setCatImage(""); setCatIconName("Shield");
+    setCatSeoTitle(""); setCatMetaDescription(""); setCatH1(""); setCatSubtitle("");
     setCatSpecResolution(""); setCatSpecViewAngle(""); setCatSpecNightVision(""); setCatSpecStorage(""); setCatSpecPower("");
   };
 
@@ -515,6 +530,10 @@ export default function AdminPanel({
     setCatDesc(c.description);
     setCatImage(c.image);
     setCatIconName(c.iconName || "Shield");
+    setCatSeoTitle(c.seoTitle || "");
+    setCatMetaDescription(c.metaDescription || "");
+    setCatH1(c.h1 || "");
+    setCatSubtitle(c.subtitle || "");
     setCatSpecResolution(c.specLabels?.resolution || "");
     setCatSpecViewAngle(c.specLabels?.viewAngle || "");
     setCatSpecNightVision(c.specLabels?.nightVision || "");
@@ -541,6 +560,10 @@ export default function AdminPanel({
       description: catDesc,
       image: catImage || "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?q=80&w=800&auto=format&fit=crop",
       iconName: catIconName,
+      ...(catSeoTitle.trim() ? { seoTitle: catSeoTitle.trim() } : {}),
+      ...(catMetaDescription.trim() ? { metaDescription: catMetaDescription.trim() } : {}),
+      ...(catH1.trim() ? { h1: catH1.trim() } : {}),
+      ...(catSubtitle.trim() ? { subtitle: catSubtitle.trim() } : {}),
       ...(Object.keys(specLabels).length ? { specLabels } : {}),
     };
 
@@ -2261,6 +2284,18 @@ export default function AdminPanel({
           >
             <Search className="w-4 h-4 shrink-0" />
             SEO &amp; Meta
+          </button>
+
+          <button
+            onClick={() => setActiveTab("homeseo")}
+            className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all text-left cursor-pointer ${
+              activeTab === "homeseo"
+                ? "bg-[#FF5E2E] text-white shadow-lg shadow-[#FF5E2E]/10 font-bold"
+                : "text-slate-400 hover:text-white hover:bg-slate-900"
+            }`}
+          >
+            <Search className="w-4 h-4 shrink-0" />
+            Startseite (SEO)
           </button>
 
           <button
@@ -5338,6 +5373,58 @@ export default function AdminPanel({
             </div>
           )}
 
+          {/* TAB: STARTSEITE (SEO) */}
+          {activeTab === "homeseo" && (
+            <div className="space-y-6 animate-fadeIn pb-12 max-w-2xl">
+              <div>
+                <h3 className="text-lg font-black text-white">Startseite – SEO</h3>
+                <p className="text-xs text-slate-400 mt-1">Titel, Meta-Beschreibung und die (für Besucher unsichtbare) SEO-Überschrift der Startseite. Diese Werte haben Vorrang vor dem SEO-Manager.</p>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">SEO-Titel</label>
+                <input
+                  type="text"
+                  value={homeSeoDraft.seoTitle || ""}
+                  onChange={(e) => setHomeSeoDraft((d) => ({ ...d, seoTitle: e.target.value }))}
+                  placeholder="Titel für Google / Browser-Tab (ca. 50–60 Zeichen)"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#FF5E2E]"
+                />
+                <span className={`text-[10px] ${(homeSeoDraft.seoTitle || "").length > 60 ? "text-amber-400" : "text-slate-500"}`}>{(homeSeoDraft.seoTitle || "").length}/60 Zeichen</span>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Meta-Beschreibung</label>
+                <textarea
+                  rows={3}
+                  value={homeSeoDraft.metaDescription || ""}
+                  onChange={(e) => setHomeSeoDraft((d) => ({ ...d, metaDescription: e.target.value }))}
+                  placeholder="1–2 Sätze, die bei Google unter dem Titel erscheinen (ca. 150–160 Zeichen)"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#FF5E2E]"
+                />
+                <span className={`text-[10px] ${(homeSeoDraft.metaDescription || "").length > 160 ? "text-amber-400" : "text-slate-500"}`}>{(homeSeoDraft.metaDescription || "").length}/160 Zeichen</span>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Überschrift (H1)</label>
+                <input
+                  type="text"
+                  value={homeSeoDraft.h1 || ""}
+                  onChange={(e) => setHomeSeoDraft((d) => ({ ...d, h1: e.target.value }))}
+                  placeholder="SEO-Hauptüberschrift der Startseite (für Suchmaschinen)"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#FF5E2E]"
+                />
+              </div>
+              <button
+                onClick={() => onUpdateHomeSeo && onUpdateHomeSeo({
+                  seoTitle: (homeSeoDraft.seoTitle || "").trim(),
+                  metaDescription: (homeSeoDraft.metaDescription || "").trim(),
+                  h1: (homeSeoDraft.h1 || "").trim(),
+                })}
+                className="bg-[#FF5E2E] hover:bg-[#ff4d15] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-all cursor-pointer"
+              >
+                Startseiten-SEO speichern
+              </button>
+            </div>
+          )}
+
           {/* TAB: CATEGORIES */}
           {activeTab === "categories" && (
             <div className="space-y-6 animate-fadeIn pb-12">
@@ -5394,7 +5481,7 @@ export default function AdminPanel({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-300 mb-1">Badge / Untertitel</label>
+                        <label className="block text-xs font-bold text-slate-300 mb-1">Kachel: Tagline / Badge</label>
                         <input
                           type="text"
                           value={catTagline}
@@ -5439,15 +5526,62 @@ export default function AdminPanel({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1">Beschreibung *</label>
+                      <label className="block text-xs font-bold text-slate-300 mb-1">Kachel: Kurzbeschreibung *</label>
                       <textarea
                         required
                         rows={2}
                         value={catDesc}
                         onChange={(e) => setCatDesc(e.target.value)}
-                        placeholder="Kurze Beschreibung der Kategorie..."
+                        placeholder="Kurzer Text auf der Kategorie-Kachel (Startseite)…"
                         className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#FF5E2E]"
                       />
+                    </div>
+
+                    {/* SEO & Seiteninhalt der Kategorieseite */}
+                    <div className="border-t border-slate-800 pt-4 mt-1 space-y-4">
+                      <p className="text-[11px] font-bold text-[#FF5E2E] uppercase tracking-wider">SEO & Seiteninhalt der Kategorieseite</p>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1">SEO-Titel</label>
+                        <input
+                          type="text"
+                          value={catSeoTitle}
+                          onChange={(e) => setCatSeoTitle(e.target.value)}
+                          placeholder="Titel für Google / Browser-Tab (ca. 50–60 Zeichen)"
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#FF5E2E]"
+                        />
+                        <span className={`text-[10px] ${catSeoTitle.length > 60 ? "text-amber-400" : "text-slate-500"}`}>{catSeoTitle.length}/60 Zeichen</span>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1">Meta-Beschreibung</label>
+                        <textarea
+                          rows={2}
+                          value={catMetaDescription}
+                          onChange={(e) => setCatMetaDescription(e.target.value)}
+                          placeholder="1–2 Sätze, die bei Google unter dem Titel erscheinen (ca. 150–160 Zeichen)"
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#FF5E2E]"
+                        />
+                        <span className={`text-[10px] ${catMetaDescription.length > 160 ? "text-amber-400" : "text-slate-500"}`}>{catMetaDescription.length}/160 Zeichen</span>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1">Überschrift (H1)</label>
+                        <input
+                          type="text"
+                          value={catH1}
+                          onChange={(e) => setCatH1(e.target.value)}
+                          placeholder="Sichtbare Hauptüberschrift auf der Kategorieseite"
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#FF5E2E]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1">Untertitel unter der H1</label>
+                        <textarea
+                          rows={2}
+                          value={catSubtitle}
+                          onChange={(e) => setCatSubtitle(e.target.value)}
+                          placeholder="Einleitender Text direkt unter der Überschrift"
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#FF5E2E]"
+                        />
+                      </div>
                     </div>
 
                     {/* Spezifikations-Feld-Bezeichnungen je Kategorie */}

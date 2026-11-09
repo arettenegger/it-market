@@ -78,6 +78,11 @@ export interface Category {
   tagline: string;
   iconName: string;
   image: string;
+  // SEO-/Inhaltsfelder für die Kategorieseite (Admin-pflegbar).
+  seoTitle?: string;         // <title> / SEO-Titel
+  metaDescription?: string;  // Meta-Beschreibung
+  h1?: string;               // sichtbare Überschrift (H1)
+  subtitle?: string;         // Untertitel unter der H1
   // Optional pro Kategorie frei benennbare Bezeichnungen der 5 Spezifikations-Felder.
   specLabels?: Partial<SpecLabels>;
 }
