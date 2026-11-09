@@ -138,15 +138,11 @@ export default function AdminPanel({
   const [homeSeoDraft, setHomeSeoDraft] = useState<{ seoTitle?: string; metaDescription?: string; h1?: string }>(homeSeo);
 
   // --- SEO-Manager: Unterseiten-Routen + lokale Entwürfe ---
+  // Kategorie-Seiten bewusst NICHT hier – deren SEO (Titel, Meta, H1, Untertitel)
+  // wird pro Kategorie im Tab "Kategorien" gepflegt (hat Vorrang). Doppelpflege vermeiden.
   const SEO_ROUTES: { key: string; label: string }[] = [
     { key: "/", label: "Startseite" },
     { key: "/blog", label: "Blog / Ratgeber" },
-    { key: "/kategorie/kameras", label: "Kategorie: IP-Kameras" },
-    { key: "/kategorie/netzwerke", label: "Kategorie: Netzwerke" },
-    { key: "/kategorie/hotspot", label: "Kategorie: Hotspot" },
-    { key: "/kategorie/nas", label: "Kategorie: NAS" },
-    { key: "/kategorie/pc-hardware", label: "Kategorie: PC-Hardware" },
-    { key: "/kategorie/smarthome", label: "Kategorie: Smart-Home" },
     { key: "/kontakt", label: "Kontakt" },
     { key: "/ueber-uns", label: "Über uns" },
     { key: "/impressum", label: "Impressum" },
