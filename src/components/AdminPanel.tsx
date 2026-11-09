@@ -110,6 +110,39 @@ interface AdminPanelProps {
   onAuthChange?: (isAdmin: boolean) => void;
 }
 
+/**
+ * Eingabefeld für kommagetrennte Schlagwörter (Keywords / Tags).
+ * WICHTIG: Der sichtbare Text wird im Feld selbst gehalten, damit Kommas und
+ * Leerzeichen beim Tippen stehen bleiben. Nach außen (an das Blog-Draft) wird
+ * erst das bereinigte Array gemeldet. Würde man – wie früher – bei jedem
+ * Tastendruck in ein Array zerlegen und leere Teile wegfiltern, verschwände das
+ * gerade getippte Komma sofort wieder ("Komma wird nicht angenommen").
+ */
+function TagInput({
+  tags,
+  onChange,
+  className,
+}: {
+  tags: string[];
+  onChange: (tags: string[]) => void;
+  className?: string;
+}) {
+  const [text, setText] = useState((tags || []).join(", "));
+  return (
+    <input
+      type="text"
+      value={text}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setText(raw);
+        onChange(raw.split(",").map((t) => t.trim()).filter(Boolean));
+      }}
+      placeholder="z. B. IP-Kamera, Überwachung, Netzwerk"
+      className={className}
+    />
+  );
+}
+
 export default function AdminPanel({
   isOpen,
   onClose,
@@ -3560,7 +3593,7 @@ export default function AdminPanel({
                         </div>
                         <div>
                           <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Keywords / Tags (kommagetrennt)</label>
-                          <input value={(p.tags || []).join(", ")} onChange={(e) => setSeoBlogDraft((d) => d.map((x, xi) => (xi === i ? { ...x, tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) } : x)))} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E] mt-1" />
+                          <TagInput tags={p.tags || []} onChange={(tags) => setSeoBlogDraft((d) => d.map((x, xi) => (xi === i ? { ...x, tags } : x)))} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF5E2E] mt-1" />
                         </div>
                       </div>
                     </div>
