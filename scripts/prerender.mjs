@@ -500,7 +500,7 @@ try {
     const pageBlog = (r.home || r.path === "/blog") ? blogTeasers : [];
     const html = renderHtml(base, {
       title, description, canonical,
-      keywords: override.keywords || "",
+      keywords: (liveCat && liveCat.keywords && liveCat.keywords.trim()) || override.keywords || "",
       bodyHtml,
       seedJson: makeSeedJson(pageSeed, pageBlog),
     });

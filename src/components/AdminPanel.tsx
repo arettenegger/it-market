@@ -468,6 +468,7 @@ export default function AdminPanel({
   // SEO-/Inhaltsfelder der Kategorieseite
   const [catSeoTitle, setCatSeoTitle] = useState("");
   const [catMetaDescription, setCatMetaDescription] = useState("");
+  const [catKeywords, setCatKeywords] = useState("");
   const [catH1, setCatH1] = useState("");
   const [catSubtitle, setCatSubtitle] = useState("");
   // Frei benennbare Spezifikations-Felder je Kategorie (leer = Standard-Bezeichnung)
@@ -484,7 +485,7 @@ export default function AdminPanel({
     setCatDesc("");
     setCatImage("https://images.unsplash.com/photo-1544197150-b99a580bb7a8?q=80&w=800&auto=format&fit=crop");
     setCatIconName("Shield");
-    setCatSeoTitle(""); setCatMetaDescription(""); setCatH1(""); setCatSubtitle("");
+    setCatSeoTitle(""); setCatMetaDescription(""); setCatKeywords(""); setCatH1(""); setCatSubtitle("");
     setCatSpecResolution(""); setCatSpecViewAngle(""); setCatSpecNightVision(""); setCatSpecStorage(""); setCatSpecPower("");
     setIsAddingCategory(true);
   };
@@ -515,7 +516,7 @@ export default function AdminPanel({
   const resetCategoryForm = () => {
     setEditingCategory(null);
     setCatName(""); setCatTagline(""); setCatDesc(""); setCatImage(""); setCatIconName("Shield");
-    setCatSeoTitle(""); setCatMetaDescription(""); setCatH1(""); setCatSubtitle("");
+    setCatSeoTitle(""); setCatMetaDescription(""); setCatKeywords(""); setCatH1(""); setCatSubtitle("");
     setCatSpecResolution(""); setCatSpecViewAngle(""); setCatSpecNightVision(""); setCatSpecStorage(""); setCatSpecPower("");
   };
 
@@ -528,6 +529,7 @@ export default function AdminPanel({
     setCatIconName(c.iconName || "Shield");
     setCatSeoTitle(c.seoTitle || "");
     setCatMetaDescription(c.metaDescription || "");
+    setCatKeywords(c.keywords || "");
     setCatH1(c.h1 || "");
     setCatSubtitle(c.subtitle || "");
     setCatSpecResolution(c.specLabels?.resolution || "");
@@ -558,6 +560,7 @@ export default function AdminPanel({
       iconName: catIconName,
       ...(catSeoTitle.trim() ? { seoTitle: catSeoTitle.trim() } : {}),
       ...(catMetaDescription.trim() ? { metaDescription: catMetaDescription.trim() } : {}),
+      ...(catKeywords.trim() ? { keywords: catKeywords.trim() } : {}),
       ...(catH1.trim() ? { h1: catH1.trim() } : {}),
       ...(catSubtitle.trim() ? { subtitle: catSubtitle.trim() } : {}),
       ...(Object.keys(specLabels).length ? { specLabels } : {}),
@@ -5558,6 +5561,16 @@ export default function AdminPanel({
                           className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#FF5E2E]"
                         />
                         <span className={`text-[10px] ${catMetaDescription.length > 160 ? "text-amber-400" : "text-slate-500"}`}>{catMetaDescription.length}/160 Zeichen</span>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1">Keywords (kommagetrennt)</label>
+                        <input
+                          type="text"
+                          value={catKeywords}
+                          onChange={(e) => setCatKeywords(e.target.value)}
+                          placeholder="z.B. ip kamera, überwachungskamera, videoüberwachung"
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#FF5E2E]"
+                        />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-300 mb-1">Überschrift (H1)</label>
